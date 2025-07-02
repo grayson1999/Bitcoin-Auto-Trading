@@ -5,7 +5,14 @@ import time
 import jwt
 import requests
 from dotenv import load_dotenv
-from models import init_db, SessionLocal, save_ticker, save_account
+from src.utils.logger import get_logger
+from src.realtime.models import init_db, SessionLocal, save_ticker, save_account
+
+logger = get_logger(
+    name="realtime.data_collection",
+    log_file="data_collection.log"
+)
+
 
 # .env 파일의 환경변수를 로드합니다.
 load_dotenv("../../config/.env")
