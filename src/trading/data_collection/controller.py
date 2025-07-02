@@ -1,13 +1,25 @@
 # src/realtime/controller.py
 
+"""
+realtime.controller 모듈
+
+APScheduler를 사용하여 실시간 데이터(fetch_realtime)를 지정된 주기로 수집하고,
+수집된 데이터를 DB에 저장하는 컨트롤러입니다.
+
+주요 기능:
+ 1. init_db(): ORM 기반 테이블 생성
+ 2. fetch_realtime(): Upbit API로 티커 데이터를 가져와 파싱 후 save_ticker()로 DB 저장
+ 3. main(): BackgroundScheduler 설정(즉시 실행 후 15분 간격), 스케줄러 시작 및 종료 제어
+"""
+
 import time
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from src.utils.logger import get_logger
-from src.realtime.data_collection import (
+from src.trading.data_collection.data_collection import (
     get_ticker_data, parse_and_refine_data
 )
-from src.realtime.models import init_db, SessionLocal, save_ticker
+from src.trading.data_collection.models import init_db, SessionLocal, save_ticker
 
 # logger 생성
 logger = get_logger(

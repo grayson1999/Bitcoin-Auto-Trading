@@ -11,9 +11,13 @@
 - **src/**  
   - **목적:** 실제 소스 코드가 포함되는 폴더  
   - **구성:**  
-    - `src/realtime/` : 실시간 데이터 수집, AI 신호 생성, 주문 실행, 리스크 관리 관련 모듈  
-    - `src/backtesting/` : 백테스팅 및 전략 평가 관련 코드  
-    - `src/web/` : 웹 대시보드 구현 (HTML, CSS, JavaScript 파일)
+    - `src/trading/` : 실시간 트레이딩 엔진 관련 모듈  
+      - `data_collection/`   : Upbit API 기반 실시간 데이터 수집  
+      - `signal_generation/` : ChatGPT API 기반 매매 신호 생성  
+      - `order_execution/`   : Upbit API 기반 주문 실행  
+      - `risk_management/`   : 포지션 사이징, 손절/익절 로직 등 리스크 관리  
+    - `src/backtesting/`     : 백테스팅 및 전략 평가 관련 코드  
+    - `src/web/`             : 웹 대시보드 구현 (HTML, CSS, JavaScript 파일)  
 
 - **config/**  
   - **목적:** API 키, 환경 변수 등 설정 파일을 별도로 관리하여 코드와 분리
