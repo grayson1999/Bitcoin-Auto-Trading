@@ -1,70 +1,52 @@
-# src/realtime/controller.py
-
-"""
-realtime.controller 모듈
-
-APScheduler를 사용하여 실시간 데이터(fetch_realtime)를 지정된 주기로 수집하고,
-수집된 데이터를 DB에 저장하는 컨트롤러입니다.
-
-주요 기능:
- 1. init_db(): ORM 기반 테이블 생성
- 2. fetch_realtime(): Upbit API로 티커 데이터를 가져와 파싱 후 save_ticker()로 DB 저장
- 3. main(): BackgroundScheduler 설정(즉시 실행 후 15분 간격), 스케줄러 시작 및 종료 제어
-"""
-
 import time
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from src.utils.logger import get_logger
-from src.trading.data_collection.data_collection import (
-    get_ticker_data, parse_and_refine_data
-)
-from src.trading.data_collection.models import init_db, SessionLocal, save_ticker
+from .api import UpbitAPI
+from .parser import parse_ticker
+from .db import init_db, SessionLocal, TickData, save
 
-# logger 생성
-logger = get_logger(
-    name="realtime.controller",
-    log_file="controller.log"
-)
+logger = get_logger(name="realtime.controller", log_file="controller.log")
 
-def fetch_realtime():
-    """현재 시세를 실시간으로 수집하여 DB 저장."""
+def fetch_and_store_ticker():
+    """실시간 티커 데이터를 가져와 DB에 저장."""
+    raw = UpbitAPI.fetch_ticker("KRW-BTC")
+    if not raw:
+        logger.warning("fetch_and_store_ticker: 데이터 수신 실패")
+        return
+
+    data = parse_ticker(raw)
+    if not data:
+        logger.error("fetch_and_store_ticker: 데이터 정제 실패")
+        return
+
+    session = SessionLocal()
     try:
-        raw = get_ticker_data("KRW-XRP")
-        if not raw:
-            logger.warning("fetch_realtime: 티커 데이터 수신 실패")
-            return
-
-        refined = parse_and_refine_data(raw)
-        if not refined:
-            logger.error("fetch_realtime: 데이터 정제 실패")
-            return
-
-        session = SessionLocal()
-        save_ticker(session, refined)
+        save(session, TickData(**data))
+        logger.info(f"fetch_and_store_ticker: 저장 성공 – {data}")
+    except Exception as e:
+        logger.exception(f"fetch_and_store_ticker: 저장 중 오류 – {e}")
+    finally:
         session.close()
-        logger.info(f"fetch_realtime: 저장 성공 – {refined}")
-    except Exception:
-        logger.exception("fetch_realtime: 예외 발생")
 
 def main():
+    # DB 테이블 생성(최초 1회)
     init_db()
     logger.info("DB 초기화 완료")
 
+    # 스케줄러 설정: 즉시 실행 후 15분마다 티커 수집
     scheduler = BackgroundScheduler()
     scheduler.add_job(
-        fetch_realtime,
+        fetch_and_store_ticker,
         trigger="interval",
-        seconds=900,  # ★ 15분마다 실행
-        id="fetch_realtime_job",
-        next_run_time=datetime.now(),  # ★ 시작하자마자 즉시 실행
-        misfire_grace_time=10,
-        max_instances=1,
+        seconds=900,  # 15분 간격
+        next_run_time=datetime.now(),
+        id="ticker_job",
         replace_existing=True
     )
 
     scheduler.start()
-    logger.info("스케줄러 시작됨 (fetch_realtime: 즉시 실행 후 15분마다)")
+    logger.info("스케줄러 시작됨: fetch_and_store_ticker 즉시 실행 후 15분마다")
 
     try:
         while True:
