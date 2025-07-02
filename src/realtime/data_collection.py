@@ -5,6 +5,7 @@ import time
 import jwt
 import requests
 from dotenv import load_dotenv
+from models import init_db, SessionLocal, save_ticker, save_account
 
 # .env 파일의 환경변수를 로드합니다.
 load_dotenv("../../config/.env")
@@ -178,28 +179,42 @@ def parse_private_account_data(private_data, target_currency="BTC"):
         return None
     
 if __name__ == "__main__":
+    # DB 테이블 생성(최초 1회만 실행해도 됩니다)
+    init_db()
+
+    # DB 세션 생성
+    session = SessionLocal()
     # 공용 데이터 요청 테스트
     ticker_data = get_ticker_data()
     if ticker_data:
         print("Ticker Data:", ticker_data)
+        
+    print()
     
     # 비공개 데이터 요청 테스트 (환경변수 설정 필수)
     private_data = get_private_data()
     if private_data:
         print("Private Data:", private_data)
+    print()
     
     # 공용 데이터 파싱 테스트
     refined = parse_and_refine_data(ticker_data)
     if refined:
         print("정제된 데이터:", refined)
+        save_ticker(session, refined)   # DB에 저장
     else:
         print("데이터 정제 실패")
+    print()
     
     # 비공개 데이터 정제 파싱 테스트
-    btc_account = parse_private_account_data(private_data, target_currency="BTC")
+    btc_account = parse_private_account_data(private_data, target_currency="XRP")
     if btc_account:
-        print("BTC 계좌 정보:", btc_account)
-
+        print("계좌 정보:", btc_account)
+        # acct dict에 timestamp 필드 추가 후 저장
+        btc_account["timestamp"] = int(time.time() * 1000)
+        save_account(session, btc_account)
+    print()
+    
     # # 스케줄러를 사용해 1초마다 get_ticker_data() 함수 실행 후 데이터 파싱 및 정제
     # def job():
     #     raw_data = get_ticker_data()
