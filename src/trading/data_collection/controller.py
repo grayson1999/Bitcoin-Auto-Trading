@@ -4,7 +4,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from src.utils.logger import get_logger
 from .api import UpbitAPI
 from .parser import parse_ticker
-from .db import init_db, SessionLocal, TickData, save
+from database.session import SessionLocal, init_db, save
+from database.models import TickData, AccountData
 
 logger = get_logger(name="realtime.controller", log_file="controller.log")
 
