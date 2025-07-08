@@ -63,3 +63,11 @@ class UpbitAPI:
         except Exception as e:
             print(f"[UpbitAPI] fetch_accounts 오류: {e}")
             return None
+
+if __name__ == "__main__":
+    # 간단한 테스트용 코드
+    ticker = UpbitAPI.fetch_ticker("KRW-BTC")
+    print("Ticker:", ticker)
+
+    accounts = UpbitAPI.fetch_accounts()
+    print("Accounts:", accounts)
