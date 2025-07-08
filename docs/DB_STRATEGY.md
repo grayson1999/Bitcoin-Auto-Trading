@@ -1,0 +1,29 @@
+- **데이터 분류 및 테이블 구조:**  
+  - **실시간 티커 데이터 (Tick Data):**  
+    - 빠른 업데이트와 조회가 필요한 실시간 시세·거래량 정보를 저장  
+    - 테이블: `tick_data`  
+      - 주요 컬럼:  
+        - `market`, `trade_price`, `prev_closing_price`, `opening_price`,  
+        - `high_price`, `low_price`, `change_type`, `change_rate`,  
+        - `trade_volume`, `acc_trade_volume_24h`, `data_timestamp`  
+  - **계좌 정보 (Account Data):**  
+    - 비공개 API로부터 받아온 계정별 자산·잔고 정보를 저장  
+    - 테이블: `account_data`  
+      - 주요 컬럼:  
+        - `currency`, `balance`, `locked`, `avg_buy_price`, `data_timestamp`  
+  - **과거(히스토리) 데이터 (Historical Data):**  
+    - 백테스팅 및 장기 분석용으로 보관할 과거 시계열 데이터  
+    - 테이블: `historical_data`  
+      - 예: `timestamp`, `close_price`, `volume`, `other_metrics` 등  
+  - **외부 데이터 (External Data):**  
+    - 뉴스, 소셜 미디어, 크롤링 데이터 등 보조 분석용 데이터  
+    - 테이블: `external_data`  
+      - 예: `source`, `title`/`content`, `published_at` 등
+
+
+- **ETL 파이프라인 및 메타데이터 관리:**  
+  - 각 데이터 소스로부터 데이터를 수집, 정제, 변환하여 적절한 테이블에 적재하는 방법  
+  - 데이터 수집 시점, 출처 등 메타데이터를 함께 기록하는 전략
+
+- **확장성 및 백업 전략:**  
+  - 데이터량 증가에 대비한 인덱싱, 샤딩, 백업 정책 등 고려 사항
