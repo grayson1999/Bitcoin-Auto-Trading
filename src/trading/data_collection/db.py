@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 from sqlalchemy import (
     create_engine, Column, Float, String,
-    BigInteger, DateTime, UniqueConstraint, Index
+    BigInteger, DateTime, UniqueConstraint, Index,
+    text
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -41,7 +42,11 @@ class TickData(Base):
     trade_volume         = Column(Float,    nullable=False)
     acc_trade_volume_24h = Column(Float,    nullable=False)
     data_timestamp       = Column(BigInteger, nullable=False)
-    created_at           = Column(DateTime,  server_default="CURRENT_TIMESTAMP")
+    created_at           = Column(
+        DateTime,
+        server_default=text("CURRENT_TIMESTAMP"),
+        nullable=False
+    )
 
     __table_args__ = (
         Index("idx_data_timestamp", "data_timestamp"),
@@ -55,7 +60,11 @@ class AccountData(Base):
     locked         = Column(Float,    nullable=False)
     avg_buy_price  = Column(Float,    nullable=True)
     data_timestamp = Column(BigInteger, nullable=False)
-    created_at     = Column(DateTime,  server_default="CURRENT_TIMESTAMP")
+    created_at     = Column(
+        DateTime,
+        server_default=text("CURRENT_TIMESTAMP"),
+        nullable=False
+    )
 
     __table_args__ = (
         UniqueConstraint("currency", "data_timestamp", name="uq_currency_timestamp"),
