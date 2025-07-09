@@ -2,6 +2,9 @@
 
 import sys
 from pathlib import Path
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 
 # ─────────── 프로젝트 구조 가정 ───────────
 # Bitcoin-Auto-Trading/
@@ -19,3 +22,5 @@ ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 
+root = Path(__file__).resolve().parents[1]
+load_dotenv(root / "config" / ".env")

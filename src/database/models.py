@@ -1,7 +1,7 @@
 from sqlalchemy import (
     Column, Float, String,
     BigInteger, DateTime,
-    UniqueConstraint, Index, text
+    UniqueConstraint, Index, text, Integer
 )
 from .base import Base  # 공통 Declarative Base 가져오기
 
@@ -9,7 +9,7 @@ from .base import Base  # 공통 Declarative Base 가져오기
 class TickData(Base):
     __tablename__ = "tick_data"
     # ─── PK 및 자동 증가 ID ───────────────────────────────────────────────────
-    id                   = Column(BigInteger, primary_key=True, autoincrement=True)
+    id                   = Column(Integer, primary_key=True, autoincrement=True)
 
     # ─── 시장 및 가격·거래량 정보 ───────────────────────────────────────────────
     market               = Column(String(20), nullable=False)   # 마켓 코드 (예: "KRW-BTC")
@@ -40,7 +40,7 @@ class TickData(Base):
 class AccountData(Base):
     __tablename__ = "account_data"
     # ─── PK 및 자동 증가 ID ───────────────────────────────────────────────────
-    id             = Column(BigInteger, primary_key=True, autoincrement=True)
+    id             = Column(Integer, primary_key=True, autoincrement=True)
 
     # ─── 계좌별 잔고 정보 ───────────────────────────────────────────────────────
     currency       = Column(String(10), nullable=False)         # 통화 코드 (예: "BTC")
