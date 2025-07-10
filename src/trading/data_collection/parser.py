@@ -1,3 +1,5 @@
+## src/trading/data_collection/parser.py
+
 import time
 
 def parse_ticker(raw: dict) -> dict:
