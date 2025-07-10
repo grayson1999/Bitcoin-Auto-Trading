@@ -14,8 +14,8 @@ def memory_db(monkeypatch):
     모델·save() 동작만 검증
     """
     mem_engine = create_engine("sqlite:///:memory:")
-    monkeypatch.setattr(db_session, "engine", mem_engine)
-    monkeypatch.setattr(db_session, "SessionLocal",
+    monkeypatch.setattr(db_session, "engine_realtime", mem_engine)
+    monkeypatch.setattr(db_session, "SessionRealtime",
                         sessionmaker(bind=mem_engine, autoflush=False, autocommit=False))
     # 테이블 생성
     base_mod.Base.metadata.create_all(mem_engine)
@@ -25,11 +25,11 @@ def memory_db(monkeypatch):
 
 @pytest.fixture
 def session():
-    return db_session.SessionLocal()
+    return db_session.SessionRealtime()
 
 def test_tables_created():
     """메모리 DB에서 테이블이 생성됐는지 확인"""
-    inspector = inspect(db_session.engine)
+    inspector = inspect(db_session.engine_realtime)
     assert "tick_data" in inspector.get_table_names()
     assert "account_data" in inspector.get_table_names()
 
@@ -55,7 +55,7 @@ def test_tickdata_crud_and_save(session):
         trade_volume=0.1, acc_trade_volume_24h=5.0,
         data_timestamp=9876543210
     )
-    db_session.save(session, another)
+    db_session.save_realtime(session, another)
     assert session.query(models.TickData).filter_by(market="KRW-SAVE").one()
 
 def test_accountdata_unique_constraint(session):
