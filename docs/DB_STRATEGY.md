@@ -13,8 +13,9 @@
         - `currency`, `balance`, `locked`, `avg_buy_price`, `data_timestamp`  
   - **과거(히스토리) 데이터 (Historical Data):**  
     - 백테스팅 및 장기 분석용으로 보관할 과거 시계열 데이터  
-    - 테이블: `historical_data`  
-      - 예: `timestamp`, `close_price`, `volume`, `other_metrics` 등  
+    - 테이블: `five_min_ohlcv` (5분봉 OHLCV 데이터)  
+      - 주요 컬럼: `market`, `timestamp`, `open`, `high`, `low`, `close`, `volume`  
+    - `tick_data`에서 집계되어 아카이빙됨  
   - **외부 데이터 (External Data):**  
     - 뉴스, 소셜 미디어, 크롤링 데이터 등 보조 분석용 데이터  
     - 테이블: `external_data`  
@@ -23,6 +24,7 @@
 
 - **ETL 파이프라인 및 메타데이터 관리:**  
   - 각 데이터 소스로부터 데이터를 수집, 정제, 변환하여 적절한 테이블에 적재하는 방법  
+  - `archiving.py` 모듈을 통해 `tick_data`를 `five_min_ohlcv`로 집계하여 히스토리 DB에 저장  
   - 데이터 수집 시점, 출처 등 메타데이터를 함께 기록하는 전략
 
 - **확장성 및 백업 전략:**  

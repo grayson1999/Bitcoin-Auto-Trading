@@ -33,4 +33,12 @@ logs/      - 실행 로그 파일
 | 분류       | 기술     | 버전        |
 | ---------- | -------- | ----------- |
 | Server     | Python   | 3.10.x      |
-| Database   | MySQL    | 8.0.X      |
+| Database   | MySQL    | 8.0.x      |
+
+## 설치 및 실행 (개발 예정)
+1. **환경 설정:**
+   - Python 3.10.x 설치
+   - `pip install -r requirements.txt`
+   - `config/.env` 파일 생성 및 API 키, DB 정보 설정
+2. **실행:**
+   - `python main.py` (예정)

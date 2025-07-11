@@ -15,6 +15,7 @@ flowchart TD
       RT["실시간 데이터 DB"]
       HIST["히스토리 DB"]
       EXT["외부 데이터 DB"]
+      ARC["아카이빙 모듈"]
     end
 
     %% [GPT 판단 근거 영역]
@@ -47,7 +48,8 @@ flowchart TD
     %% 연결 흐름: 데이터 저장
     B -->|"저장: 정제 데이터"| RT
     D -->|"저장: 주문 결과"| RT
-    RT -->|"아카이브"| HIST
+    RT -->|"아카이빙 요청"| ARC
+    ARC -->|"아카이브된 데이터"| HIST
     X -->|"크롤링 데이터"| EXT
 
     %% 연결 흐름: GPT 판단 근거 활용
@@ -71,7 +73,7 @@ flowchart TD
   Upbit API에서 실시간 데이터를 수신하여, 데이터 수집 모듈이 정제한 후 ChatGPT 신호 생성 모듈로 전달합니다. 리스크 관리 모듈을 거쳐 주문 실행 모듈이 실제 거래를 실행하며, 주문 결과는 다시 데이터 수집 모듈에 피드백됩니다.
 
 - **데이터 저장 영역:**  
-  실시간 데이터와 주문 결과는 실시간 데이터 DB(RT)에 저장되며, 이후 아카이브되어 히스토리 DB(HIST)로 전송됩니다. 외부 데이터 소스(X)에서 크롤링한 데이터는 외부 데이터 DB(EXT)에 저장됩니다.
+  실시간 데이터와 주문 결과는 실시간 데이터 DB(RT)에 저장되며, 아카이빙 모듈(ARC)을 통해 히스토리 DB(HIST)로 전송됩니다. 외부 데이터 소스(X)에서 크롤링한 데이터는 외부 데이터 DB(EXT)에 저장됩니다.
 
 - **GPT 판단 근거 영역:**  
   RT, HIST, EXT에 저장된 데이터가 GPT 판단 근거로 통합되어, 이를 바탕으로 ChatGPT 신호 생성 모듈에서 보다 풍부한 매매 신호를 도출할 수 있게 됩니다.
@@ -88,26 +90,15 @@ flowchart TD
 
 ```mermaid
 classDiagram
-    class DataCollector {
-        +fetchData()
-        +parseData()
-    }
-    class SignalGenerator {
-        +generateSignal(data)
-    }
-    class RiskManager {
-        +assessRisk(signal)
-        +applyRiskManagement()
-    }
-    class OrderExecutor {
-        +executeOrder(signal)
+    class Archiver {
+        +archiveTickData()
     }
     class RealTimeDB {
         +saveData(data)
         +getData()
     }
     class HistoryDB {
-        +archiveData(data)
+        +saveArchivedData(data)
         +getHistoricalData()
     }
     class ExternalDB {
@@ -138,7 +129,8 @@ classDiagram
     %% 데이터 저장 관련
     DataCollector --> RealTimeDB : "save real-time data"
     OrderExecutor --> RealTimeDB : "log order result"
-    RealTimeDB --> HistoryDB : "archive data"
+    RealTimeDB --> Archiver : "fetch data for archive"
+    Archiver --> HistoryDB : "save archived data"
     
     %% 외부 데이터 및 GPT 판단 근거
     RealTimeDB --> GPTJudge : "rt data"

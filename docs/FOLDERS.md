@@ -12,10 +12,12 @@
   - **목적:** 실제 소스 코드가 포함되는 폴더  
   - **구성:**  
     - `src/trading/` : 실시간 트레이딩 엔진 관련 모듈  
-      - `data_collection/`   : Upbit API 기반 실시간 데이터 수집  
+      - `data_collection/`   : Upbit API 기반 실시간 데이터 수집 및 아카이빙  
       - `signal_generation/` : ChatGPT API 기반 매매 신호 생성  
       - `order_execution/`   : Upbit API 기반 주문 실행  
       - `risk_management/`   : 포지션 사이징, 손절/익절 로직 등 리스크 관리  
+    - `src/database/`        : DB 연결, 세션 관리, 모델 정의  
+    - `src/utils/`           : 로깅, 유틸리티 함수 등 공통 기능  
     - `src/backtesting/`     : 백테스팅 및 전략 평가 관련 코드  
     - `src/web/`             : 웹 대시보드 구현 (HTML, CSS, JavaScript 파일)  
 
@@ -48,11 +50,19 @@
 
 ```
 src/
-  ├── realtime/
-  │     ├── data_collection.py       # Upbit API 연동, 데이터 수집, 파싱, 오류 처리 등 실시간 데이터 처리 모듈
+  ├── trading/
+  │     ├── data_collection/       # Upbit API 연동, 데이터 수집, 파싱, 오류 처리 등 실시간 데이터 처리 및 아카이빙 모듈
   │     ├── signal_generation.py     # 정제 데이터를 기반으로 ChatGPT API를 호출해 매매 신호 생성
   │     ├── risk_management.py       # 포지션 사이징, 손절, 자동 정지 등 리스크 관리 로직 구현
   │     └── order_execution.py       # 생성된 신호에 따라 Upbit API로 주문 실행 및 결과 피드백 처리
+  │
+  ├── database/
+  │     ├── base.py                # SQLAlchemy Declarative Base 정의
+  │     ├── models.py              # DB 테이블 모델 정의 (TickData, AccountData, FiveMinOHLCV 등)
+  │     └── session.py             # DB 연결 엔진 및 세션 관리
+  │
+  ├── utils/
+  │     └── logger.py              # 로깅 설정 및 유틸리티 함수
   │
   ├── backtesting/
   │     └── backtesting_module.py    # 히스토리 데이터를 활용한 전략 시뮬레이션 및 평가, 백테스팅 결과 산출
