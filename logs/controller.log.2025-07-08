@@ -1,4 +1,0 @@
-2025-07-08 16:44:08,241 [INFO] realtime.controller: DB 초기화 완료
-2025-07-08 16:44:08,244 [INFO] realtime.controller: 스케줄러 시작됨: fetch_and_store_ticker 즉시 실행 후 15분마다
-2025-07-08 16:44:08,437 [INFO] realtime.controller: fetch_and_store_ticker: 저장 성공 – {'market': 'KRW-BTC', 'trade_price': 148098000.0, 'prev_closing_price': 148100000.0, 'opening_price': 148100000.0, 'high_price': 148349000.0, 'low_price': 147100000.0, 'change_type': 'FALL', 'change_rate': 1.35044e-05, 'trade_volume': 0.0040003, 'acc_trade_volume_24h': 801.39658159, 'data_timestamp': 1751960645039}
-2025-07-08 16:44:18,769 [INFO] realtime.controller: 스케줄러 종료

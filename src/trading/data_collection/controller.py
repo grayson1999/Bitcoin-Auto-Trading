@@ -13,11 +13,11 @@ def main():
     logger.info("DB 초기화 및 Service 준비 완료")
 
     scheduler = BackgroundScheduler()
-    # 티커 수집: 즉시 실행 후 15분마다
+    # 티커 수집: 즉시 실행 후 3초마다
     scheduler.add_job(
         service.collect_ticker,
         trigger="interval",
-        seconds=900,
+        seconds=3,
         next_run_time=datetime.now(),
         id="ticker_job",
         replace_existing=True

@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from .base import Base
 
 # .env 로드
-env_path = Path(__file__).resolve().parents[1] / "config" / ".env"
+env_path = Path(__file__).resolve().parents[2] / "config" / ".env"
 load_dotenv(env_path)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -42,6 +42,7 @@ HISTORY_DATABASE_URL = (
     f"@{os.getenv('HISTORY_DB_HOST','localhost')}:{os.getenv('HISTORY_DB_PORT','3306')}"
     f"/{os.getenv('HISTORY_DB_NAME')}?charset=utf8mb4"
 )
+
 engine_history = create_engine(HISTORY_DATABASE_URL, pool_pre_ping=True)
 SessionHistory = sessionmaker(bind=engine_history, autoflush=False, autocommit=False)
 
@@ -69,6 +70,7 @@ def get_realtime_db():
 def get_history_db():
     """히스토리 DB 세션을 생성·반환하고, 사용 후 닫습니다."""
     db = SessionHistory()
+    # print(os.getenv('HISTORY_DB_USER'), os.getenv('REALTIME_DB_USER'))
     try:
         yield db
     finally:
