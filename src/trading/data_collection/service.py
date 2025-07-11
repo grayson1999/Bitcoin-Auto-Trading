@@ -54,5 +54,22 @@ class DataCollectionService:
             self.db.rollback()
             logger.exception(f"collect_account: 저장 중 오류 – {e}")
 
+    
+    def archive_5min(
+        self,
+        days: int = 30
+    ) -> None:
+        """
+        실시간 DB에서 지난 `days`일간의 tick 데이터를 5분 OHLCV로 집계해
+        히스토리 DB에 저장 및 원본 삭제까지 수행합니다.
+        """
+        from .archiving import archive_5min_ohlcv
+
+        try:
+            archive_5min_ohlcv(days=days)
+            logger.info(f"Service: {days}일치 5분 OHLCV 아카이빙 완료")
+        except Exception as e:
+            logger.error(f"Service: 아카이빙 중 예외 발생 – {e}", exc_info=e)
+    
     def close(self):
         self.db.close()

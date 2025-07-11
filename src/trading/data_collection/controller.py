@@ -5,8 +5,7 @@ from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from zoneinfo import ZoneInfo
 from src.utils.logger import get_logger
-from .service import DataCollectionService
-from .archiving import archive_5min_ohlcv
+from .service import DataCollectionService 
 
 logger = get_logger(name="realtime.controller", log_file="controller.log")
 
@@ -30,7 +29,7 @@ def main():
 
     # 아카이브: 매일 자정(한국시간)에 5분 OHLCV 집계 및 저장
     scheduler.add_job(
-        archive_5min_ohlcv,
+        service.archive_5min,
         trigger="cron",
         hour=0,
         minute=0,
