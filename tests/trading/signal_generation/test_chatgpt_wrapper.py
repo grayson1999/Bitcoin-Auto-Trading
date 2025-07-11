@@ -1,58 +1,110 @@
 import pytest
 import time
+import json
+from unittest.mock import call, MagicMock
 
-# src 디렉토리가 PYTHONPATH에 올라가 있다는 가정 하에 import
-from src.trading.signal_generation.chatgpt_wrapper import send_signal_request, MAX_RETRIES, client
+from src.trading.signal_generation.chatgpt_wrapper import (
+    send_signal_request, 
+    SignalResponse, 
+    MAX_RETRIES, 
+    RETRY_DELAY_SECONDS,
+    CONFIDENCE_THRESHOLD,
+    client
+)
 
-# 더미 응답 객체: model_dump()를 호출하면 dict를 리턴
-class 더미응답:
-    def __init__(self, data):
-        self._data = data
+# Mock response object that mimics openai.ChatCompletion
+class MockChatCompletion:
+    def __init__(self, content, is_json=True):
+        if is_json:
+            response_content = json.dumps(content)
+        else:
+            response_content = content  # For testing malformed responses
+
+        self._data = {
+            'choices': [{'message': {'content': response_content}}],
+            'usage': {'total_tokens': 50} # Example metadata
+        }
 
     def model_dump(self):
         return self._data
 
-def test_정상적으로_신호_요청을_보내고_응답을_반환한다(monkeypatch):
-    호출파라미터 = {}
-    # create를 모킹: 호출 파라미터를 저장하고, 더미 응답 리턴
+def test_정상적으로_신호_요청을_보내고_파싱된_객체를_반환한다(monkeypatch):
+    """
+    Given a valid request payload,
+    When send_signal_request is called,
+    Then it should return a correctly parsed SignalResponse object.
+    """
+    call_params = {}
+    
     def fake_create(**kwargs):
-        호출파라미터.update(kwargs)
-        return 더미응답({"signal": "BUY", "reason": "상승 추세 확인", "confidence": 0.95})
+        call_params.update(kwargs)
+        response_data = {"signal": "BUY", "reason": "Ascending trend confirmed", "confidence": 0.95}
+        return MockChatCompletion(response_data)
 
     monkeypatch.setattr(client.chat.completions, "create", fake_create)
-    monkeypatch.setattr(time, "sleep", lambda _: None)
 
     payload = {
         "model": "gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": "비트코인 매수 신호 줘"}],
-        "timeout": 3
+        "messages": [{"role": "user", "content": "Give me a Bitcoin signal"}],
     }
     result = send_signal_request(payload)
 
-    # 반환값 검증
-    assert result == {"signal": "BUY", "reason": "상승 추세 확인", "confidence": 0.95}
-    # 내부 호출에 payload가 그대로 전달됐는지 확인
-    assert 호출파라미터["model"] == "gpt-3.5-turbo"
-    assert 호출파라미터["messages"][0]["content"] == "비트코인 매수 신호 줘"
-    assert 호출파라미터["timeout"] == 3
+    assert isinstance(result, SignalResponse)
+    assert result.signal == "BUY"
+    assert result.confidence >= CONFIDENCE_THRESHOLD
+
+def test_신뢰도가_낮으면_재시도_후_성공한다(monkeypatch):
+    """
+    Given the API first returns a low-confidence response, then a high-confidence one,
+    When send_signal_request is called,
+    Then it should retry and return the high-confidence response.
+    """
+    low_confidence_response = MockChatCompletion({"signal": "HOLD", "reason": "Low volatility", "confidence": 0.3})
+    high_confidence_response = MockChatCompletion({"signal": "BUY", "reason": "Breakout confirmed", "confidence": 0.8})
+    
+    mock_create = MagicMock(side_effect=[low_confidence_response, high_confidence_response])
+    monkeypatch.setattr(client.chat.completions, "create", mock_create)
+    mock_sleep = MagicMock()
+    monkeypatch.setattr(time, "sleep", mock_sleep)
+
+    result = send_signal_request({"model": "gpt-3.5-turbo", "messages": [{}]})
+
+    assert mock_create.call_count == 2
+    mock_sleep.assert_called_once_with(RETRY_DELAY_SECONDS)
+    assert result.signal == "BUY"
+    assert result.confidence == 0.8
+
+def test_응답_파싱에_실패하면_오류를_담은_객체를_반환한다(monkeypatch):
+    """
+    Given a response with malformed content (not valid JSON),
+    When send_signal_request is called,
+    Then it should return a SignalResponse object indicating a parsing error.
+    """
+    def fake_create_malformed(**kwargs):
+        return MockChatCompletion("This is not a valid JSON string.", is_json=False)
+
+    monkeypatch.setattr(client.chat.completions, "create", fake_create_malformed)
+
+    result = send_signal_request({"model": "gpt-3.5-turbo", "messages": [{}]})
+
+    assert result.signal == 'parsing_error'
+    assert result.confidence == 0.0
 
 def test_API_오류가_발생하면_재시도_후_예외를_던진다(monkeypatch):
-    호출횟수 = {"count": 0}
-    # 매 호출마다 예외 발생
-    def fake_create_raise(**kwargs):
-        호출횟수["count"] += 1
-        raise Exception("강제 오류")
+    """
+    Given that the API call consistently fails,
+    When send_signal_request is called,
+    Then it should retry MAX_RETRIES times and then raise the exception.
+    """
+    mock_create = MagicMock(side_effect=ConnectionError("Forced API error"))
+    monkeypatch.setattr(client.chat.completions, "create", mock_create)
+    mock_sleep = MagicMock()
+    monkeypatch.setattr(time, "sleep", mock_sleep)
 
-    monkeypatch.setattr(client.chat.completions, "create", fake_create_raise)
-    monkeypatch.setattr(time, "sleep", lambda _: None)
+    with pytest.raises(ConnectionError):
+        send_signal_request({"model": "gpt-3.5-turbo", "messages": [{}]})
 
-    payload = {
-        "model": "gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": "테스트"}]
-    }
-    with pytest.raises(Exception) as excinfo:
-        send_signal_request(payload)
-
-    # MAX_RETRIES번 재시도했는지 확인
-    assert 호출횟수["count"] == MAX_RETRIES
-    assert "강제 오류" in str(excinfo.value)
+    assert mock_create.call_count == MAX_RETRIES
+    # Check that sleep was called with exponential backoff
+    assert call(2) in mock_sleep.call_args_list
+    assert call(4) in mock_sleep.call_args_list
