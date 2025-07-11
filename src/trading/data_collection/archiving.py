@@ -58,11 +58,24 @@ def archive_5min_ohlcv(days: int = 30):
 
         ohlcvs = aggregate_5min_ohlcv(ticks)
         history.bulk_insert_mappings(FiveMinOHLCV, ohlcvs)
+        
         history.commit()
+
+        print(f"Inserted {len(ohlcvs)} records into history DB.")
+
+        # ─── 실시간 DB에서 아카이브된 데이터 일괄 삭제 ──────────────────────
+        deleted = (
+            realtime.query(TickData)
+                    .filter(TickData.created_at < start_dt)
+                    .delete(synchronize_session=False)
+        )
+        realtime.commit()
+        print(f"Deleted {deleted} records from realtime DB.")
         print(f"Inserted {len(ohlcvs)} five-min OHLCV records for past {days} days.")
 
     except Exception as e:
         history.rollback()
+        realtime.rollback()
         print("Archive failed:", e)
         raise
 
