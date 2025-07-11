@@ -12,7 +12,7 @@ import src.database.session as db_session
 # .env 로드 (tests 디렉터리에서 상대경로로 조정 필요할 수 있습니다)
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "config", ".env"))
 
-def test_env_variables_present():
+def test_환경변수_존재_확인():
     """Realtime/History DB 환경변수가 모두 로드됐는지 확인"""
     required = [
         # Realtime
@@ -26,21 +26,21 @@ def test_env_variables_present():
         assert os.getenv(var), f"환경변수 {var}가 설정되어 있지 않습니다"
 
 
-def test_realtime_engine_url_matches_env():
+def test_실시간_DB_엔진_URL_일치_확인():
     """실시간 DB engine.url이 .env와 일치하는지 확인"""
     url = str(db_session.engine_realtime.url)
     assert os.getenv("REALTIME_DB_NAME") in url
     assert os.getenv("REALTIME_DB_USER") in url
 
 
-def test_history_engine_url_matches_env():
+def test_히스토리_DB_엔진_URL_일치_확인():
     """히스토리 DB engine_history.url이 .env와 일치하는지 확인"""
     url = str(db_session.engine_history.url)
     assert os.getenv("HISTORY_DB_NAME") in url
     assert os.getenv("HISTORY_DB_USER") in url
 
 
-def test_realtime_db_connection():
+def test_실시간_DB_연결_확인():
     """실시간 DB에 SELECT 1 쿼리로 연결 확인"""
     conn = None
     try:
@@ -55,7 +55,7 @@ def test_realtime_db_connection():
             conn.close()
 
 
-def test_history_db_connection():
+def test_히스토리_DB_연결_확인():
     """히스토리 DB에 SELECT 1 쿼리로 연결 확인"""
     conn = None
     try:
@@ -70,7 +70,7 @@ def test_history_db_connection():
             conn.close()
 
 
-def test_realtime_session_local_works():
+def test_실시간_DB_세션_작동_확인():
     """SessionLocal()로 실시간 DB 세션 작동 확인"""
     session = db_session.SessionRealtime()
     try:
@@ -82,7 +82,7 @@ def test_realtime_session_local_works():
         session.close()
 
 
-def test_history_session_local_works():
+def test_히스토리_DB_세션_작동_확인():
     """SessionHistory()로 히스토리 DB 세션 작동 확인"""
     session = db_session.SessionHistory()
     try:

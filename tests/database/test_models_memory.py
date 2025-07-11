@@ -27,13 +27,13 @@ def memory_db(monkeypatch):
 def session():
     return db_session.SessionRealtime()
 
-def test_tables_created():
+def test_테이블_생성_확인():
     """메모리 DB에서 테이블이 생성됐는지 확인"""
     inspector = inspect(db_session.engine_realtime)
     assert "tick_data" in inspector.get_table_names()
     assert "account_data" in inspector.get_table_names()
 
-def test_tickdata_crud_and_save(session):
+def test_틱데이터_CRUD_및_저장_확인(session):
     """TickData CRUD 및 save(session, instance) 검증"""
     tick = models.TickData(
         market="KRW-TEST", trade_price=1.23, prev_closing_price=1.0,
@@ -58,7 +58,7 @@ def test_tickdata_crud_and_save(session):
     db_session.save_realtime(session, another)
     assert session.query(models.TickData).filter_by(market="KRW-SAVE").one()
 
-def test_accountdata_unique_constraint(session):
+def test_계좌정보_유니크_제약조건_확인(session):
     """AccountData (currency, data_timestamp) 유니크 제약조건 확인"""
     a1 = models.AccountData(
         currency="ABC", balance=1.0, locked=0.0,

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from src.trading.data_collection.service import DataCollectionService
 
 @pytest.fixture(autouse=True)
-def disable_db_init(monkeypatch):
+def db_초기화_비활성화(monkeypatch):
     """init_db 호출 무력화"""
     monkeypatch.setattr("src.trading.data_collection.service.init_db", lambda: None)
 
