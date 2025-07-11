@@ -3,10 +3,10 @@ from sqlalchemy import (
     BigInteger, DateTime,
     UniqueConstraint, Index, text, Integer
 )
-from .base import Base  # 공통 Declarative Base 가져오기
+from .base import BaseRealtime, BaseHistory  # 분리된 Declarative Base 가져오기
 
 
-class TickData(Base):
+class TickData(BaseRealtime):
     __tablename__ = "tick_data"
     # ─── PK 및 자동 증가 ID ───────────────────────────────────────────────────
     id                   = Column(Integer, primary_key=True, autoincrement=True)
@@ -37,7 +37,7 @@ class TickData(Base):
     )
 
 
-class AccountData(Base):
+class AccountData(BaseRealtime):
     __tablename__ = "account_data"
     # ─── PK 및 자동 증가 ID ───────────────────────────────────────────────────
     id             = Column(Integer, primary_key=True, autoincrement=True)
@@ -61,7 +61,7 @@ class AccountData(Base):
         UniqueConstraint("currency", "data_timestamp", name="uq_currency_timestamp"),  # 동일 통화·타임스탬프 중복 방지
     )
 
-class FiveMinOHLCV(Base):
+class FiveMinOHLCV(BaseHistory):
     __tablename__ = "five_min_ohlcv"
 
     # ─── 복합 PK: 마켓 + 5분 버킷 타임스탬프 ─────────────────────────────

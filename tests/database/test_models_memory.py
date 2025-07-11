@@ -18,10 +18,12 @@ def memory_db(monkeypatch):
     monkeypatch.setattr(db_session, "SessionRealtime",
                         sessionmaker(bind=mem_engine, autoflush=False, autocommit=False))
     # 테이블 생성
-    base_mod.Base.metadata.create_all(mem_engine)
+    base_mod.BaseRealtime.metadata.create_all(mem_engine)
+    base_mod.BaseHistory.metadata.create_all(mem_engine)
     yield
     # 테스트 후 드롭
-    base_mod.Base.metadata.drop_all(mem_engine)
+    base_mod.BaseHistory.metadata.drop_all(mem_engine)
+    base_mod.BaseRealtime.metadata.drop_all(mem_engine)
 
 @pytest.fixture
 def session():
@@ -32,6 +34,7 @@ def test_테이블_생성_확인():
     inspector = inspect(db_session.engine_realtime)
     assert "tick_data" in inspector.get_table_names()
     assert "account_data" in inspector.get_table_names()
+    assert "five_min_ohlcv" in inspector.get_table_names()
 
 def test_틱데이터_CRUD_및_저장_확인(session):
     """TickData CRUD 및 save(session, instance) 검증"""

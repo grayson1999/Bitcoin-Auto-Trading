@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
 # Base 선언을 가져옵니다.
-from .base import Base
+from .base import BaseRealtime, BaseHistory
 
 # .env 로드
 env_path = Path(__file__).resolve().parents[2] / "config" / ".env"
@@ -26,7 +26,7 @@ SessionRealtime = sessionmaker(bind=engine_realtime, autoflush=False, autocommit
 
 def init_db():
     """Realtime DB 테이블이 없으면 생성합니다."""
-    Base.metadata.create_all(bind=engine_realtime)
+    BaseRealtime.metadata.create_all(bind=engine_realtime)
 
 def save_realtime(session, instance):
     """실시간 DB 세션에 인스턴스를 추가하고 커밋합니다."""
@@ -48,7 +48,7 @@ SessionHistory = sessionmaker(bind=engine_history, autoflush=False, autocommit=F
 
 def init_history_db():
     """History DB 테이블이 없으면 생성합니다."""
-    Base.metadata.create_all(bind=engine_history)
+    BaseHistory.metadata.create_all(bind=engine_history)
 
 def save_history(session, instance):
     """히스토리 DB 세션에 인스턴스를 추가하고 커밋합니다."""
