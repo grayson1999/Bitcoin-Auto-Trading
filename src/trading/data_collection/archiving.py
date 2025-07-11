@@ -43,7 +43,7 @@ def aggregate_5min_ohlcv(ticks: List[TickData]) -> List[Dict[str, Any]]:
         })
     return ohlcv_list
 
-def archive_5min_ohlcv(days: int = 30):
+def archive_5min_ohlcv(days: int = 30, keep_hours: int = 12):
     """
     실시간 DB에서 지난 `days`일간의 tick 데이터를 가져와
     5분 OHLCV로 집계한 뒤 히스토리 DB에 저장 및 실시간 DB 원본 삭제.
@@ -72,9 +72,11 @@ def archive_5min_ohlcv(days: int = 30):
         history.commit()
         logger.info(f"Inserted {len(ohlcvs)} records into history DB.")
 
+        # Delete tick data older than keep_hours from now
+        delete_before_dt = datetime.utcnow() - timedelta(hours=keep_hours)
         deleted = (
             realtime.query(TickData)
-                    .filter(TickData.created_at < start_dt)
+                    .filter(TickData.created_at < delete_before_dt)
                     .delete(synchronize_session=False)
         )
         realtime.commit()

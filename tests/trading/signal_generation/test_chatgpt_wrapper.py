@@ -108,3 +108,27 @@ def test_API_오류가_발생하면_재시도_후_예외를_던진다(monkeypatc
     # Check that sleep was called with exponential backoff
     assert call(2) in mock_sleep.call_args_list
     assert call(4) in mock_sleep.call_args_list
+
+def test_마크다운_코드_블록_제거_후_정상_파싱(monkeypatch):
+    """
+    Given a response with JSON content wrapped in markdown code blocks,
+    When send_signal_request is called,
+    Then it should correctly parse the JSON content.
+    """
+    def fake_create_markdown_json(**kwargs):
+        json_content = {
+            "signal": "BUY",
+            "reason": "Test reason with markdown",
+            "confidence": 0.75
+        }
+        return MockChatCompletion(f"```json\n{json.dumps(json_content)}\n```", is_json=False)
+
+    monkeypatch.setattr(client.chat.completions, "create", fake_create_markdown_json)
+
+    result = send_signal_request({"model": "gpt-3.5-turbo", "messages": [{}]})
+
+    assert isinstance(result, SignalResponse)
+    assert result.signal == "BUY"
+    assert result.reason == "Test reason with markdown"
+    assert result.confidence == 0.75
+    assert result.raw_response is not None

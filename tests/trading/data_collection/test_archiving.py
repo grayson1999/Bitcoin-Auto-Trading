@@ -1,7 +1,7 @@
 # tests/trading/data_collection/test_archiving.py
 import pytest
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 
 from src.trading.data_collection.archiving import _bucket_5min, aggregate_5min_ohlcv, archive_5min_ohlcv
 from src.database.models import TickData, FiveMinOHLCV
@@ -77,7 +77,7 @@ def test_아카이빙_성공(mock_get_history_db, mock_get_realtime_db, sample_t
     mock_realtime_session.query.return_value.filter.return_value.delete.return_value = len(sample_ticks)
 
     # 함수 실행
-    archive_5min_ohlcv(days=1)
+    archive_5min_ohlcv(days=1, keep_hours=24)
 
     # 검증
     mock_history_session.bulk_insert_mappings.assert_called_once()
@@ -85,6 +85,12 @@ def test_아카이빙_성공(mock_get_history_db, mock_get_realtime_db, sample_t
     assert args[0] == FiveMinOHLCV
     assert len(args[1]) == 2 # 2개의 OHLCV 데이터가 생성되었는지 확인
     mock_history_session.commit.assert_called_once()
+
+    # filter 호출 검증
+    # 첫 번째 filter 호출 (데이터 조회)
+    # 두 번째 filter 호출 (데이터 삭제)
+    # 정확한 datetime 객체를 예측하기 어려우므로, filter가 호출되었는지 여부만 확인
+    assert mock_realtime_session.query.return_value.filter.call_count == 2
     mock_realtime_session.query.return_value.filter.return_value.delete.assert_called_once()
     mock_realtime_session.commit.assert_called_once()
 
