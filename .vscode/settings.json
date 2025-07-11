@@ -15,5 +15,8 @@
         "./tests",
         "-p",
         "test*.py"
+    ],
+    "python.analysis.extraPaths": [
+    "venv_bitcoin/Lib/site-packages"
     ]
 }
