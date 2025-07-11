@@ -3,9 +3,9 @@ import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
-import database.base as base_mod
-import database.session as db_session
-import database.models as models
+import src.database.base as base_mod
+import src.database.session as db_session
+import src.database.models as models
 
 @pytest.fixture(autouse=True)
 def memory_db(monkeypatch):

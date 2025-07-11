@@ -120,3 +120,13 @@ def test_계좌저장예외_롤백실행(monkeypatch, fake_session):
     service.collect_account("BTC")
 
     fake_session.rollback.assert_called_once()
+
+def test_아카이빙_호출(monkeypatch):
+    """Service의 archive_5min 메소드가 archiving 모듈의 archive_5min_ohlcv를 올바르게 호출하는지 테스트합니다."""
+    mock_archive = MagicMock()
+    monkeypatch.setattr("src.trading.data_collection.archiving.archive_5min_ohlcv", mock_archive)
+
+    service = DataCollectionService()
+    service.archive_5min(days=15)
+
+    mock_archive.assert_called_once_with(days=15)

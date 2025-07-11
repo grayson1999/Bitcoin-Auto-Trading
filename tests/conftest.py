@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).parent.parent
 
 # src 디렉터리를 최상단에 추가 (PYTHONPATH)
-sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT))
 
 
 root = Path(__file__).resolve().parents[1]

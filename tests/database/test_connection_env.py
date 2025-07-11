@@ -7,7 +7,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy import text, inspect as sqlalchemy_inspect
 from dotenv import load_dotenv
 
-import database.session as db_session
+import src.database.session as db_session
 
 # .env 로드 (tests 디렉터리에서 상대경로로 조정 필요할 수 있습니다)
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "config", ".env"))

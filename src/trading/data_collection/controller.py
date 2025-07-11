@@ -13,8 +13,6 @@ def main():
     service = DataCollectionService()
     logger.info("DB 초기화 및 Service 준비 완료")
 
-    scheduler = BackgroundScheduler()
-    # 스케줄러에 KST 타임존 설정 (Python 3.9+ 표준 모듈)
     scheduler = BackgroundScheduler(timezone=ZoneInfo("Asia/Seoul"))
 
     # 티커 수집: 즉시 실행 후 3초마다
