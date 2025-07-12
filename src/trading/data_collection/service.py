@@ -36,28 +36,8 @@ class DataCollectionService:
             self.db.rollback()
             logger.exception(f"collect_ticker: 저장 중 오류 – {e}")
 
-    def collect_account(self, currency: str = "BTC") -> None:
-        raw_list = UpbitAPI.fetch_accounts()
-        if not raw_list:
-            logger.warning("collect_account: 데이터 수신 실패")
-            return
-
-        acct = parse_account(raw_list, currency)
-        if not acct:
-            logger.error(f"collect_account: {currency} 정보 없음")
-            return
-
-        try:
-            account = AccountData(**acct)
-            self.db.add(account)
-            self.db.commit()
-            logger.info(f"collect_account: 저장 성공 – {acct}")
-        except Exception as e:
-            self.db.rollback()
-            logger.exception(f"collect_account: 저장 중 오류 – {e}")
-
     def get_realtime_data(self, market: str = "KRW-BTC", count: int = 10) -> RealtimeData:
-        """최신 실시간 데이터를 DB와 API에서 조회하여 DTO로 반환"""
+        """최신 실시간 데이터를 DB와 API에서 조회하고, API 데이터는 DB에 저장까지 수행"""
         
         # 1. 최신 시세 정보 (DB에서 조회)
         ticks_from_db = self.db.query(TickData).filter_by(market=market).order_by(desc(TickData.data_timestamp)).limit(count).all()
@@ -77,21 +57,39 @@ class DataCollectionService:
             ) for t in ticks_from_db
         ]
 
-        # 2. 최신 계좌 정보 (API에서 직접 조회)
+        # 2. 최신 계좌 정보 (API에서 직접 조회 후 DB에 저장)
         realtime_accounts = []
         try:
             raw_accounts = UpbitAPI.fetch_accounts()
             if raw_accounts:
-                # market(예: "KRW-BTC")에 포함된 모든 통화(KRW, BTC)의 정보를 파싱
                 currencies = market.split('-')
-                for currency in currencies:
-                    parsed_account = parse_account(raw_accounts, currency)
-                    if parsed_account:
-                        realtime_accounts.append(RealtimeAccountData(**parsed_account))
+                parsed_accounts_for_dto = []
+                
+                # DB 저장을 위한 세션 시작
+                try:
+                    for currency in currencies:
+                        parsed_data = parse_account(raw_accounts, currency)
+                        if parsed_data:
+                            # DTO 리스트에 추가 (반환용)
+                            parsed_accounts_for_dto.append(parsed_data)
+                            # DB 모델 객체 생성 및 저장
+                            account_to_db = AccountData(**parsed_data)
+                            self.db.add(account_to_db)
+                    
+                    self.db.commit()
+                    logger.info(f"{len(parsed_accounts_for_dto)}개 계좌 정보를 DB에 성공적으로 저장했습니다.")
+                    
+                    # DTO 객체 생성
+                    realtime_accounts = [RealtimeAccountData(**pa) for pa in parsed_accounts_for_dto]
+
+                except Exception as db_error:
+                    self.db.rollback()
+                    logger.error(f"get_realtime_data: 계좌 정보 DB 저장 중 오류 발생 - {db_error}", exc_info=True)
+
             else:
                 logger.warning("get_realtime_data: API로부터 계좌 정보를 가져오지 못했습니다.")
-        except Exception as e:
-            logger.error(f"get_realtime_data: API에서 계좌 정보 조회 중 오류 발생 - {e}", exc_info=True)
+        except Exception as api_error:
+            logger.error(f"get_realtime_data: API에서 계좌 정보 조회 중 오류 발생 - {api_error}", exc_info=True)
 
         return RealtimeData(ticks=realtime_ticks, accounts=realtime_accounts)
 
