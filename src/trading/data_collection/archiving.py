@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from typing import List, Dict, Any
 
 from src.database.session import get_realtime_db, get_history_db
-from src.database.models import TickData, FiveMinOHLCV, OneHourOHLCV
+from src.database.models import TickData, OneHourOHLCV
 
 from src.utils.logger import get_logger
 
@@ -40,7 +40,7 @@ def aggregate_1h_ohlcv(market: str, ticks: List[TickData]) -> List[Dict[str, Any
         volumes = [t.trade_volume for t in group]
         ohlcv_list.append({
             "market": market,
-            "timestamp": bucket_ts,
+            "timestamp": bucket_ts.replace(microsecond=0),
             "open": prices[0],
             "high": max(prices),
             "low": min(prices),
@@ -54,8 +54,13 @@ def archive_1h():
     실시간 DB에서 지난 `days`일간의 tick 데이터를 가져와
     1시간 OHLCV로 집계한 뒤 히스토리 DB에 저장 및 실시간 DB 원본 삭제.
     """
-    end_dt = datetime.now(timezone.utc).astimezone(ZoneInfo('Asia/Seoul'))
-    start_dt = end_dt - timedelta(hours=1)
+    now = datetime.now(timezone.utc).astimezone(ZoneInfo('Asia/Seoul'))
+    # Calculate the start of the current hour
+    current_hour_start = now.replace(minute=0, second=0, microsecond=0)
+    # The end of the last completed hour is the start of the current hour
+    end_dt = current_hour_start
+    # The start of the last completed hour is one hour before current_hour_start
+    start_dt = current_hour_start - timedelta(hours=1)
     keep_hours = 12 # 틱 데이터를 12시간 동안 보관
 
     realtime = next(get_realtime_db())
@@ -75,9 +80,11 @@ def archive_1h():
             return
 
         ohlcvs = aggregate_1h_ohlcv(TARGET_MARKET, ticks)
-        history.bulk_insert_mappings(OneHourOHLCV, ohlcvs)
+        for ohlcv_data in ohlcvs:
+            # Use merge to update if exists, insert if not
+            history.merge(OneHourOHLCV(**ohlcv_data))
         history.commit()
-        logger.info(f"Inserted {len(ohlcvs)} records into history DB.")
+        logger.info(f"Merged {len(ohlcvs)} records into history DB.")
 
         # Delete tick data older than keep_hours from now
         delete_before_dt = datetime.now(timezone.utc).astimezone(ZoneInfo('Asia/Seoul')) - timedelta(hours=keep_hours)

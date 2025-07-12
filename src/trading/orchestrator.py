@@ -34,11 +34,11 @@ def main():
     # --- 스케줄러 설정 ---
     scheduler = BackgroundScheduler(timezone=ZoneInfo("Asia/Seoul"))
 
-    # Job 1: 시세 데이터 수집 (3초마다)
+    # Job 1: 시세 데이터 수집 (30초마다)
     scheduler.add_job(
         data_service.collect_ticker,
         trigger="interval",
-        seconds=5,
+        seconds=30,
         args=[TARGET_MARKET], # args로 마켓 전달
         id="ticker_collection_job"
     )

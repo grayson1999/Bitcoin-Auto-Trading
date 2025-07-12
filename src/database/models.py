@@ -61,24 +61,24 @@ class AccountData(BaseRealtime):
         UniqueConstraint("currency", "data_timestamp", name="uq_currency_timestamp"),  # 동일 통화·타임스탬프 중복 방지
     )
 
-class FiveMinOHLCV(BaseHistory):
-    __tablename__ = "five_min_ohlcv"
+# class FiveMinOHLCV(BaseHistory):
+#     __tablename__ = "five_min_ohlcv"
 
-    # ─── 복합 PK: 마켓 + 5분 버킷 타임스탬프 ─────────────────────────────
-    market    = Column(String(20), nullable=False, primary_key=True)
-    timestamp = Column(DateTime,    nullable=False, primary_key=True)
+#     # ─── 복합 PK: 마켓 + 5분 버킷 타임스탬프 ─────────────────────────────
+#     market    = Column(String(20), nullable=False, primary_key=True)
+#     timestamp = Column(DateTime,    nullable=False, primary_key=True)
     
-    # ─── OHLCV 데이터 ────────────────────────────────────────────────────
-    open   = Column(Float, nullable=False)
-    high   = Column(Float, nullable=False)
-    low    = Column(Float, nullable=False)
-    close  = Column(Float, nullable=False)
-    volume = Column(Float, nullable=False)
+#     # ─── OHLCV 데이터 ────────────────────────────────────────────────────
+#     open   = Column(Float, nullable=False)
+#     high   = Column(Float, nullable=False)
+#     low    = Column(Float, nullable=False)
+#     close  = Column(Float, nullable=False)
+#     volume = Column(Float, nullable=False)
 
-    # ─── 인덱스: 마켓·타임스탬프 검색 최적화 ─────────────────────────────
-    __table_args__ = (
-        Index("idx_5min_ohlcv_market_ts", "market", "timestamp"),
-    )
+#     # ─── 인덱스: 마켓·타임스탬프 검색 최적화 ─────────────────────────────
+#     __table_args__ = (
+#         Index("idx_5min_ohlcv_market_ts", "market", "timestamp"),
+#     )
 
 class OneHourOHLCV(BaseHistory):
     __tablename__ = "one_hour_ohlcv"
