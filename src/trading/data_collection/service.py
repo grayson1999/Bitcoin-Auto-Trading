@@ -76,8 +76,11 @@ class DataCollectionService:
                             account_to_db = AccountData(**parsed_data)
                             self.db.add(account_to_db)
                     
-                    self.db.commit()
-                    logger.info(f"{len(parsed_accounts_for_dto)}개 계좌 정보를 DB에 성공적으로 저장했습니다.")
+                    if parsed_accounts_for_dto:
+                        self.db.commit()
+                        logger.info(f"{len(parsed_accounts_for_dto)}개 계좌 정보를 DB에 성공적으로 저장했습니다.")
+                    else:
+                        logger.info("get_realtime_data: 파싱된 계좌 정보가 없어 DB에 저장하지 않았습니다.")
                     
                     # DTO 객체 생성
                     realtime_accounts = [RealtimeAccountData(**pa) for pa in parsed_accounts_for_dto]
@@ -94,21 +97,18 @@ class DataCollectionService:
         return RealtimeData(ticks=realtime_ticks, accounts=realtime_accounts)
 
     
-    def archive_5min(
-        self,
-        days: int = 30,
-        keep_hours: int = 12
+    def archive_1h(
+        self
     ) -> None:
         """
-        실시간 DB에서 지난 `days`일간의 tick 데이터를 5분 OHLCV로 집계해
+        실시간 DB에서 tick 데이터를 1시간 OHLCV로 집계해
         히스토리 DB에 저장 및 원본 삭제까지 수행합니다.
-        `keep_hours`는 실시간 DB에 유지할 최근 데이터의 시간(기본 12시간)입니다.
         """
-        from .archiving import archive_5min_ohlcv
+        from .archiving import archive_1h
 
         try:
-            archive_5min_ohlcv(days=days, keep_hours=keep_hours)
-            logger.info(f"Service: {days}일치 5분 OHLCV 아카이빙 완료. 최근 {keep_hours}시간 데이터 유지.")
+            archive_1h()
+            logger.info(f"Service: 1시간 OHLCV 아카이빙 완료.")
         except Exception as e:
             logger.error(f"Service: 아카이빙 중 예외 발생 – {e}", exc_info=e)
     

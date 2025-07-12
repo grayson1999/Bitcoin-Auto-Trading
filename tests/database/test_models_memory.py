@@ -34,7 +34,7 @@ def test_테이블_생성_확인():
     inspector = inspect(db_session.engine_realtime)
     assert "tick_data" in inspector.get_table_names()
     assert "account_data" in inspector.get_table_names()
-    assert "five_min_ohlcv" in inspector.get_table_names()
+    assert "one_hour_ohlcv" in inspector.get_table_names()
 
 def test_틱데이터_CRUD_및_저장_확인(session):
     """TickData CRUD 및 save(session, instance) 검증"""

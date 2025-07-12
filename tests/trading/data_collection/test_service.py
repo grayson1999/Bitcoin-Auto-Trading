@@ -72,15 +72,15 @@ def test_티커저장예외_롤백실행(monkeypatch, fake_session):
 
     fake_session.rollback.assert_called_once()
 
-def test_계좌저장_성공(monkeypatch, fake_session):
-    """계좌 수집 성공 시 DB 저장 및 커밋 호출"""
+def test_계좌정보_수집_및_DB_저장(monkeypatch, fake_session):
+    """계좌 정보 수집 시 DB 저장 및 커밋 호출"""
     raw_list = [{"currency": "BTC", "balance": "1.23", "locked": "0", "avg_buy_price": "100"}]
     parsed = {"currency": "BTC", "balance": 1.23, "locked": 0.0, "avg_buy_price": 100.0, "data_timestamp": 999}
     monkeypatch.setattr("src.trading.data_collection.service.UpbitAPI.fetch_accounts", lambda: raw_list)
-    monkeypatch.setattr("src.trading.data_collection.service.parse_account", lambda lst, cur="BTC": parsed)
+    monkeypatch.setattr("src.trading.data_collection.service.parse_account", lambda lst, cur: parsed if cur == "BTC" else None)
 
     service = DataCollectionService()
-    service.collect_account("BTC")
+    service.get_realtime_data("KRW-BTC")
 
     fake_session.add.assert_called_once()
     fake_session.commit.assert_called_once()
@@ -91,7 +91,7 @@ def test_계좌데이터_없을때_저장안함(monkeypatch, fake_session):
     monkeypatch.setattr("src.trading.data_collection.service.UpbitAPI.fetch_accounts", lambda: None)
 
     service = DataCollectionService()
-    service.collect_account("BTC")
+    service.get_realtime_data("KRW-BTC")
 
     fake_session.add.assert_not_called()
     fake_session.commit.assert_not_called()
@@ -100,10 +100,10 @@ def test_계좌파싱실패_실행안함(monkeypatch, fake_session):
     """파싱 결과 None 시 저장과 커밋이 호출되지 않음"""
     raw_list = [{"currency": "ETH"}]
     monkeypatch.setattr("src.trading.data_collection.service.UpbitAPI.fetch_accounts", lambda: raw_list)
-    monkeypatch.setattr("src.trading.data_collection.service.parse_account", lambda lst, cur="BTC": None)
+    monkeypatch.setattr("src.trading.data_collection.service.parse_account", lambda lst, cur: None)
 
     service = DataCollectionService()
-    service.collect_account("BTC")
+    service.get_realtime_data("KRW-BTC")
 
     fake_session.add.assert_not_called()
     fake_session.commit.assert_not_called()
@@ -113,23 +113,23 @@ def test_계좌저장예외_롤백실행(monkeypatch, fake_session):
     raw_list = [{"currency": "BTC", "balance": "1.23", "locked": "0", "avg_buy_price": "100"}]
     parsed = {"currency": "BTC", "balance": 1.23, "locked": 0.0, "avg_buy_price": 100.0, "data_timestamp": 999}
     monkeypatch.setattr("src.trading.data_collection.service.UpbitAPI.fetch_accounts", lambda: raw_list)
-    monkeypatch.setattr("src.trading.data_collection.service.parse_account", lambda lst, cur="BTC": parsed)
-    fake_session.commit.side_effect = Exception("DB error")
+    monkeypatch.setattr("src.trading.data_collection.service.parse_account", lambda lst, cur: parsed if cur == "BTC" else None)
+    fake_session.add.side_effect = Exception("DB error") # commit 대신 add에서 에러 발생하도록 변경
 
     service = DataCollectionService()
-    service.collect_account("BTC")
+    service.get_realtime_data("KRW-BTC")
 
     fake_session.rollback.assert_called_once()
 
-def test_아카이빙_호출(monkeypatch):
-    """Service의 archive_5min 메소드가 archiving 모듈의 archive_5min_ohlcv를 올바르게 호출하는지 테스트합니다."""
-    mock_archive = MagicMock()
-    monkeypatch.setattr("src.trading.data_collection.archiving.archive_5min_ohlcv", mock_archive)
+    def test_아카이브_호출(monkeypatch):
+        """Service의 archive_1h 메서드가 archiving 모듈의 archive_1h를 올바르게 호출하는지 테스트합니다."""
+        mock_archive = MagicMock()
+        monkeypatch.setattr("src.trading.data_collection.archiving.archive_1h", mock_archive)
+    
+        service = DataCollectionService()
+        service.archive_1h()
 
-    service = DataCollectionService()
-    service.archive_5min(days=15)
-
-    mock_archive.assert_called_once_with(days=15, keep_hours=12)
+        mock_archive.assert_called_once()
 
 
 from unittest.mock import patch

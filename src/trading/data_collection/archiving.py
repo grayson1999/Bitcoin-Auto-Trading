@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
 from src.database.session import get_realtime_db, get_history_db
-from src.database.models import TickData, FiveMinOHLCV
+from src.database.models import TickData, FiveMinOHLCV, OneHourOHLCV
 
 from src.utils.logger import get_logger
 
@@ -18,14 +18,13 @@ logger = get_logger(
     backup_count=30
 )
 
-def _bucket_5min(ts: datetime) -> datetime:
-    minute = (ts.minute // 5) * 5
-    return ts.replace(minute=minute, second=0, microsecond=0)
+def _bucket_1h(ts: datetime) -> datetime:
+    return ts.replace(minute=0, second=0, microsecond=0)
 
-def aggregate_5min_ohlcv(ticks: List[TickData]) -> List[Dict[str, Any]]:
+def aggregate_1h_ohlcv(ticks: List[TickData]) -> List[Dict[str, Any]]:
     buckets: Dict[datetime, List[TickData]] = defaultdict(list)
     for t in ticks:
-        b = _bucket_5min(t.created_at)
+        b = _bucket_1h(t.created_at)
         buckets[b].append(t)
 
     ohlcv_list: List[Dict[str, Any]] = []
@@ -43,13 +42,14 @@ def aggregate_5min_ohlcv(ticks: List[TickData]) -> List[Dict[str, Any]]:
         })
     return ohlcv_list
 
-def archive_5min_ohlcv(days: int = 30, keep_hours: int = 12):
+def archive_1h():
     """
     실시간 DB에서 지난 `days`일간의 tick 데이터를 가져와
     5분 OHLCV로 집계한 뒤 히스토리 DB에 저장 및 실시간 DB 원본 삭제.
     """
     end_dt = datetime.utcnow()
-    start_dt = end_dt - timedelta(days=days)
+    start_dt = end_dt - timedelta(hours=1)
+    keep_hours = 24 # 틱 데이터를 24시간 동안 보관
 
     realtime = next(get_realtime_db())
     history  = next(get_history_db())
@@ -67,8 +67,8 @@ def archive_5min_ohlcv(days: int = 30, keep_hours: int = 12):
             logger.info(f"{start_dt} ~ {end_dt} 사이에 틱 데이터가 없습니다.")
             return
 
-        ohlcvs = aggregate_5min_ohlcv(ticks)
-        history.bulk_insert_mappings(FiveMinOHLCV, ohlcvs)
+        ohlcvs = aggregate_1h_ohlcv(ticks)
+        history.bulk_insert_mappings(OneHourOHLCV, ohlcvs)
         history.commit()
         logger.info(f"Inserted {len(ohlcvs)} records into history DB.")
 
@@ -93,4 +93,4 @@ def archive_5min_ohlcv(days: int = 30, keep_hours: int = 12):
         history.close()
 
 if __name__ == "__main__":
-    archive_5min_ohlcv()
+    archive_1h()

@@ -32,13 +32,13 @@ def main():
     scheduler.add_job(
         data_service.collect_ticker,
         trigger="interval",
-        seconds=3,
+        seconds=5,
         args=[TARGET_MARKET], # args로 마켓 전달
         id="ticker_collection_job"
     )
 
 
-    # Job 3: 매매 신호 생성 및 처리 (30초마다)
+    # Job 2: 매매 신호 생성 및 처리 (10분 마다)
     def trading_cycle_job():
         logger.info("==== 새로운 매매 사이클 시작 ====")
         try:
@@ -72,7 +72,7 @@ def main():
     scheduler.add_job(
         trading_cycle_job,
         trigger="interval",
-        seconds=30,
+        seconds=600,
         id="trading_cycle_job",
         next_run_time=datetime.now() # 즉시 1회 실행
     )
