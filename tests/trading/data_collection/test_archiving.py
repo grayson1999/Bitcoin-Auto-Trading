@@ -35,12 +35,13 @@ def test_1시간단위_버킷팅():
 
 def test_1시간_OHLCV_집계(sample_ticks):
     """aggregate_1h_ohlcv 함수가 틱 데이터를 1시간 OHLCV로 정확하게 집계하는지 테스트합니다."""
-    ohlcv_list = aggregate_1h_ohlcv(sample_ticks)
+    ohlcv_list = aggregate_1h_ohlcv("KRW-BTC", sample_ticks)
 
     assert len(ohlcv_list) == 2
 
     # First bucket (12:00)
     assert ohlcv_list[0]["timestamp"] == datetime(2023, 1, 1, 12, 0, 0)
+    assert ohlcv_list[0]["market"] == "KRW-BTC"
     assert ohlcv_list[0]["open"] == 100
     assert ohlcv_list[0]["high"] == 100 + 59 # 12:59의 trade_price
     assert ohlcv_list[0]["low"] == 100
@@ -49,6 +50,7 @@ def test_1시간_OHLCV_집계(sample_ticks):
 
     # Second bucket (13:00)
     assert ohlcv_list[1]["timestamp"] == datetime(2023, 1, 1, 13, 0, 0)
+    assert ohlcv_list[1]["market"] == "KRW-BTC"
     assert ohlcv_list[1]["open"] == 200
     assert ohlcv_list[1]["high"] == 200 + 59 # 13:59의 trade_price
     assert ohlcv_list[1]["low"] == 200

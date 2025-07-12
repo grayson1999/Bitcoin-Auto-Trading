@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from src.utils.logger import get_logger
 from src.trading.data_collection.service import DataCollectionService
 from src.trading.signal_generation.service import SignalGenerationService
+from src.database.session import init_db
 
 logger = get_logger(name="trading.orchestrator", log_file="orchestrator.log")
 
@@ -20,6 +21,11 @@ TARGET_MARKET = "KRW-XRP"
 def main():
     """자동매매 전체 프로세스를 조율하고 실행합니다."""
     
+    # --- DB 초기화 ---
+    logger.info("데이터베이스 테이블 생성을 시도합니다.")
+    init_db()
+    logger.info("데이터베이스 초기화 완료.")
+
     # --- 서비스 초기화 ---
     data_service = DataCollectionService()
     signal_service = SignalGenerationService()
@@ -79,11 +85,11 @@ def main():
 
     # Job 4: 데이터 아카이빙 (매일 자정)
     scheduler.add_job(
-        data_service.archive_5min,
+        data_service.archive_1h,
         trigger="cron",
         hour=0,
         minute=0,
-        id="archive_5min_job"
+        id="archive_1h_job"
     )
     
     logger.info("모든 작업이 스케줄러에 등록되었습니다.")
