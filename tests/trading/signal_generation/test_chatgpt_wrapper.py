@@ -11,6 +11,7 @@ from src.trading.signal_generation.chatgpt_wrapper import (
     CONFIDENCE_THRESHOLD,
     client
 )
+from src.trading.data_collection.dto import RealtimeData, RealtimeTickData, RealtimeAccountData
 
 # Mock response object that mimics openai.ChatCompletion
 class MockChatCompletion:
@@ -28,7 +29,27 @@ class MockChatCompletion:
     def model_dump(self):
         return self._data
 
-def test_정상적으로_신호_요청을_보내고_파싱된_객체를_반환한다(monkeypatch):
+@pytest.fixture
+def mock_realtime_data() -> RealtimeData:
+    """테스트용 RealtimeData 객체를 생성하는 Fixture"""
+    return RealtimeData(
+        ticks=[
+            RealtimeTickData(
+                market='KRW-BTC', trade_price=90500000, prev_closing_price=90000000, 
+                opening_price=90100000, high_price=90800000, low_price=89900000,
+                change_type='RISE', change_rate=0.0055, trade_volume=0.1, 
+                acc_trade_volume_24h=1500, data_timestamp=int(time.time() * 1000)
+            )
+        ],
+        accounts=[
+            RealtimeAccountData(
+                currency='KRW', balance=1000000, locked=0, avg_buy_price=None, 
+                data_timestamp=int(time.time() * 1000)
+            )
+        ]
+    )
+
+def test_정상적으로_신호_요청을_보내고_파싱된_객체를_반환한다(monkeypatch, mock_realtime_data):
     """
     Given a valid request payload,
     When send_signal_request is called,
@@ -43,17 +64,13 @@ def test_정상적으로_신호_요청을_보내고_파싱된_객체를_반환�
 
     monkeypatch.setattr(client.chat.completions, "create", fake_create)
 
-    payload = {
-        "model": "gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": "Give me a Bitcoin signal"}],
-    }
-    result = send_signal_request(payload)
+    result = send_signal_request(mock_realtime_data)
 
     assert isinstance(result, SignalResponse)
     assert result.signal == "BUY"
     assert result.confidence >= CONFIDENCE_THRESHOLD
 
-def test_신뢰도가_낮으면_재시도_후_성공한다(monkeypatch):
+def test_신뢰도가_낮으면_재시도_후_성공한다(monkeypatch, mock_realtime_data):
     """
     Given the API first returns a low-confidence response, then a high-confidence one,
     When send_signal_request is called,
@@ -67,14 +84,14 @@ def test_신뢰도가_낮으면_재시도_후_성공한다(monkeypatch):
     mock_sleep = MagicMock()
     monkeypatch.setattr(time, "sleep", mock_sleep)
 
-    result = send_signal_request({"model": "gpt-3.5-turbo", "messages": [{}]})
+    result = send_signal_request(mock_realtime_data)
 
     assert mock_create.call_count == 2
     mock_sleep.assert_called_once_with(RETRY_DELAY_SECONDS)
     assert result.signal == "BUY"
     assert result.confidence == 0.8
 
-def test_응답_파싱에_실패하면_오류를_담은_객체를_반환한다(monkeypatch):
+def test_응답_파싱에_실패하면_오류를_담은_객체를_반환한다(monkeypatch, mock_realtime_data):
     """
     Given a response with malformed content (not valid JSON),
     When send_signal_request is called,
@@ -85,12 +102,12 @@ def test_응답_파싱에_실패하면_오류를_담은_객체를_반환한다(m
 
     monkeypatch.setattr(client.chat.completions, "create", fake_create_malformed)
 
-    result = send_signal_request({"model": "gpt-3.5-turbo", "messages": [{}]})
+    result = send_signal_request(mock_realtime_data)
 
     assert result.signal == 'parsing_error'
     assert result.confidence == 0.0
 
-def test_API_오류가_발생하면_재시도_후_예외를_던진다(monkeypatch):
+def test_API_오류가_발생하면_재시도_후_예외를_던진다(monkeypatch, mock_realtime_data):
     """
     Given that the API call consistently fails,
     When send_signal_request is called,
@@ -102,14 +119,14 @@ def test_API_오류가_발생하면_재시도_후_예외를_던진다(monkeypatc
     monkeypatch.setattr(time, "sleep", mock_sleep)
 
     with pytest.raises(ConnectionError):
-        send_signal_request({"model": "gpt-3.5-turbo", "messages": [{}]})
+        send_signal_request(mock_realtime_data)
 
     assert mock_create.call_count == MAX_RETRIES
     # Check that sleep was called with exponential backoff
     assert call(2) in mock_sleep.call_args_list
     assert call(4) in mock_sleep.call_args_list
 
-def test_마크다운_코드_블록_제거_후_정상_파싱(monkeypatch):
+def test_마크다운_코드_블록_제거_후_정상_파싱(monkeypatch, mock_realtime_data):
     """
     Given a response with JSON content wrapped in markdown code blocks,
     When send_signal_request is called,
@@ -125,7 +142,7 @@ def test_마크다운_코드_블록_제거_후_정상_파싱(monkeypatch):
 
     monkeypatch.setattr(client.chat.completions, "create", fake_create_markdown_json)
 
-    result = send_signal_request({"model": "gpt-3.5-turbo", "messages": [{}]})
+    result = send_signal_request(mock_realtime_data)
 
     assert isinstance(result, SignalResponse)
     assert result.signal == "BUY"
