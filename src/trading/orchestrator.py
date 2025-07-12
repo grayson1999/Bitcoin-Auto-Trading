@@ -11,6 +11,12 @@ from src.trading.signal_generation.service import SignalGenerationService
 
 logger = get_logger(name="trading.orchestrator", log_file="orchestrator.log")
 
+# --- 설정 변수 ---
+# 자동매매를 실행할 마켓을 지정합니다.
+# 예: "KRW-BTC", "KRW-ETH", "BTC-XRP" 등
+TARGET_MARKET = "KRW-XRP"
+
+
 def main():
     """자동매매 전체 프로세스를 조율하고 실행합니다."""
     
@@ -27,16 +33,18 @@ def main():
         data_service.collect_ticker,
         trigger="interval",
         seconds=3,
+        args=[TARGET_MARKET], # args로 마켓 전달
         id="ticker_collection_job"
     )
+
 
     # Job 3: 매매 신호 생성 및 처리 (30초마다)
     def trading_cycle_job():
         logger.info("==== 새로운 매매 사이클 시작 ====")
         try:
             # 1. 데이터 조회
-            logger.info("[1/3] 실시간 데이터를 조회합니다.")
-            realtime_data = data_service.get_realtime_data(count=20)
+            logger.info(f"[1/3] {TARGET_MARKET} 마켓의 실시간 데이터를 조회합니다.")
+            realtime_data = data_service.get_realtime_data(market=TARGET_MARKET, count=20)
             if not realtime_data.ticks:
                 logger.warning("조회된 시세 데이터가 없어 매매 사이클을 건너뜁니다.")
                 return
