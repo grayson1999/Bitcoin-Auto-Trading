@@ -3,6 +3,8 @@
 from . import chatgpt_wrapper
 from src.trading.data_collection.dto import RealtimeData
 from src.utils.logger import get_logger
+from src.database.session import get_history_db
+from src.database.models import SignalHistory
 
 logger = get_logger(name="signal.service", log_file="signal_service.log")
 
@@ -15,7 +17,8 @@ class SignalGenerationService:
 
     def generate_signal(self, realtime_data: RealtimeData) -> chatgpt_wrapper.SignalResponse:
         """
-        실시간 데이터를 기반으로 ChatGPT API를 호출하여 매매 신호를 생성합니다.
+        실시간 데이터를 기반으로 ChatGPT API를 호출하여 매매 신호를 생성하고,
+        그 결과를 데이터베이스에 저장합니다.
 
         :param realtime_data: 판단 근거가 될 실시간 데이터 DTO
         :return: 파싱된 매매 신호 응답 객체
@@ -27,6 +30,19 @@ class SignalGenerationService:
                 options=self.options
             )
             logger.info(f"매매 신호 수신 완료: {signal_response.signal} (신뢰도: {signal_response.confidence})")
+
+            # 신호 이력 저장
+            with get_history_db() as db:
+                history = SignalHistory(
+                    signal=signal_response.signal,
+                    reason=signal_response.reason,
+                    confidence=signal_response.confidence,
+                    timestamp=signal_response.timestamp
+                )
+                db.add(history)
+                db.commit()
+            logger.info("매매 신호 이력을 데이터베이스에 저장했습니다.")
+
             return signal_response
         except Exception as e:
             logger.error(f"매매 신호 생성 중 예외 발생: {e}", exc_info=True)

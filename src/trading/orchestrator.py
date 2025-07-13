@@ -64,7 +64,7 @@ def main():
             logger.info("[3/3] 신호에 따라 주문을 실행합니다. (현재는 로그만 기록)")
             # TODO: 아래 주석을 실제 주문 실행 로직으로 교체해야 합니다.
             # from src.trading.order.service import OrderService
-            # order_service = OrderService()
+            # order_service = OrderService())
             # if signal_response.signal == "buy":
             #     order_service.place_buy_order(...)
             # elif signal_response.signal == "sell":

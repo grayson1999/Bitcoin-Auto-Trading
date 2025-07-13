@@ -1,7 +1,8 @@
 import os
 import time
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 import openai
@@ -22,6 +23,7 @@ class SignalResponse:
     signal: str
     reason: str
     confidence: float
+    timestamp: datetime = field(default_factory=datetime.now)
     raw_response: Optional[Dict[str, Any]] = None
 
 

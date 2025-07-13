@@ -2,13 +2,14 @@
 
 import os
 from pathlib import Path
+from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
 # Base 선언을 가져옵니다.
 from .base import BaseRealtime, BaseHistory
-from .models import OneHourOHLCV, FiveMinOHLCV, TickData, AccountData
+from .models import OneHourOHLCV, TickData, AccountData
 
 # .env 로드
 env_path = Path(__file__).resolve().parents[2] / "config" / ".env"
@@ -59,6 +60,7 @@ def init_db():
 # ─────────────────────────────────────────────────────────────────────────────
 # 3) Dependency / Session Generator
 # ─────────────────────────────────────────────────────────────────────────────
+@contextmanager
 def get_realtime_db():
     """실시간 DB 세션을 생성·반환하고, 사용 후 닫습니다."""
     db = SessionRealtime()
@@ -67,6 +69,7 @@ def get_realtime_db():
     finally:
         db.close()
 
+@contextmanager
 def get_history_db():
     """히스토리 DB 세션을 생성·반환하고, 사용 후 닫습니다."""
     db = SessionHistory()

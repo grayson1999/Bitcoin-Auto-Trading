@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Float, String,
-    BigInteger, DateTime,
+    BigInteger, DateTime, Text,
     UniqueConstraint, Index, text, Integer
 )
 from .base import BaseRealtime, BaseHistory  # 분리된 Declarative Base 가져오기
@@ -60,6 +60,16 @@ class AccountData(BaseRealtime):
     __table_args__ = (
         UniqueConstraint("currency", "data_timestamp", name="uq_currency_timestamp"),  # 동일 통화·타임스탬프 중복 방지
     )
+
+class SignalHistory(BaseHistory):
+    __tablename__ = "signal_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    signal = Column(String(20), nullable=False)
+    reason = Column(Text, nullable=False)
+    confidence = Column(Float, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+
 
 # class FiveMinOHLCV(BaseHistory):
 #     __tablename__ = "five_min_ohlcv"
