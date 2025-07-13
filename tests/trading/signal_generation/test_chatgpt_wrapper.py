@@ -2,6 +2,7 @@ import pytest
 import time
 import json
 from unittest.mock import call, MagicMock
+from datetime import datetime
 
 from src.trading.signal_generation.chatgpt_wrapper import (
     send_signal_request, 
@@ -69,6 +70,7 @@ def test_정상적으로_신호_요청을_보내고_파싱된_객체를_반환�
     assert isinstance(result, SignalResponse)
     assert result.signal == "BUY"
     assert result.confidence >= CONFIDENCE_THRESHOLD
+    assert isinstance(result.timestamp, datetime)
 
 def test_신뢰도가_낮으면_재시도_후_성공한다(monkeypatch, mock_realtime_data):
     """

@@ -61,33 +61,39 @@ def test_1시간_OHLCV_집계(sample_ticks):
 @patch('src.trading.data_collection.archiving.get_history_db')
 def test_아카이빙_성공(mock_get_history_db, mock_get_realtime_db, sample_ticks):
     """archive_1h 함수가 전체 아카이빙 프로세스를 성공적으로 수행하는지 테스트합니다."""
-    # Mock DB 세션 설정
+    # 1) Mock DB 세션 설정
     mock_realtime_session = MagicMock()
     mock_history_session = MagicMock()
     mock_get_realtime_db.return_value = iter([mock_realtime_session])
     mock_get_history_db.return_value = iter([mock_history_session])
 
-    # Mock 쿼리 결과 설정
-    mock_realtime_session.query.return_value.filter.return_value.order_by.return_value.all.return_value = sample_ticks
+    # 2) Mock 쿼리 결과 설정
+    mock_realtime_session.query.return_value.filter.return_value \
+        .order_by.return_value.all.return_value = sample_ticks
     mock_realtime_session.query.return_value.filter.return_value.delete.return_value = len(sample_ticks)
 
-    # 함수 실행
+    # 3) 함수 실행
     archive_1h()
 
-    # 검증
-    mock_history_session.bulk_insert_mappings.assert_called_once()
-    args, _ = mock_history_session.bulk_insert_mappings.call_args
-    assert args[0] == OneHourOHLCV
-    assert len(args[1]) == 2 # 2개의 OHLCV 데이터가 생성되었는지 확인
+    # 4) 검증: merge()가 OHLCV 레코드 수만큼 호출됐는지 (이 예제에서는 2개)
+    #    실제 aggregate_1h_ohlcv 구현에 따라 이 숫자를 맞춰주세요.
+    expected_ohlcv_count = 2
+    assert mock_history_session.merge.call_count == expected_ohlcv_count
+
+    # merge에 전달된 인스턴스가 OneHourOHLCV 타입인지 확인
+    for call_args in mock_history_session.merge.call_args_list:
+        instance = call_args[0][0]
+        assert isinstance(instance, OneHourOHLCV)
+
+    # 5) 커밋이 한 번 호출되었는지
     mock_history_session.commit.assert_called_once()
 
-    # filter 호출 검증
-    # 첫 번째 filter 호출 (데이터 조회)
-    # 두 번째 filter 호출 (데이터 삭제)
-    # 정확한 datetime 객체를 예측하기 어려우므로, filter가 호출되었는지 여부만 확인
+    # 6) realtime DB 쪽 삭제 로직 검증
     assert mock_realtime_session.query.return_value.filter.call_count == 2
     mock_realtime_session.query.return_value.filter.return_value.delete.assert_called_once()
     mock_realtime_session.commit.assert_called_once()
+
+
 
 @patch('src.trading.data_collection.archiving.get_realtime_db')
 @patch('src.trading.data_collection.archiving.get_history_db')
