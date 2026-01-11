@@ -1,14 +1,14 @@
-.PHONY: dev dev-down dev-logs dev-backend dev-frontend test test-backend test-frontend lint lint-fix build db-migrate db-revision clean
+.PHONY: dev-db dev-db-down dev-db-logs dev-backend dev-frontend test test-backend test-frontend lint lint-fix db-migrate db-revision clean
 
-# Docker Compose
-dev:
+# PostgreSQL (Docker)
+dev-db:
 	docker-compose up -d
 
-dev-down:
+dev-db-down:
 	docker-compose down
 
-dev-logs:
-	docker-compose logs -f
+dev-db-logs:
+	docker-compose logs -f db
 
 # Backend (local development)
 dev-backend:
@@ -37,10 +37,6 @@ lint:
 lint-fix:
 	cd backend && uv run ruff check --fix . && uv run ruff format .
 	cd frontend && npm run lint -- --fix
-
-# Build
-build:
-	docker-compose build
 
 # Database migrations
 db-migrate:

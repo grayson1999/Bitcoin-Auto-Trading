@@ -8,7 +8,7 @@ Auto-generated from feature plans. Last updated: 2026-01-11
 - **Language**: Python 3.11+
 - **Framework**: FastAPI, SQLAlchemy 2.0, APScheduler
 - **HTTP Client**: httpx
-- **AI SDK**: google-generativeai (Gemini 2.5 Flash)
+- **AI SDK**: google-genai (Gemini 2.5 Flash)
 - **Validation**: Pydantic v2
 - **Logging**: loguru
 
@@ -20,7 +20,7 @@ Auto-generated from feature plans. Last updated: 2026-01-11
 - **Chart**: Recharts
 
 ### Database
-- SQLite (개발) / PostgreSQL (운영)
+- PostgreSQL 15 (개발/운영 동일)
 
 ## Project Structure (Monorepo)
 
@@ -57,27 +57,28 @@ Bitcoin-Auto-Trading/
 ## Commands
 
 ```bash
-# 전체 실행 (Docker)
-docker-compose up -d
+# PostgreSQL 컨테이너 시작
+make dev-db
 
-# Backend 개발
-cd backend && uvicorn src.main:app --reload --port 8000
+# Backend 개발 (별도 터미널)
+make dev-backend
 
-# Frontend 개발
-cd frontend && npm run dev
+# Frontend 개발 (별도 터미널)
+make dev-frontend
 
-# Backend 테스트
-cd backend && pytest
+# DB 컨테이너 중지
+make dev-db-down
 
-# Frontend 테스트
-cd frontend && npm test
+# 테스트
+make test-backend
+make test-frontend
 
 # 린트
-cd backend && ruff check . && ruff format .
-cd frontend && npm run lint
+make lint
+make lint-fix
 
 # DB 마이그레이션
-cd backend && alembic upgrade head
+make db-migrate
 ```
 
 ## Code Style
