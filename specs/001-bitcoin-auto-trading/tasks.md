@@ -38,18 +38,18 @@
 
 **⚠️ 중요**: 이 단계가 완료될 때까지 사용자 스토리 작업을 시작할 수 없습니다
 
-- [ ] T007 backend/src/config.py에 Pydantic Settings로 설정 관리 생성
-- [ ] T008 backend/src/database.py에 SQLAlchemy 비동기 엔진 및 세션 팩토리 설정
-- [ ] T009 backend/alembic/에 Alembic 마이그레이션 프레임워크 초기화
-- [ ] T010 [P] backend/src/models/__init__.py에 기본 SQLAlchemy 모델 클래스 생성
-- [ ] T011 [P] backend/src/config.py에 loguru 로거 설정 구성
-- [ ] T012 backend/src/main.py에 lifespan, CORS, 오류 핸들러가 포함된 FastAPI 앱 생성
-- [ ] T013 [P] backend/src/api/__init__.py에 버전 관리가 포함된 API 라우터 구조 설정
-- [ ] T014 [P] backend/src/api/health.py에 헬스체크 엔드포인트 구현
-- [ ] T015 [P] frontend/src/api/client.ts에 axios로 프론트엔드 API 클라이언트 생성
-- [ ] T016 [P] frontend/src/App.tsx에 페이지 구조가 포함된 React Router 설정
-- [ ] T017 [P] frontend/tailwind.config.js에 Tailwind CSS 구성
-- [ ] T018 [P] frontend/src/main.tsx에 React Query 프로바이더 설정
+- [x] T007 backend/src/config.py에 Pydantic Settings로 설정 관리 생성
+- [x] T008 backend/src/database.py에 SQLAlchemy 비동기 엔진 및 세션 팩토리 설정
+- [x] T009 backend/alembic/에 Alembic 마이그레이션 프레임워크 초기화
+- [x] T010 [P] backend/src/models/__init__.py에 기본 SQLAlchemy 모델 클래스 생성
+- [x] T011 [P] backend/src/config.py에 loguru 로거 설정 구성
+- [x] T012 backend/src/main.py에 lifespan, CORS, 오류 핸들러가 포함된 FastAPI 앱 생성
+- [x] T013 [P] backend/src/api/__init__.py에 버전 관리가 포함된 API 라우터 구조 설정
+- [x] T014 [P] backend/src/api/health.py에 헬스체크 엔드포인트 구현
+- [x] T015 [P] frontend/src/api/client.ts에 axios로 프론트엔드 API 클라이언트 생성
+- [x] T016 [P] frontend/src/App.tsx에 페이지 구조가 포함된 React Router 설정
+- [x] T017 [P] frontend/tailwind.config.js에 Tailwind CSS 구성
+- [x] T018 [P] frontend/src/main.tsx에 React Query 프로바이더 설정
 
 **체크포인트**: 기반 구축 완료 - 사용자 스토리 구현 시작 가능
 
