@@ -1,16 +1,32 @@
-import type { FC } from "react";
+/**
+ * 대시보드 페이지 컴포넌트
+ *
+ * 거래 활동, 포지션, 성과 지표의 개요를 표시합니다.
+ * 현재는 플레이스홀더 상태이며, 추후 다음 기능이 구현될 예정:
+ * - 실시간 시세 차트
+ * - 포지션 현황
+ * - 수익률 통계
+ * - 최근 거래 내역
+ */
 
+import type { FC } from "react";
+import PageLayout from "../components/PageLayout";
+
+/**
+ * Dashboard 컴포넌트
+ *
+ * 메인 대시보드 페이지입니다.
+ * 거래 시스템의 전반적인 상태와 성과를 한눈에 볼 수 있습니다.
+ *
+ * @returns JSX.Element 대시보드 UI
+ */
 const Dashboard: FC = () => {
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-      <p className="text-gray-600">
-        Overview of trading activity, positions, and performance metrics.
-      </p>
-      <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-500">
-        Dashboard components coming soon...
-      </div>
-    </div>
+    <PageLayout
+      title="대시보드"
+      description="거래 활동, 포지션, 성과 지표의 개요를 확인합니다."
+      placeholder="대시보드 컴포넌트 개발 예정..."
+    />
   );
 };
 

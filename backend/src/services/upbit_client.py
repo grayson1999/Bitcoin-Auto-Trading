@@ -1,7 +1,12 @@
-"""Upbit API client with JWT authentication.
+"""
+Upbit API 클라이언트 모듈
 
-This module provides async HTTP client for Upbit exchange API.
-Supports market data retrieval and order execution.
+이 모듈은 Upbit 거래소 API와 통신하는 비동기 HTTP 클라이언트를 제공합니다.
+- JWT 인증 기반 API 요청
+- 시세 조회 (공개 API)
+- 계좌 잔고 조회 (인증 필요)
+- 주문 생성/조회/취소 (인증 필요)
+- 자동 재시도 및 Rate Limit 처리
 """
 
 import asyncio
@@ -19,19 +24,54 @@ from pydantic import BaseModel
 
 from src.config import settings
 
-# Upbit API constants
-UPBIT_API_URL = "https://api.upbit.com/v1"
-REQUEST_TIMEOUT = 10.0
-MAX_RETRIES = 3
-RETRY_DELAY = 1.0
+# === Upbit API 상수 ===
+UPBIT_API_URL = "https://api.upbit.com/v1"  # API 기본 URL
+REQUEST_TIMEOUT = 10.0  # 요청 타임아웃 (초)
+MAX_RETRIES = 3  # 최대 재시도 횟수
+RETRY_DELAY = 1.0  # 재시도 기본 대기 시간 (초)
 
-# JWT/Hash constants
-JWT_ALGORITHM = "HS256"
-HASH_ALGORITHM = "SHA512"
+# === JWT/해시 알고리즘 상수 ===
+JWT_ALGORITHM = "HS256"  # JWT 서명 알고리즘
+HASH_ALGORITHM = "SHA512"  # 쿼리 해시 알고리즘
+
+# === 오류 메시지 상수 ===
+ERROR_INVALID_TICKER = "잘못된 시세 응답"
+ERROR_INVALID_ACCOUNT = "잘못된 계좌 응답"
+ERROR_INVALID_ORDER = "잘못된 주문 응답"
+ERROR_INVALID_CANCEL = "잘못된 취소 응답"
+
+# === 인덱스 상수 ===
+FIRST_ITEM = 0  # 응답 리스트의 첫 번째 항목
+
+
+def _to_decimal(value: str | int | float | None) -> Decimal | None:
+    """
+    값을 Decimal로 변환하는 헬퍼 함수
+
+    Args:
+        value: 변환할 값 (문자열, 정수, 실수 또는 None)
+
+    Returns:
+        Decimal | None: 변환된 Decimal 값 또는 None
+    """
+    if value is None:
+        return None
+    return Decimal(str(value))
 
 
 class UpbitTickerData(BaseModel):
-    """Ticker data from Upbit API."""
+    """
+    Upbit 시세 데이터 모델
+
+    Attributes:
+        market: 마켓 코드 (예: KRW-BTC)
+        trade_price: 현재 거래가
+        acc_trade_volume_24h: 24시간 누적 거래량
+        high_price: 24시간 고가
+        low_price: 24시간 저가
+        acc_trade_count_24h: 24시간 누적 거래 건수
+        timestamp: 타임스탬프 (밀리초)
+    """
 
     market: str
     trade_price: Decimal
@@ -43,7 +83,15 @@ class UpbitTickerData(BaseModel):
 
 
 class UpbitBalance(BaseModel):
-    """Account balance from Upbit API."""
+    """
+    Upbit 계좌 잔고 모델
+
+    Attributes:
+        currency: 화폐 코드 (예: KRW, BTC)
+        balance: 사용 가능 잔고
+        locked: 주문 중 잠금된 금액
+        avg_buy_price: 평균 매수 단가
+    """
 
     currency: str
     balance: Decimal
@@ -52,7 +100,21 @@ class UpbitBalance(BaseModel):
 
 
 class UpbitOrderResponse(BaseModel):
-    """Order response from Upbit API."""
+    """
+    Upbit 주문 응답 모델
+
+    Attributes:
+        uuid: 주문 고유 식별자
+        side: 주문 방향 (bid=매수, ask=매도)
+        ord_type: 주문 유형 (limit=지정가, price=시장가매수, market=시장가매도)
+        price: 주문 가격 (지정가 주문 시)
+        state: 주문 상태 (wait=대기, done=완료, cancel=취소)
+        market: 마켓 코드
+        volume: 주문 수량
+        remaining_volume: 미체결 수량
+        executed_volume: 체결 수량
+        trades_count: 체결 건수
+    """
 
     uuid: str
     side: str
@@ -67,7 +129,15 @@ class UpbitOrderResponse(BaseModel):
 
 
 class UpbitError(Exception):
-    """Exception for Upbit API errors."""
+    """
+    Upbit API 오류 예외
+
+    API 요청 실패 또는 오류 응답 시 발생합니다.
+
+    Attributes:
+        message: 오류 메시지
+        status_code: HTTP 상태 코드 (있는 경우)
+    """
 
     def __init__(self, message: str, status_code: int | None = None):
         self.message = message
@@ -76,14 +146,17 @@ class UpbitError(Exception):
 
 
 class UpbitClient:
-    """Async HTTP client for Upbit exchange API.
+    """
+    Upbit 거래소 비동기 API 클라이언트
 
-    Provides methods for:
-    - Getting market ticker data
-    - Querying account balances
-    - Placing and querying orders
+    JWT 인증을 사용하여 Upbit API와 통신합니다.
+    - 공개 API: 시세 조회, 오더북 조회
+    - 비공개 API: 잔고 조회, 주문 생성/조회/취소
 
-    Uses JWT authentication for private endpoints.
+    사용 예시:
+        client = UpbitClient()
+        ticker = await client.get_ticker("KRW-BTC")
+        print(f"현재가: {ticker.trade_price}")
     """
 
     def __init__(
@@ -91,18 +164,26 @@ class UpbitClient:
         access_key: str | None = None,
         secret_key: str | None = None,
     ):
-        """Initialize Upbit client.
+        """
+        Upbit 클라이언트 초기화
 
         Args:
-            access_key: Upbit API access key. Defaults to settings.
-            secret_key: Upbit API secret key. Defaults to settings.
+            access_key: Upbit API 접근 키 (기본값: 설정 파일에서 로드)
+            secret_key: Upbit API 비밀 키 (기본값: 설정 파일에서 로드)
         """
         self.access_key = access_key or settings.upbit_access_key
         self.secret_key = secret_key or settings.upbit_secret_key
         self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
-        """Get or create HTTP client."""
+        """
+        HTTP 클라이언트 반환 (지연 초기화)
+
+        클라이언트가 없거나 닫혔으면 새로 생성합니다.
+
+        Returns:
+            httpx.AsyncClient: HTTP 클라이언트 인스턴스
+        """
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(
                 base_url=UPBIT_API_URL,
@@ -112,26 +193,35 @@ class UpbitClient:
         return self._client
 
     async def close(self) -> None:
-        """Close HTTP client."""
+        """
+        HTTP 클라이언트 종료
+
+        리소스를 정리하고 연결을 닫습니다.
+        """
         if self._client is not None and not self._client.is_closed:
             await self._client.aclose()
             self._client = None
 
     def _generate_jwt_token(self, query_params: dict[str, Any] | None = None) -> str:
-        """Generate JWT token for authenticated requests.
+        """
+        JWT 인증 토큰 생성
+
+        Upbit API 인증에 필요한 JWT 토큰을 생성합니다.
+        쿼리 파라미터가 있는 경우 SHA512 해시를 포함합니다.
 
         Args:
-            query_params: Query parameters to include in token hash.
+            query_params: 요청에 포함될 쿼리 파라미터 (해시에 포함)
 
         Returns:
-            JWT token string.
+            str: 생성된 JWT 토큰
         """
         payload: dict[str, Any] = {
             "access_key": self.access_key,
-            "nonce": str(uuid.uuid4()),
-            "timestamp": int(time.time() * 1000),
+            "nonce": str(uuid.uuid4()),  # 일회용 난수
+            "timestamp": int(time.time() * 1000),  # 밀리초 타임스탬프
         }
 
+        # 쿼리 파라미터가 있으면 해시 추가
         if query_params:
             query_string = urlencode(query_params)
             query_hash = hashlib.sha512(query_string.encode()).hexdigest()
@@ -148,30 +238,35 @@ class UpbitClient:
         json_data: dict[str, Any] | None = None,
         authenticated: bool = False,
     ) -> dict[str, Any] | list[dict[str, Any]]:
-        """Make HTTP request to Upbit API.
+        """
+        Upbit API HTTP 요청 수행
+
+        재시도 로직과 Rate Limit 처리를 포함합니다.
 
         Args:
-            method: HTTP method (GET, POST, DELETE).
-            endpoint: API endpoint path.
-            params: Query parameters.
-            json_data: JSON body data.
-            authenticated: Whether to include JWT auth.
+            method: HTTP 메서드 (GET, POST, DELETE)
+            endpoint: API 엔드포인트 경로
+            params: URL 쿼리 파라미터
+            json_data: JSON 요청 본문
+            authenticated: JWT 인증 포함 여부
 
         Returns:
-            API response data.
+            API 응답 데이터 (dict 또는 list)
 
         Raises:
-            UpbitError: On API error or network failure.
+            UpbitError: API 오류 또는 네트워크 실패 시
         """
         client = await self._get_client()
         headers: dict[str, str] = {}
 
+        # 인증이 필요한 경우 JWT 토큰 추가
         if authenticated:
             token = self._generate_jwt_token(params or json_data)
             headers["Authorization"] = f"Bearer {token}"
 
         last_error: Exception | None = None
 
+        # 재시도 로직 (최대 MAX_RETRIES 회)
         for attempt in range(MAX_RETRIES):
             try:
                 response = await client.request(
@@ -182,20 +277,21 @@ class UpbitClient:
                     headers=headers,
                 )
 
+                # Rate Limit (429) 처리 - 지수 백오프 후 재시도
                 if response.status_code == 429:
-                    # Rate limit - wait and retry
                     wait_time = RETRY_DELAY * (2**attempt)
-                    logger.warning(f"Rate limit hit, waiting {wait_time}s before retry")
+                    logger.warning(f"Rate limit 도달, {wait_time}초 후 재시도")
                     await self._sleep(wait_time)
                     continue
 
+                # 4xx/5xx 오류 처리
                 if response.status_code >= 400:
                     error_data = response.json() if response.content else {}
                     error_msg = error_data.get("error", {}).get(
                         "message", response.text
                     )
                     raise UpbitError(
-                        f"Upbit API error: {error_msg}",
+                        f"Upbit API 오류: {error_msg}",
                         status_code=response.status_code,
                     )
 
@@ -203,54 +299,66 @@ class UpbitClient:
 
             except httpx.TimeoutException as e:
                 last_error = e
-                logger.warning(f"Request timeout (attempt {attempt + 1}/{MAX_RETRIES})")
+                logger.warning(f"요청 타임아웃 (시도 {attempt + 1}/{MAX_RETRIES})")
                 await self._sleep(RETRY_DELAY)
 
             except httpx.RequestError as e:
                 last_error = e
-                logger.warning(
-                    f"Request error (attempt {attempt + 1}/{MAX_RETRIES}): {e}"
-                )
+                logger.warning(f"요청 오류 (시도 {attempt + 1}/{MAX_RETRIES}): {e}")
                 await self._sleep(RETRY_DELAY)
 
-        raise UpbitError(f"Request failed after {MAX_RETRIES} attempts: {last_error}")
+        raise UpbitError(f"{MAX_RETRIES}회 재시도 후 요청 실패: {last_error}")
 
     async def _sleep(self, seconds: float) -> None:
-        """Async sleep helper."""
+        """
+        비동기 대기 헬퍼
+
+        Args:
+            seconds: 대기 시간 (초)
+        """
         await asyncio.sleep(seconds)
 
     def _parse_order_response(self, response: dict[str, Any]) -> UpbitOrderResponse:
-        """Parse order response from Upbit API.
+        """
+        주문 응답 파싱
+
+        API 응답을 UpbitOrderResponse 객체로 변환합니다.
 
         Args:
-            response: Raw API response dictionary.
+            response: API 응답 딕셔너리
 
         Returns:
-            Parsed UpbitOrderResponse.
+            UpbitOrderResponse: 파싱된 주문 응답 객체
         """
         return UpbitOrderResponse(
             uuid=response["uuid"],
             side=response["side"],
             ord_type=response["ord_type"],
-            price=Decimal(str(response["price"])) if response.get("price") else None,
+            price=_to_decimal(response.get("price")),
             state=response["state"],
             market=response["market"],
-            volume=Decimal(str(response["volume"])),
-            remaining_volume=Decimal(str(response["remaining_volume"])),
-            executed_volume=Decimal(str(response["executed_volume"])),
+            volume=_to_decimal(response["volume"]),
+            remaining_volume=_to_decimal(response["remaining_volume"]),
+            executed_volume=_to_decimal(response["executed_volume"]),
             trades_count=response["trades_count"],
         )
 
-    # ==================== Public Endpoints ====================
+    # ==================== 공개 API ====================
 
     async def get_ticker(self, market: str = "KRW-BTC") -> UpbitTickerData:
-        """Get current ticker data for a market.
+        """
+        시세 조회
+
+        특정 마켓의 현재 시세 정보를 조회합니다.
 
         Args:
-            market: Market code (default: KRW-BTC).
+            market: 마켓 코드 (기본값: KRW-BTC)
 
         Returns:
-            Ticker data with price, volume, etc.
+            UpbitTickerData: 시세 데이터 (가격, 거래량 등)
+
+        Raises:
+            UpbitError: API 오류 시
         """
         response = await self._request(
             method="GET",
@@ -259,42 +367,51 @@ class UpbitClient:
         )
 
         if not response or not isinstance(response, list):
-            raise UpbitError("Invalid ticker response")
+            raise UpbitError(ERROR_INVALID_TICKER)
 
-        data = response[0]
+        data = response[FIRST_ITEM]
         return UpbitTickerData(
             market=data["market"],
-            trade_price=Decimal(str(data["trade_price"])),
-            acc_trade_volume_24h=Decimal(str(data["acc_trade_volume_24h"])),
-            high_price=Decimal(str(data["high_price"])),
-            low_price=Decimal(str(data["low_price"])),
+            trade_price=_to_decimal(data["trade_price"]),
+            acc_trade_volume_24h=_to_decimal(data["acc_trade_volume_24h"]),
+            high_price=_to_decimal(data["high_price"]),
+            low_price=_to_decimal(data["low_price"]),
             acc_trade_count_24h=data["acc_trade_count_24h"],
             timestamp=data["timestamp"],
         )
 
     async def get_orderbook(self, market: str = "KRW-BTC") -> dict[str, Any]:
-        """Get orderbook for a market.
+        """
+        오더북 조회
+
+        특정 마켓의 호가 정보를 조회합니다.
 
         Args:
-            market: Market code.
+            market: 마켓 코드
 
         Returns:
-            Orderbook data with bids and asks.
+            dict: 오더북 데이터 (매수/매도 호가 목록)
         """
         response = await self._request(
             method="GET",
             endpoint="/orderbook",
             params={"markets": market},
         )
-        return response[0] if response else {}
+        return response[FIRST_ITEM] if response else {}
 
-    # ==================== Private Endpoints ====================
+    # ==================== 비공개 API (인증 필요) ====================
 
     async def get_accounts(self) -> list[UpbitBalance]:
-        """Get account balances.
+        """
+        계좌 잔고 조회
+
+        모든 보유 자산의 잔고 정보를 조회합니다.
 
         Returns:
-            List of account balances.
+            list[UpbitBalance]: 자산별 잔고 목록
+
+        Raises:
+            UpbitError: API 오류 시
         """
         response = await self._request(
             method="GET",
@@ -303,26 +420,27 @@ class UpbitClient:
         )
 
         if not isinstance(response, list):
-            raise UpbitError("Invalid accounts response")
+            raise UpbitError(ERROR_INVALID_ACCOUNT)
 
         return [
             UpbitBalance(
                 currency=acc["currency"],
-                balance=Decimal(str(acc["balance"])),
-                locked=Decimal(str(acc["locked"])),
-                avg_buy_price=Decimal(str(acc["avg_buy_price"])),
+                balance=_to_decimal(acc["balance"]),
+                locked=_to_decimal(acc["locked"]),
+                avg_buy_price=_to_decimal(acc["avg_buy_price"]),
             )
             for acc in response
         ]
 
     async def get_balance(self, currency: str = "KRW") -> Decimal:
-        """Get balance for a specific currency.
+        """
+        특정 자산 잔고 조회
 
         Args:
-            currency: Currency code (KRW, BTC, etc.).
+            currency: 화폐 코드 (KRW, BTC 등)
 
         Returns:
-            Available balance.
+            Decimal: 사용 가능 잔고 (없으면 0)
         """
         accounts = await self.get_accounts()
         for acc in accounts:
@@ -338,17 +456,24 @@ class UpbitClient:
         price: Decimal | None = None,
         ord_type: str = "limit",
     ) -> UpbitOrderResponse:
-        """Place a new order.
+        """
+        주문 생성
 
         Args:
-            market: Market code (e.g., KRW-BTC).
-            side: Order side (bid=buy, ask=sell).
-            volume: Order volume (for limit/market sell).
-            price: Order price (for limit/market buy).
-            ord_type: Order type (limit, price, market).
+            market: 마켓 코드 (예: KRW-BTC)
+            side: 주문 방향 (bid=매수, ask=매도)
+            volume: 주문 수량 (지정가/시장가매도 시 필수)
+            price: 주문 가격 (지정가/시장가매수 시 필수)
+            ord_type: 주문 유형
+                - limit: 지정가 주문
+                - price: 시장가 매수 (총액 지정)
+                - market: 시장가 매도 (수량 지정)
 
         Returns:
-            Order response with UUID and status.
+            UpbitOrderResponse: 주문 응답 (UUID, 상태 등)
+
+        Raises:
+            UpbitError: 주문 실패 시
         """
         params: dict[str, Any] = {
             "market": market,
@@ -361,7 +486,7 @@ class UpbitClient:
         if price is not None:
             params["price"] = str(price)
 
-        logger.info(f"Placing order: {params}")
+        logger.info(f"주문 요청: {params}")
 
         response = await self._request(
             method="POST",
@@ -371,18 +496,22 @@ class UpbitClient:
         )
 
         if not isinstance(response, dict):
-            raise UpbitError("Invalid order response")
+            raise UpbitError(ERROR_INVALID_ORDER)
 
         return self._parse_order_response(response)
 
     async def get_order(self, uuid: str) -> UpbitOrderResponse:
-        """Get order status by UUID.
+        """
+        주문 상태 조회
 
         Args:
-            uuid: Order UUID.
+            uuid: 주문 고유 식별자
 
         Returns:
-            Order details.
+            UpbitOrderResponse: 주문 상세 정보
+
+        Raises:
+            UpbitError: 조회 실패 시
         """
         response = await self._request(
             method="GET",
@@ -392,18 +521,22 @@ class UpbitClient:
         )
 
         if not isinstance(response, dict):
-            raise UpbitError("Invalid order response")
+            raise UpbitError(ERROR_INVALID_ORDER)
 
         return self._parse_order_response(response)
 
     async def cancel_order(self, uuid: str) -> UpbitOrderResponse:
-        """Cancel an order.
+        """
+        주문 취소
 
         Args:
-            uuid: Order UUID to cancel.
+            uuid: 취소할 주문의 고유 식별자
 
         Returns:
-            Cancelled order details.
+            UpbitOrderResponse: 취소된 주문 정보
+
+        Raises:
+            UpbitError: 취소 실패 시
         """
         response = await self._request(
             method="DELETE",
@@ -413,17 +546,24 @@ class UpbitClient:
         )
 
         if not isinstance(response, dict):
-            raise UpbitError("Invalid cancel response")
+            raise UpbitError(ERROR_INVALID_CANCEL)
 
         return self._parse_order_response(response)
 
 
-# Singleton instance
+# === 싱글톤 인스턴스 ===
 _upbit_client: UpbitClient | None = None
 
 
 def get_upbit_client() -> UpbitClient:
-    """Get singleton Upbit client instance."""
+    """
+    Upbit 클라이언트 싱글톤 반환
+
+    애플리케이션 전체에서 동일한 클라이언트 인스턴스를 공유합니다.
+
+    Returns:
+        UpbitClient: 싱글톤 클라이언트 인스턴스
+    """
     global _upbit_client
     if _upbit_client is None:
         _upbit_client = UpbitClient()
