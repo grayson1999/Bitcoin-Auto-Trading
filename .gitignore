@@ -205,3 +205,31 @@ pip-selfcheck.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,venv
+
+### Node.js ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.pnp.*
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Database ###
+*.db
+*.sqlite
+*.sqlite3
+
+### uv ###
+.python-version
+
+### Local env ###
+.env.local
+.env.*.local

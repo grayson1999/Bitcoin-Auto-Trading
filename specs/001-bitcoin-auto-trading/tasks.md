@@ -23,12 +23,12 @@
 
 **목적**: 프로젝트 초기화, 기본 구조 및 설정
 
-- [ ] T001 plan.md에 따라 모노레포 디렉토리 구조 생성 (backend/, frontend/, docker-compose.yml, Makefile)
-- [ ] T002 [P] pyproject.toml과 의존성으로 백엔드 Python 프로젝트 초기화 (FastAPI, httpx, SQLAlchemy 2.0, APScheduler, google-generativeai, pydantic, loguru)
-- [ ] T003 [P] Vite, TypeScript, 의존성으로 프론트엔드 React 프로젝트 초기화 (react-router-dom, @tanstack/react-query, recharts, tailwindcss, axios)
-- [ ] T004 [P] 모든 필수 환경 변수가 포함된 backend/.env.example 생성
-- [ ] T005 [P] backend, frontend, PostgreSQL 서비스가 포함된 docker-compose.yml 생성
-- [ ] T006 [P] dev, test, build 명령어가 포함된 Makefile 생성
+- [x] T001 plan.md에 따라 모노레포 디렉토리 구조 생성 (backend/, frontend/, docker-compose.yml, Makefile)
+- [x] T002 [P] pyproject.toml과 의존성으로 백엔드 Python 프로젝트 초기화 (FastAPI, httpx, SQLAlchemy 2.0, APScheduler, google-generativeai, pydantic, loguru)
+- [x] T003 [P] Vite, TypeScript, 의존성으로 프론트엔드 React 프로젝트 초기화 (react-router-dom, @tanstack/react-query, recharts, tailwindcss, axios)
+- [x] T004 [P] 모든 필수 환경 변수가 포함된 backend/.env.example 생성
+- [x] T005 [P] backend, frontend, PostgreSQL 서비스가 포함된 docker-compose.yml 생성
+- [x] T006 [P] dev, test, build 명령어가 포함된 Makefile 생성
 
 ---
 
