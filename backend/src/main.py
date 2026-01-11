@@ -11,6 +11,7 @@ from loguru import logger
 from src.api import api_router
 from src.config import APP_VERSION, settings, setup_logging
 from src.database import close_db, init_db
+from src.scheduler import setup_scheduler, start_scheduler, stop_scheduler
 
 CORS_ORIGINS = [
     "http://localhost:3000",
@@ -33,10 +34,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.error(f"Failed to connect to database: {e}")
         raise
 
+    # Setup and start scheduler
+    setup_scheduler()
+    start_scheduler()
+    logger.info("Scheduler started")
+
     yield
 
     # Shutdown
     logger.info("Shutting down Bitcoin Auto-Trading Backend")
+    stop_scheduler()
+    logger.info("Scheduler stopped")
     await close_db()
     logger.info("Database connection closed")
 

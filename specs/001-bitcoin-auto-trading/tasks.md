@@ -65,15 +65,15 @@
 
 ### 사용자 스토리 3 구현
 
-- [ ] T019 [P] [US3] backend/src/models/market_data.py에 MarketData SQLAlchemy 모델 생성
-- [ ] T020 [US3] MarketData 테이블용 Alembic 마이그레이션 생성
-- [ ] T021 [US3] backend/src/services/upbit_client.py에 JWT 인증이 포함된 Upbit API 클라이언트 구현
-- [ ] T022 [US3] backend/src/services/data_collector.py에 시장 데이터 수집용 DataCollector 서비스 구현
-- [ ] T023 [US3] backend/src/api/schemas/market.py에 MarketData API 응답용 Pydantic 스키마 생성
-- [ ] T024 [US3] backend/src/api/dashboard.py에 GET /dashboard/market 엔드포인트 구현
-- [ ] T025 [US3] backend/src/scheduler/jobs.py에 1초 주기 데이터 수집용 APScheduler 작업 설정
-- [ ] T026 [US3] backend/src/services/data_collector.py에 네트워크 장애 시 자동 재연결 로직 추가
-- [ ] T027 [US3] backend/src/services/data_collector.py에 데이터 수집 이벤트 로깅 추가
+- [x] T019 [P] [US3] backend/src/models/market_data.py에 MarketData SQLAlchemy 모델 생성
+- [x] T020 [US3] MarketData 테이블용 Alembic 마이그레이션 생성
+- [x] T021 [US3] backend/src/services/upbit_client.py에 JWT 인증이 포함된 Upbit API 클라이언트 구현
+- [x] T022 [US3] backend/src/services/data_collector.py에 시장 데이터 수집용 DataCollector 서비스 구현
+- [x] T023 [US3] backend/src/api/schemas/market.py에 MarketData API 응답용 Pydantic 스키마 생성
+- [x] T024 [US3] backend/src/api/dashboard.py에 GET /dashboard/market 엔드포인트 구현
+- [x] T025 [US3] backend/src/scheduler/jobs.py에 1초 주기 데이터 수집용 APScheduler 작업 설정
+- [x] T026 [US3] backend/src/services/data_collector.py에 네트워크 장애 시 자동 재연결 로직 추가
+- [x] T027 [US3] backend/src/services/data_collector.py에 데이터 수집 이벤트 로깅 추가
 
 **체크포인트**: Upbit에서 데이터 수집이 작동하고 시장 데이터가 저장됨
 

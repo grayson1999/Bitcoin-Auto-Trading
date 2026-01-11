@@ -24,3 +24,9 @@ class TimestampMixin:
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+
+# Import models to register them with SQLAlchemy
+from src.models.market_data import MarketData  # noqa: E402, F401
+
+__all__ = ["Base", "TimestampMixin", "MarketData"]
