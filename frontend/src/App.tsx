@@ -13,6 +13,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 const APP_TITLE = "Bitcoin Auto-Trading";
 
 // === 스타일 상수 ===
+const CONTAINER_CLASSES = "mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8";
 const NAV_STYLES = {
   active: "bg-gray-900 text-white",
   inactive: "text-gray-700 hover:bg-gray-200",
@@ -55,7 +56,7 @@ const App: FC = () => {
     <div className="min-h-screen bg-gray-100">
       {/* 헤더 - 앱 제목 및 네비게이션 */}
       <header className="bg-white shadow">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className={CONTAINER_CLASSES}>
           <div className="flex items-center justify-between">
             {/* 앱 제목 */}
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -85,7 +86,7 @@ const App: FC = () => {
 
       {/* 메인 콘텐츠 영역 */}
       <main>
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className={CONTAINER_CLASSES}>
           {/* Outlet: 중첩 라우트의 자식 컴포넌트가 렌더링되는 위치 */}
           <Outlet />
         </div>

@@ -95,7 +95,6 @@ class CurrentMarketResponse(BaseModel):
         volume_24h: 24시간 거래량
         high_24h: 24시간 최고가
         low_24h: 24시간 최저가
-        trade_count_24h: 24시간 거래 건수
         timestamp: 시세 데이터 시간
         change_24h_pct: 24시간 변동률 (%)
     """
@@ -105,7 +104,6 @@ class CurrentMarketResponse(BaseModel):
     volume_24h: Decimal = Field(description="24시간 거래량")
     high_24h: Decimal = Field(description="24시간 최고가")
     low_24h: Decimal = Field(description="24시간 최저가")
-    trade_count_24h: int = Field(description="24시간 거래 건수")
     timestamp: datetime = Field(description="시세 데이터 시간")
     change_24h_pct: float | None = Field(default=None, description="24시간 변동률 (%)")
 

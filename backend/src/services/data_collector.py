@@ -143,7 +143,7 @@ class DataCollector:
                 volume=ticker.acc_trade_volume_24h,
                 high_price=ticker.high_price,
                 low_price=ticker.low_price,
-                trade_count=ticker.acc_trade_count_24h,
+                trade_count=0,  # Upbit API에서 거래 건수 미제공
             )
 
             # DB에 추가 및 플러시 (ID 할당)

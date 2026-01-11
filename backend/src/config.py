@@ -19,6 +19,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # 애플리케이션 버전
 APP_VERSION = "0.1.0"
 
+# === 데이터베이스 풀 설정 ===
+DB_POOL_SIZE = 5  # 기본 풀 크기 (동시 연결 수)
+DB_POOL_MAX_OVERFLOW = 10  # 풀 초과 시 추가 허용 연결 수 (최대 15개)
+
 
 class Settings(BaseSettings):
     """

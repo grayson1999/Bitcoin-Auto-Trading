@@ -9,6 +9,11 @@
 
 import type { FC, ReactNode } from "react";
 
+// === 상수 ===
+const DEFAULT_PLACEHOLDER = "개발 예정...";
+const PLACEHOLDER_CLASSES =
+  "rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-500";
+
 /**
  * PageLayout Props 인터페이스
  */
@@ -48,8 +53,8 @@ const PageLayout: FC<PageLayoutProps> = ({
 
       {/* 콘텐츠 영역 */}
       {children ?? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-500">
-          {placeholder ?? "개발 예정..."}
+        <div className={PLACEHOLDER_CLASSES}>
+          {placeholder ?? DEFAULT_PLACEHOLDER}
         </div>
       )}
     </div>

@@ -17,11 +17,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from src.config import settings
-
-# === 커넥션 풀 설정 ===
-POOL_SIZE = 5  # 기본 풀 크기 (동시 연결 수)
-MAX_OVERFLOW = 10  # 풀 초과 시 추가 허용 연결 수 (최대 15개)
+from src.config import DB_POOL_MAX_OVERFLOW, DB_POOL_SIZE, settings
 
 # 비동기 SQLAlchemy 엔진 생성
 # - echo: 디버그 모드에서 SQL 쿼리 로깅
@@ -30,8 +26,8 @@ engine = create_async_engine(
     settings.database_url,
     echo=settings.debug,  # SQL 쿼리 로깅 (디버그 모드에서만)
     pool_pre_ping=True,  # 연결 건강 검사
-    pool_size=POOL_SIZE,
-    max_overflow=MAX_OVERFLOW,
+    pool_size=DB_POOL_SIZE,
+    max_overflow=DB_POOL_MAX_OVERFLOW,
 )
 
 # 비동기 세션 팩토리

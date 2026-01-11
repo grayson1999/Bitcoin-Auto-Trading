@@ -69,7 +69,6 @@ class UpbitTickerData(BaseModel):
         acc_trade_volume_24h: 24시간 누적 거래량
         high_price: 24시간 고가
         low_price: 24시간 저가
-        acc_trade_count_24h: 24시간 누적 거래 건수
         timestamp: 타임스탬프 (밀리초)
     """
 
@@ -78,7 +77,6 @@ class UpbitTickerData(BaseModel):
     acc_trade_volume_24h: Decimal
     high_price: Decimal
     low_price: Decimal
-    acc_trade_count_24h: int
     timestamp: int
 
 
@@ -376,7 +374,6 @@ class UpbitClient:
             acc_trade_volume_24h=_to_decimal(data["acc_trade_volume_24h"]),
             high_price=_to_decimal(data["high_price"]),
             low_price=_to_decimal(data["low_price"]),
-            acc_trade_count_24h=data["acc_trade_count_24h"],
             timestamp=data["timestamp"],
         )
 

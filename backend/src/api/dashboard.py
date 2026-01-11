@@ -80,7 +80,6 @@ async def get_current_market() -> CurrentMarketResponse:
             volume_24h=ticker.acc_trade_volume_24h,
             high_24h=ticker.high_price,
             low_24h=ticker.low_price,
-            trade_count_24h=ticker.acc_trade_count_24h,
             timestamp=datetime.fromtimestamp(ticker.timestamp / MS_TO_SECONDS, tz=UTC),
             change_24h_pct=change_24h_pct,
         )

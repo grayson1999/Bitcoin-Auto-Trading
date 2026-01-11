@@ -30,6 +30,10 @@ CORS_ORIGINS = [
     "http://127.0.0.1:5173",  # 로컬호스트 대체 주소
 ]
 
+# === 에러 응답 상수 ===
+INTERNAL_SERVER_ERROR_STATUS = 500
+INTERNAL_SERVER_ERROR_MESSAGE = "서버 내부 오류가 발생했습니다"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -117,9 +121,9 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     """
     logger.exception(f"처리되지 않은 예외 발생: {exc}")
     return JSONResponse(
-        status_code=500,
+        status_code=INTERNAL_SERVER_ERROR_STATUS,
         content={
-            "detail": "서버 내부 오류가 발생했습니다",
+            "detail": INTERNAL_SERVER_ERROR_MESSAGE,
             "type": type(exc).__name__,
         },
     )
