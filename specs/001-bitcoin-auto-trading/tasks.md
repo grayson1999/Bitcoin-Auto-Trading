@@ -89,18 +89,18 @@
 
 ### 사용자 스토리 4 구현
 
-- [ ] T028 [P] [US4] backend/src/models/trading_signal.py에 TradingSignal SQLAlchemy 모델 생성
-- [ ] T029 [US4] TradingSignal 테이블용 Alembic 마이그레이션 생성
-- [ ] T030 [US4] backend/src/services/ai_client.py에 google-generativeai SDK로 Gemini AI 클라이언트 구현
-- [ ] T031 [US4] backend/src/services/signal_generator.py에 매매 신호 프롬프트 템플릿 생성
-- [ ] T032 [US4] backend/src/services/signal_generator.py에 시장 데이터 전처리가 포함된 SignalGenerator 서비스 구현
-- [ ] T033 [US4] backend/src/api/schemas/signal.py에 TradingSignal용 Pydantic 스키마 생성
-- [ ] T034 [US4] backend/src/api/signals.py에 GET /signals 엔드포인트 구현
-- [ ] T035 [US4] backend/src/api/signals.py에 GET /signals/latest 엔드포인트 구현
-- [ ] T036 [US4] backend/src/api/signals.py에 POST /signals/generate 엔드포인트 (수동 트리거) 구현
-- [ ] T037 [US4] backend/src/scheduler/jobs.py에 1시간 주기 신호 생성용 APScheduler 작업 설정
-- [ ] T038 [US4] backend/src/services/ai_client.py에 AI API 호출 5초 타임아웃 및 재시도 로직 추가
-- [ ] T039 [US4] backend/src/services/signal_generator.py에 비용 추적용 토큰 사용량 로깅 추가
+- [x] T028 [P] [US4] backend/src/models/trading_signal.py에 TradingSignal SQLAlchemy 모델 생성
+- [x] T029 [US4] TradingSignal 테이블용 Alembic 마이그레이션 생성
+- [x] T030 [US4] backend/src/services/ai_client.py에 google-generativeai SDK로 Gemini AI 클라이언트 구현
+- [x] T031 [US4] backend/src/services/signal_generator.py에 매매 신호 프롬프트 템플릿 생성
+- [x] T032 [US4] backend/src/services/signal_generator.py에 시장 데이터 전처리가 포함된 SignalGenerator 서비스 구현
+- [x] T033 [US4] backend/src/api/schemas/signal.py에 TradingSignal용 Pydantic 스키마 생성
+- [x] T034 [US4] backend/src/api/signals.py에 GET /signals 엔드포인트 구현
+- [x] T035 [US4] backend/src/api/signals.py에 GET /signals/latest 엔드포인트 구현
+- [x] T036 [US4] backend/src/api/signals.py에 POST /signals/generate 엔드포인트 (수동 트리거) 구현
+- [x] T037 [US4] backend/src/scheduler/jobs.py에 1시간 주기 신호 생성용 APScheduler 작업 설정
+- [x] T038 [US4] backend/src/services/ai_client.py에 AI API 호출 5초 타임아웃 및 재시도 로직 추가
+- [x] T039 [US4] backend/src/services/signal_generator.py에 비용 추적용 토큰 사용량 로깅 추가
 
 **체크포인트**: AI 신호 생성이 1시간 스케줄링으로 작동
 

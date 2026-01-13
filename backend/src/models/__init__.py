@@ -53,5 +53,6 @@ class TimestampMixin:
 
 # SQLAlchemy에 모델 등록을 위한 임포트
 from src.models.market_data import MarketData  # noqa: E402, F401
+from src.models.trading_signal import SignalType, TradingSignal  # noqa: E402, F401
 
-__all__ = ["Base", "TimestampMixin", "MarketData"]
+__all__ = ["Base", "TimestampMixin", "MarketData", "TradingSignal", "SignalType"]

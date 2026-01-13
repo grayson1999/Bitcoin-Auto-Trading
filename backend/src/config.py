@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     # === Google Gemini API 설정 ===
     gemini_api_key: str = Field(default="", description="Google Gemini API 키")
 
+    # === OpenAI API 설정 (백업) ===
+    openai_api_key: str = Field(default="", description="OpenAI API 키 (백업용)")
+
     # === Slack 웹훅 설정 (선택사항) ===
     slack_webhook_url: str | None = Field(
         default=None, description="Slack 알림 웹훅 URL"

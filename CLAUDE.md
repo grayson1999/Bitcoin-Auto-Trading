@@ -150,10 +150,18 @@ make db-migrate      # Alembic 마이그레이션 적용
 ### 대시보드
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
-| GET | `/api/v1/dashboard/current` | 현재 시세 조회 |
-| GET | `/api/v1/dashboard/history` | 시세 히스토리 (1시간) |
-| GET | `/api/v1/dashboard/summary` | 24시간 요약 통계 |
+| GET | `/api/v1/dashboard/market` | 현재 시세 조회 |
+| GET | `/api/v1/dashboard/market/history` | 시세 히스토리 (1-168시간) |
+| GET | `/api/v1/dashboard/market/summary` | 시간별 요약 통계 |
+| GET | `/api/v1/dashboard/market/latest` | 최신 시세 레코드 조회 |
 | GET | `/api/v1/dashboard/collector/stats` | 데이터 수집기 상태 |
+
+### AI 신호
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/api/v1/signals` | AI 신호 내역 조회 |
+| GET | `/api/v1/signals/latest` | 최신 AI 신호 조회 |
+| POST | `/api/v1/signals/generate` | AI 신호 수동 생성 |
 
 ---
 
@@ -282,10 +290,14 @@ VITE_API_URL=http://localhost:8000
 | `config.py` | Pydantic Settings로 환경 변수 로드, loguru 로깅 설정 |
 | `database.py` | SQLAlchemy 비동기 엔진/세션 팩토리, 커넥션 풀 관리 |
 | `models/market_data.py` | MarketData 모델 - 시세 데이터 저장 (Numeric(18,8) 정밀도) |
+| `models/trading_signal.py` | TradingSignal 모델 - AI 매매 신호 저장 (신호타입, 신뢰도, 분석 근거) |
 | `services/upbit_client.py` | Upbit API 래퍼 - 시세, 주문, 잔고 API 호출 + 재시도 로직 |
 | `services/data_collector.py` | 시세 수집기 - 지수 백오프 재시도, 수집 통계 관리 |
+| `services/ai_client.py` | Gemini AI 클라이언트 - 텍스트 생성, 토큰 추적, 재시도 로직 |
+| `services/signal_generator.py` | AI 신호 생성기 - 프롬프트 생성, 응답 파싱, DB 저장 |
 | `api/dashboard.py` | 대시보드 엔드포인트 - 현재가, 히스토리, 요약 통계 |
-| `scheduler/jobs.py` | APScheduler 작업 - 시세 수집 (1초), 데이터 정리 (24시간) |
+| `api/signals.py` | AI 신호 엔드포인트 - 신호 조회, 수동 생성 |
+| `scheduler/jobs.py` | APScheduler 작업 - 시세 수집 (1초), AI 신호 (1시간), 데이터 정리 (24시간) |
 
 ### 프론트엔드
 
@@ -303,6 +315,7 @@ VITE_API_URL=http://localhost:8000
 
 ## 개발 이력
 
+- **Phase 4**: AI 기반 매매 신호 생성 구현 (Gemini AI, SignalGenerator)
 - **Phase 3**: 실시간 시장 데이터 수집 구현 (Upbit API, DataCollector)
 - **Phase 2**: 백엔드/프론트엔드 기반 인프라 구축
 - **Phase 1**: 모노레포 구조 및 프로젝트 초기화

@@ -3,6 +3,7 @@ APScheduler 작업 정의 모듈
 
 이 모듈은 백그라운드에서 실행되는 예약 작업을 정의합니다.
 - 시장 데이터 수집 (1초 간격)
+- AI 신호 생성 (1시간 간격)
 - 오래된 데이터 정리 (24시간 간격)
 """
 
@@ -13,8 +14,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from loguru import logger
 
+from src.config import settings
 from src.database import async_session_factory
 from src.services.data_collector import get_data_collector
+from src.services.signal_generator import SignalGeneratorError, get_signal_generator
 
 # 스케줄러 인스턴스 (비동기)
 scheduler = AsyncIOScheduler()
@@ -84,6 +87,39 @@ async def cleanup_old_data_job() -> None:
             logger.exception(f"데이터 정리 작업 오류: {e}")
 
 
+async def generate_trading_signal_job() -> None:
+    """
+    AI 매매 신호 생성 작업
+
+    설정된 주기(기본 1시간)마다 실행되어 Gemini AI를 통해
+    매매 신호를 생성합니다.
+
+    처리 흐름:
+        1. SignalGenerator 인스턴스 생성
+        2. 최근 시장 데이터 분석
+        3. AI 호출하여 신호 생성
+        4. 결과 DB 저장
+    """
+    async with async_session_factory() as session:
+        try:
+            generator = get_signal_generator(session)
+
+            # 스케줄러에서 호출 시 쿨다운 무시 (force=True)
+            signal = await generator.generate_signal(force=True)
+
+            logger.info(
+                f"AI 신호 생성 완료: {signal.signal_type} "
+                f"(신뢰도: {signal.confidence}, 모델: {signal.model_name})"
+            )
+
+        except SignalGeneratorError as e:
+            logger.warning(f"AI 신호 생성 실패: {e}")
+
+        except Exception as e:
+            await session.rollback()
+            logger.exception(f"AI 신호 생성 작업 오류: {e}")
+
+
 def setup_scheduler() -> AsyncIOScheduler:
     """
     스케줄러 설정
@@ -92,6 +128,7 @@ def setup_scheduler() -> AsyncIOScheduler:
 
     등록되는 작업:
         - collect_market_data: 1초마다 시세 수집
+        - generate_trading_signal: 설정된 주기(기본 1시간)마다 AI 신호 생성
         - cleanup_old_data: 24시간마다 오래된 데이터 삭제
 
     설정 옵션:
@@ -113,6 +150,18 @@ def setup_scheduler() -> AsyncIOScheduler:
         coalesce=True,  # 놓친 실행은 스킵
     )
 
+    # AI 신호 생성 작업 (설정된 간격, 기본 1시간)
+    signal_interval_hours = settings.signal_interval_hours
+    scheduler.add_job(
+        generate_trading_signal_job,
+        trigger=IntervalTrigger(hours=signal_interval_hours),
+        id="generate_trading_signal",
+        name="AI 매매 신호 생성",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,  # 놓친 실행은 스킵 (AI 비용 절약)
+    )
+
     # 데이터 정리 작업 (24시간 간격)
     scheduler.add_job(
         cleanup_old_data_job,
@@ -127,6 +176,7 @@ def setup_scheduler() -> AsyncIOScheduler:
     logger.info(
         f"스케줄러 설정 완료: "
         f"데이터 수집 ({DATA_COLLECTION_INTERVAL_SECONDS}초), "
+        f"AI 신호 생성 ({signal_interval_hours}시간), "
         f"데이터 정리 ({DATA_CLEANUP_INTERVAL_HOURS}시간)"
     )
 
