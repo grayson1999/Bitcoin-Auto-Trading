@@ -116,22 +116,22 @@
 
 ### 사용자 스토리 2 구현
 
-- [ ] T040 [P] [US2] backend/src/models/risk_event.py에 RiskEvent SQLAlchemy 모델 생성
-- [ ] T041 [P] [US2] backend/src/models/daily_stats.py에 DailyStats SQLAlchemy 모델 생성
-- [ ] T042 [P] [US2] backend/src/models/position.py에 Position SQLAlchemy 모델 생성
-- [ ] T043 [P] [US2] backend/src/models/system_config.py에 SystemConfig SQLAlchemy 모델 생성
-- [ ] T044 [US2] RiskEvent, DailyStats, Position, SystemConfig 테이블용 Alembic 마이그레이션 생성
-- [ ] T045 [US2] backend/src/services/risk_manager.py에 포지션 크기 검증이 포함된 RiskManager 서비스 구현
-- [ ] T046 [US2] backend/src/services/risk_manager.py에 개별 손절 체크 (3-5% 손실 임계값) 추가
-- [ ] T047 [US2] backend/src/services/risk_manager.py에 일일 손실 한도 체크 및 거래 중단 로직 추가
-- [ ] T048 [US2] backend/src/services/risk_manager.py에 변동성 감지 (5분 내 3% 초과 변동) 추가
-- [ ] T049 [US2] backend/src/api/schemas/risk.py에 RiskEvent 및 RiskStatus용 Pydantic 스키마 생성
-- [ ] T050 [US2] backend/src/api/risk.py에 GET /risk/events 엔드포인트 구현
-- [ ] T051 [US2] backend/src/api/risk.py에 GET /risk/status 엔드포인트 구현
-- [ ] T052 [US2] backend/src/api/risk.py에 POST /risk/halt 엔드포인트 구현
-- [ ] T053 [US2] backend/src/api/risk.py에 POST /risk/resume 엔드포인트 구현
-- [ ] T054 [US2] backend/src/services/notifier.py에 리스크 알림용 Slack 알림 서비스 구현
-- [ ] T055 [US2] backend/src/services/risk_manager.py에 모든 리스크 이벤트 로깅 추가
+- [x] T040 [P] [US2] backend/src/models/risk_event.py에 RiskEvent SQLAlchemy 모델 생성
+- [x] T041 [P] [US2] backend/src/models/daily_stats.py에 DailyStats SQLAlchemy 모델 생성
+- [x] T042 [P] [US2] backend/src/models/position.py에 Position SQLAlchemy 모델 생성
+- [x] T043 [P] [US2] backend/src/models/system_config.py에 SystemConfig SQLAlchemy 모델 생성
+- [x] T044 [US2] RiskEvent, DailyStats, Position, SystemConfig 테이블용 Alembic 마이그레이션 생성
+- [x] T045 [US2] backend/src/services/risk_manager.py에 포지션 크기 검증이 포함된 RiskManager 서비스 구현
+- [x] T046 [US2] backend/src/services/risk_manager.py에 개별 손절 체크 (3-5% 손실 임계값) 추가
+- [x] T047 [US2] backend/src/services/risk_manager.py에 일일 손실 한도 체크 및 거래 중단 로직 추가
+- [x] T048 [US2] backend/src/services/risk_manager.py에 변동성 감지 (5분 내 3% 초과 변동) 추가
+- [x] T049 [US2] backend/src/api/schemas/risk.py에 RiskEvent 및 RiskStatus용 Pydantic 스키마 생성
+- [x] T050 [US2] backend/src/api/risk.py에 GET /risk/events 엔드포인트 구현
+- [x] T051 [US2] backend/src/api/risk.py에 GET /risk/status 엔드포인트 구현
+- [x] T052 [US2] backend/src/api/risk.py에 POST /risk/halt 엔드포인트 구현
+- [x] T053 [US2] backend/src/api/risk.py에 POST /risk/resume 엔드포인트 구현
+- [x] T054 [US2] backend/src/services/notifier.py에 리스크 알림용 Slack 알림 서비스 구현
+- [x] T055 [US2] backend/src/services/risk_manager.py에 모든 리스크 이벤트 로깅 추가
 
 **체크포인트**: 리스크 관리 규칙이 적용되고 거래 중단/재개가 가능
 
