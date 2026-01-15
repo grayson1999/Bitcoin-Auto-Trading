@@ -1,5 +1,7 @@
 """Pydantic schemas."""
 
+from src.api.schemas.config import SystemConfigResponse, SystemConfigUpdateRequest
+from src.api.schemas.dashboard import DashboardSummaryResponse
 from src.api.schemas.market import (
     CollectorStatsResponse,
     CurrentMarketResponse,
@@ -23,6 +25,11 @@ from src.api.schemas.risk import (
 )
 
 __all__ = [
+    # Config
+    "SystemConfigResponse",
+    "SystemConfigUpdateRequest",
+    # Dashboard
+    "DashboardSummaryResponse",
     # Market
     "MarketDataResponse",
     "MarketDataListResponse",

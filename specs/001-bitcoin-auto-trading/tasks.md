@@ -176,21 +176,21 @@
 
 ### 사용자 스토리 5 구현
 
-- [ ] T070 [US5] backend/src/api/dashboard.py에 GET /dashboard/summary 엔드포인트 구현
-- [ ] T071 [US5] backend/src/api/schemas/dashboard.py에 DashboardSummary용 Pydantic 스키마 생성
-- [ ] T072 [US5] backend/src/api/config.py에 GET /config 엔드포인트 구현
-- [ ] T073 [US5] backend/src/api/config.py에 PATCH /config 엔드포인트 구현
-- [ ] T074 [P] [US5] frontend/src/pages/Dashboard.tsx에 Dashboard 페이지 컴포넌트 생성
-- [ ] T075 [P] [US5] frontend/src/pages/Orders.tsx에 Orders 페이지 컴포넌트 생성
-- [ ] T076 [P] [US5] frontend/src/pages/Signals.tsx에 Signals 페이지 컴포넌트 생성
-- [ ] T077 [P] [US5] frontend/src/pages/Settings.tsx에 Settings 페이지 컴포넌트 생성
-- [ ] T078 [P] [US5] frontend/src/components/PriceChart.tsx에 Recharts로 PriceChart 컴포넌트 생성
-- [ ] T079 [P] [US5] frontend/src/components/OrderTable.tsx에 OrderTable 컴포넌트 생성
-- [ ] T080 [P] [US5] frontend/src/components/SignalCard.tsx에 SignalCard 컴포넌트 생성
-- [ ] T081 [P] [US5] frontend/src/components/RiskStatus.tsx에 RiskStatus 컴포넌트 생성
-- [ ] T082 [US5] frontend/src/hooks/useApi.ts에 React Query로 데이터 페칭용 useApi 훅 생성
-- [ ] T083 [US5] frontend/src/pages/Dashboard.tsx에 대시보드 데이터 자동 새로고침 (5초 주기) 구현
-- [ ] T084 [US5] frontend/src/pages/Dashboard.tsx에 모바일 보기용 반응형 레이아웃 추가
+- [x] T070 [US5] backend/src/api/dashboard.py에 GET /dashboard/summary 엔드포인트 구현
+- [x] T071 [US5] backend/src/api/schemas/dashboard.py에 DashboardSummary용 Pydantic 스키마 생성
+- [x] T072 [US5] backend/src/api/config.py에 GET /config 엔드포인트 구현
+- [x] T073 [US5] backend/src/api/config.py에 PATCH /config 엔드포인트 구현
+- [x] T074 [P] [US5] frontend/src/pages/Dashboard.tsx에 Dashboard 페이지 컴포넌트 생성
+- [x] T075 [P] [US5] frontend/src/pages/Orders.tsx에 Orders 페이지 컴포넌트 생성
+- [x] T076 [P] [US5] frontend/src/pages/Signals.tsx에 Signals 페이지 컴포넌트 생성
+- [x] T077 [P] [US5] frontend/src/pages/Settings.tsx에 Settings 페이지 컴포넌트 생성
+- [x] T078 [P] [US5] frontend/src/components/PriceChart.tsx에 Recharts로 PriceChart 컴포넌트 생성
+- [x] T079 [P] [US5] frontend/src/components/OrderTable.tsx에 OrderTable 컴포넌트 생성
+- [x] T080 [P] [US5] frontend/src/components/SignalCard.tsx에 SignalCard 컴포넌트 생성
+- [x] T081 [P] [US5] frontend/src/components/RiskStatus.tsx에 RiskStatus 컴포넌트 생성
+- [x] T082 [US5] frontend/src/hooks/useApi.ts에 React Query로 데이터 페칭용 useApi 훅 생성
+- [x] T083 [US5] frontend/src/pages/Dashboard.tsx에 대시보드 데이터 자동 새로고침 (5초 주기) 구현
+- [x] T084 [US5] frontend/src/pages/Dashboard.tsx에 모바일 보기용 반응형 레이아웃 추가
 
 **체크포인트**: 대시보드가 실시간 거래 정보를 표시하고 설정 변경 가능
 

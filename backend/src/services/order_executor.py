@@ -220,7 +220,9 @@ class OrderExecutor:
 
         # 최소 주문 금액 확인
         if order_amount < MIN_ORDER_AMOUNT_KRW:
-            logger.warning(f"주문 금액 부족: {order_amount:,.0f}원 < {MIN_ORDER_AMOUNT_KRW:,.0f}원")
+            logger.warning(
+                f"주문 금액 부족: {order_amount:,.0f}원 < {MIN_ORDER_AMOUNT_KRW:,.0f}원"
+            )
             return OrderResult(
                 success=False,
                 order=None,
@@ -545,8 +547,7 @@ class OrderExecutor:
             # 매도: 수량 감소 (평균 매수가는 유지)
             if order.executed_amount:
                 position.quantity = max(
-                    Decimal("0"),
-                    position.quantity - order.executed_amount
+                    Decimal("0"), position.quantity - order.executed_amount
                 )
 
                 # 수량이 0이면 평균 매수가 초기화
@@ -603,7 +604,9 @@ class OrderExecutor:
             position = await self._get_position()
             if position and position.avg_buy_price > 0:
                 # 실현 손익 = (체결가 - 평균매수가) * 체결수량
-                pnl = (order.executed_price - position.avg_buy_price) * order.executed_amount
+                pnl = (
+                    order.executed_price - position.avg_buy_price
+                ) * order.executed_amount
                 daily_stats.realized_pnl += pnl
 
                 if pnl >= 0:
@@ -728,10 +731,7 @@ class OrderExecutor:
 
         # 주문 목록 조회
         stmt = (
-            select(Order)
-            .order_by(Order.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+            select(Order).order_by(Order.created_at.desc()).limit(limit).offset(offset)
         )
         if status:
             stmt = stmt.where(Order.status == status.value)

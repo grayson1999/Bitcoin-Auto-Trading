@@ -1,32 +1,129 @@
 /**
- * AI 거래 신호 페이지 컴포넌트
+ * AI 거래 신호 페이지 컴포넌트 (T076)
  *
  * AI가 생성한 거래 신호와 신뢰도 점수를 표시합니다.
- * 현재는 플레이스홀더 상태이며, 추후 다음 기능이 구현될 예정:
  * - 최신 AI 신호 목록
  * - 신호별 신뢰도 점수
- * - 신호 이력 및 분석
- * - 신호 기반 자동 매매 설정
+ * - 수동 신호 생성
  */
 
-import type { FC } from "react";
-import PageLayout from "../components/PageLayout";
+import { useState, type FC } from "react";
+import { useSignals, useGenerateSignal } from "../hooks/useApi";
+import SignalCard from "../components/SignalCard";
+
+// === 상수 ===
+const SIGNAL_TYPES = [
+  { value: "all", label: "전체" },
+  { value: "BUY", label: "매수" },
+  { value: "HOLD", label: "보유" },
+  { value: "SELL", label: "매도" },
+];
 
 /**
  * Signals 컴포넌트
- *
- * AI 거래 신호 페이지입니다.
- * Gemini AI가 분석한 매수/매도 신호를 확인할 수 있습니다.
- *
- * @returns JSX.Element 거래 신호 UI
  */
 const Signals: FC = () => {
+  const [signalType, setSignalType] = useState("all");
+  const { data, isLoading, error } = useSignals(50, signalType);
+  const generateMutation = useGenerateSignal();
+
+  // 신호 수동 생성
+  const handleGenerate = () => {
+    if (window.confirm("새로운 AI 신호를 생성하시겠습니까?")) {
+      generateMutation.mutate();
+    }
+  };
+
   return (
-    <PageLayout
-      title="거래 신호"
-      description="AI가 생성한 거래 신호와 신뢰도 점수를 확인합니다."
-      placeholder="신호 이력 및 분석 기능 개발 예정..."
-    />
+    <div className="space-y-6">
+      {/* 페이지 헤더 */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">거래 신호</h2>
+          <p className="text-gray-600">
+            AI가 생성한 거래 신호와 신뢰도 점수를 확인합니다.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* 필터 */}
+          <select
+            value={signalType}
+            onChange={(e) => setSignalType(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {SIGNAL_TYPES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          {/* 수동 생성 버튼 */}
+          <button
+            onClick={handleGenerate}
+            disabled={generateMutation.isPending}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {generateMutation.isPending ? "생성 중..." : "신호 생성"}
+          </button>
+        </div>
+      </div>
+
+      {/* 생성 에러 메시지 */}
+      {generateMutation.isError && (
+        <div className="rounded-lg bg-red-50 p-4 text-center text-red-600">
+          신호 생성 실패: {generateMutation.error?.message || "알 수 없는 오류"}
+        </div>
+      )}
+
+      {/* 생성 성공 메시지 */}
+      {generateMutation.isSuccess && (
+        <div className="rounded-lg bg-green-50 p-4 text-center text-green-600">
+          신호가 성공적으로 생성되었습니다!
+        </div>
+      )}
+
+      {/* 로딩 상태 */}
+      {isLoading && (
+        <div className="flex h-64 items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+            <p className="mt-3 text-gray-500">신호 로딩 중...</p>
+          </div>
+        </div>
+      )}
+
+      {/* 에러 메시지 */}
+      {error && (
+        <div className="rounded-lg bg-red-50 p-4 text-center text-red-600">
+          신호를 불러올 수 없습니다. 백엔드 서버를 확인하세요.
+        </div>
+      )}
+
+      {/* 신호 목록 */}
+      {data && (
+        <div className="space-y-4">
+          {data.items.length === 0 ? (
+            <div className="rounded-lg bg-gray-50 p-8 text-center text-gray-500">
+              생성된 신호가 없습니다. &quot;신호 생성&quot; 버튼을 눌러 AI 신호를 생성하세요.
+            </div>
+          ) : (
+            <>
+              {/* 신호 개수 표시 */}
+              <p className="text-sm text-gray-500">총 {data.total}개의 신호</p>
+
+              {/* 신호 카드 그리드 */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {data.items.map((signal) => (
+                  <SignalCard key={signal.id} signal={signal} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 

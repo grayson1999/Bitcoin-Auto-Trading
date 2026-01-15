@@ -230,7 +230,9 @@ class RiskManager:
         # 경고 수준 (손절 임계값의 80%)
         warning_threshold = -stop_loss_pct * WARNING_THRESHOLD_RATIO
         if loss_pct < warning_threshold:
-            message = f"손절 경고: 현재 손실 {loss_pct:.2f}% (임계값: -{stop_loss_pct}%)"
+            message = (
+                f"손절 경고: 현재 손실 {loss_pct:.2f}% (임계값: -{stop_loss_pct}%)"
+            )
             logger.info(message)
             return StopLossCheckResult(
                 result=RiskCheckResult.WARNING,
@@ -308,7 +310,9 @@ class RiskManager:
         # 경고 수준 (한도의 80%)
         warning_threshold = -daily_loss_limit_pct * WARNING_THRESHOLD_RATIO
         if loss_pct < warning_threshold:
-            message = f"일일 손실 경고: {loss_pct:.2f}% (한도: -{daily_loss_limit_pct}%)"
+            message = (
+                f"일일 손실 경고: {loss_pct:.2f}% (한도: -{daily_loss_limit_pct}%)"
+            )
             logger.info(message)
             return (RiskCheckResult.WARNING, message)
 
@@ -321,7 +325,9 @@ class RiskManager:
     # T048: 변동성 감지
     # ==========================================================================
 
-    async def check_volatility(self, window_minutes: int = 5) -> tuple[RiskCheckResult, float, str]:
+    async def check_volatility(
+        self, window_minutes: int = 5
+    ) -> tuple[RiskCheckResult, float, str]:
         """
         변동성 감지
 
@@ -340,17 +346,14 @@ class RiskManager:
 
         # 최근 N분간의 시장 데이터 조회
         now = datetime.now(UTC)
-        window_start = now.replace(
-            second=0, microsecond=0
-        ) - timedelta(minutes=window_minutes)
-
-        stmt = (
-            select(
-                func.min(MarketData.price).label("min_price"),
-                func.max(MarketData.price).label("max_price"),
-            )
-            .where(MarketData.timestamp >= window_start)
+        window_start = now.replace(second=0, microsecond=0) - timedelta(
+            minutes=window_minutes
         )
+
+        stmt = select(
+            func.min(MarketData.price).label("min_price"),
+            func.max(MarketData.price).label("max_price"),
+        ).where(MarketData.timestamp >= window_start)
         result = await self._session.execute(stmt)
         row = result.one_or_none()
 
@@ -553,7 +556,9 @@ class RiskManager:
     # 내부 헬퍼 메서드
     # ==========================================================================
 
-    async def _get_config_value(self, key: str, default: float | int | bool | str) -> float:
+    async def _get_config_value(
+        self, key: str, default: float | int | bool | str
+    ) -> float:
         """설정값 조회"""
         stmt = select(SystemConfig).where(SystemConfig.key == key)
         result = await self._session.execute(stmt)

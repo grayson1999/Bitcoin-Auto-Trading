@@ -2,18 +2,23 @@
 대시보드 API 엔드포인트 모듈
 
 이 모듈은 대시보드에서 사용하는 시장 데이터 관련 API를 제공합니다.
+- 대시보드 요약 정보 (현재가, 포지션, 잔고, 일일 손익 등)
 - 실시간 시세 조회 (Upbit API 직접 호출)
 - 과거 데이터 조회 (DB에서 조회)
 - 통계 요약 정보
 - 데이터 수집기 상태 조회
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from loguru import logger
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.schemas.dashboard import DashboardSummaryResponse
 from src.api.schemas.market import (
     CollectorStatsResponse,
     CurrentMarketResponse,
@@ -21,8 +26,12 @@ from src.api.schemas.market import (
     MarketDataResponse,
     MarketSummaryResponse,
 )
+from src.api.schemas.order import BalanceResponse, PositionResponse
+from src.api.schemas.signal import TradingSignalResponse
 from src.database import get_session
+from src.models import DailyStats, Order, OrderStatus, Position, TradingSignal
 from src.services.data_collector import get_data_collector
+from src.services.risk_manager import get_risk_manager
 from src.services.upbit_client import UpbitError, get_upbit_client
 
 # === 상수 ===
@@ -38,6 +47,161 @@ DEFAULT_LIMIT_HISTORY = 100  # 히스토리 기본 레코드 수
 DEFAULT_LIMIT_LATEST = 10  # 최신 데이터 기본 레코드 수
 
 router = APIRouter(prefix="/dashboard")
+
+
+# ==========================================================================
+# T070: GET /dashboard/summary - 대시보드 요약 정보
+# ==========================================================================
+
+
+@router.get(
+    "/summary",
+    response_model=DashboardSummaryResponse,
+    summary="대시보드 요약 정보",
+    description="현재 가격, 포지션, 잔고, 일일 손익 등 대시보드에 필요한 전체 요약 정보를 조회합니다.",
+)
+async def get_dashboard_summary(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> DashboardSummaryResponse:
+    """
+    대시보드 요약 정보 조회
+
+    현재 시세, 포지션, 잔고, 일일 손익, 최신 AI 신호 등
+    대시보드에 표시할 전체 요약 정보를 반환합니다.
+
+    Args:
+        session: 데이터베이스 세션
+
+    Returns:
+        DashboardSummaryResponse: 대시보드 요약 정보
+
+    Raises:
+        HTTPException: Upbit API 오류 시 503 반환
+    """
+    now = datetime.now(UTC)
+
+    # === 1. 현재 시세 조회 ===
+    client = get_upbit_client()
+    try:
+        ticker = await client.get_ticker(DEFAULT_MARKET)
+        current_price = ticker.trade_price
+
+        # 24시간 변동률 계산
+        change_24h_pct = None
+        if ticker.low_price > 0:
+            mid_price = (ticker.high_price + ticker.low_price) / 2
+            if mid_price > 0:
+                change_24h_pct = float(
+                    (ticker.trade_price - mid_price) / mid_price * 100
+                )
+    except UpbitError as e:
+        logger.error(f"시세 조회 실패: {e.message}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"시세 조회 실패: {e.message}",
+        ) from e
+
+    # === 2. 포지션 정보 조회 ===
+    position_response: PositionResponse | None = None
+    stmt = select(Position).where(Position.symbol == DEFAULT_MARKET)
+    result = await session.execute(stmt)
+    position = result.scalar_one_or_none()
+
+    if position is not None:
+        position.update_value(current_price)
+        position_response = PositionResponse(
+            symbol=position.symbol,
+            quantity=position.quantity,
+            avg_buy_price=position.avg_buy_price,
+            current_value=position.current_value,
+            unrealized_pnl=position.unrealized_pnl,
+            unrealized_pnl_pct=position.pnl_pct,
+            updated_at=position.updated_at,
+        )
+
+    # === 3. 잔고 정보 조회 ===
+    balance_response: BalanceResponse | None = None
+    try:
+        accounts = await client.get_accounts()
+        krw_balance = Decimal("0")
+        krw_locked = Decimal("0")
+        xrp_balance = Decimal("0")
+        xrp_locked = Decimal("0")
+        xrp_avg_price = Decimal("0")
+
+        for acc in accounts:
+            if acc.currency == "KRW":
+                krw_balance = acc.balance
+                krw_locked = acc.locked
+            elif acc.currency == "XRP":
+                xrp_balance = acc.balance
+                xrp_locked = acc.locked
+                xrp_avg_price = acc.avg_buy_price
+
+        total_krw = (
+            krw_balance + krw_locked + (xrp_balance + xrp_locked) * current_price
+        )
+
+        balance_response = BalanceResponse(
+            krw=krw_balance,
+            krw_locked=krw_locked,
+            xrp=xrp_balance,
+            xrp_locked=xrp_locked,
+            xrp_avg_buy_price=xrp_avg_price,
+            total_krw=total_krw,
+        )
+    except UpbitError as e:
+        logger.warning(f"잔고 조회 실패: {e.message}")
+
+    # === 4. 일일 손익 조회 ===
+    daily_pnl = Decimal("0")
+    daily_pnl_pct = 0.0
+    today = date.today()
+    stmt_daily = select(DailyStats).where(DailyStats.date == today)
+    result_daily = await session.execute(stmt_daily)
+    daily_stats = result_daily.scalar_one_or_none()
+
+    if daily_stats:
+        daily_pnl = daily_stats.realized_pnl
+        daily_pnl_pct = daily_stats.loss_pct
+
+    # === 5. 최신 AI 신호 조회 ===
+    latest_signal_response: TradingSignalResponse | None = None
+    stmt_signal = (
+        select(TradingSignal).order_by(TradingSignal.created_at.desc()).limit(1)
+    )
+    result_signal = await session.execute(stmt_signal)
+    latest_signal = result_signal.scalar_one_or_none()
+
+    if latest_signal:
+        latest_signal_response = TradingSignalResponse.model_validate(latest_signal)
+
+    # === 6. 거래 활성화 여부 조회 ===
+    risk_manager = await get_risk_manager(session)
+    is_trading_active = await risk_manager.is_trading_enabled()
+
+    # === 7. 오늘 거래 횟수 조회 ===
+    today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=UTC)
+    stmt_orders = (
+        select(func.count(Order.id))
+        .where(Order.created_at >= today_start)
+        .where(Order.status == OrderStatus.EXECUTED.value)
+    )
+    result_orders = await session.execute(stmt_orders)
+    today_trade_count = result_orders.scalar() or 0
+
+    return DashboardSummaryResponse(
+        current_price=current_price,
+        price_change_24h=change_24h_pct,
+        position=position_response,
+        balance=balance_response,
+        daily_pnl=daily_pnl,
+        daily_pnl_pct=daily_pnl_pct,
+        latest_signal=latest_signal_response,
+        is_trading_active=is_trading_active,
+        today_trade_count=today_trade_count,
+        updated_at=now,
+    )
 
 
 @router.get(
