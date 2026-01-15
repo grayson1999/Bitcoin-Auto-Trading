@@ -86,7 +86,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 # - debug 모드에서만 Swagger/ReDoc 문서 활성화
 app = FastAPI(
     title="Bitcoin Auto-Trading API",
-    description="AI 기반 자동 비트코인 거래 시스템",
+    description="AI 기반 자동 암호화폐 거래 시스템",
     version=APP_VERSION,
     lifespan=lifespan,
     docs_url="/docs" if settings.debug else None,  # Swagger UI

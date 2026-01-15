@@ -1,7 +1,7 @@
 """
 AI 매매 신호 생성 서비스
 
-이 모듈은 Gemini AI를 사용하여 비트코인 매매 신호를 생성하는 서비스를 제공합니다.
+이 모듈은 Gemini AI를 사용하여 암호화폐 매매 신호를 생성하는 서비스를 제공합니다.
 - 시장 데이터 전처리 및 분석
 - AI 프롬프트 템플릿 기반 신호 생성
 - 신호 파싱 및 검증
@@ -28,7 +28,7 @@ MARKET_DATA_HOURS = 24  # 분석에 사용할 시장 데이터 기간 (시간)
 COOLDOWN_MINUTES = 5  # 수동 신호 생성 쿨다운 (분)
 
 # === 시스템 프롬프트 ===
-SYSTEM_INSTRUCTION = """당신은 비트코인 트레이딩 전문가 AI입니다.
+SYSTEM_INSTRUCTION = """당신은 리플(XRP) 트레이딩 전문가 AI입니다.
 주어진 시장 데이터를 분석하고 매매 신호를 생성합니다.
 
 핵심 원칙:
@@ -53,14 +53,14 @@ SYSTEM_INSTRUCTION = """당신은 비트코인 트레이딩 전문가 AI입니�
 """
 
 # === 분석 프롬프트 템플릿 ===
-ANALYSIS_PROMPT_TEMPLATE = """## 비트코인(BTC/KRW) 시장 분석 요청
+ANALYSIS_PROMPT_TEMPLATE = """## 리플(XRP/KRW) 시장 분석 요청
 
 ### 현재 시장 상황
 - 분석 시각: {timestamp}
 - 현재가: {current_price:,.0f} KRW
 - 24시간 고가: {high_price:,.0f} KRW
 - 24시간 저가: {low_price:,.0f} KRW
-- 24시간 거래량: {volume:,.2f} BTC
+- 24시간 거래량: {volume:,.2f} XRP
 - 24시간 변동률: {price_change_pct:+.2f}%
 
 ### 가격 추이 (최근 {data_hours}시간)
@@ -82,7 +82,7 @@ class SignalGenerator:
     """
     AI 매매 신호 생성 서비스
 
-    Gemini AI를 사용하여 시장 데이터를 분석하고
+    Gemini AI를 사용하여 XRP 시장 데이터를 분석하고
     Buy/Hold/Sell 신호를 생성합니다.
 
     사용 예시:

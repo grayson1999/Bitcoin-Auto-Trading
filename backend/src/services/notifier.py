@@ -250,7 +250,7 @@ class Notifier:
         side: str,
         amount: float,
         price: float,
-        symbol: str = "BTC-KRW",
+        symbol: str = "XRP-KRW",
     ) -> bool:
         """
         거래 체결 알림

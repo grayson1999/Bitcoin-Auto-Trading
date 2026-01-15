@@ -73,7 +73,7 @@ class Order(Base):
         signal_id: 연관 AI 신호 ID (수동 주문 시 NULL)
         order_type: 주문 타입 (MARKET/LIMIT)
         side: 주문 방향 (BUY/SELL)
-        market: 마켓 코드 (KRW-BTC)
+        market: 마켓 코드 (KRW-XRP)
         amount: 주문 금액/수량
         price: 지정가 (시장가 주문 시 NULL)
         status: 주문 상태
@@ -125,11 +125,11 @@ class Order(Base):
     market: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
-        default="KRW-BTC",
+        default="KRW-XRP",
         comment="마켓 코드",
     )
 
-    # 주문 금액 (매수 시 KRW, 매도 시 BTC 수량)
+    # 주문 금액 (매수 시 KRW, 매도 시 XRP 수량)
     amount: Mapped[Decimal] = mapped_column(
         Numeric(18, 8),
         nullable=False,

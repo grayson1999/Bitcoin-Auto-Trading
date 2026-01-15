@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from src.services.notifier import Notifier
 
 # === 상수 ===
-DEFAULT_MARKET = "KRW-BTC"
+DEFAULT_MARKET = "KRW-XRP"
 MAX_ORDER_RETRIES = 3  # 주문 재시도 횟수
 RETRY_DELAY_SECONDS = 1.0  # 재시도 대기 시간
 MIN_ORDER_AMOUNT_KRW = Decimal("5000")  # 최소 주문 금액 (원)
@@ -81,9 +81,9 @@ class BalanceInfo:
 
     krw_available: Decimal
     krw_locked: Decimal
-    btc_available: Decimal
-    btc_locked: Decimal
-    btc_avg_price: Decimal
+    xrp_available: Decimal
+    xrp_locked: Decimal
+    xrp_avg_price: Decimal
     total_krw: Decimal  # 총 평가금액
 
 
@@ -270,13 +270,13 @@ class OrderExecutor:
         """매도 주문 실행"""
         logger.info("매도 주문 처리 시작")
 
-        # 보유 BTC 확인
-        if balance_info.btc_available <= 0:
-            logger.warning("보유 BTC 없음 - 매도 불가")
+        # 보유 XRP 확인
+        if balance_info.xrp_available <= 0:
+            logger.warning("보유 XRP 없음 - 매도 불가")
             return OrderResult(
                 success=False,
                 order=None,
-                message="보유 BTC가 없습니다",
+                message="보유 XRP가 없습니다",
                 blocked_reason=OrderBlockedReason.INSUFFICIENT_BALANCE,
             )
 
@@ -317,8 +317,8 @@ class OrderExecutor:
                     blocked_reason=OrderBlockedReason.STOP_LOSS_TRIGGERED,
                 )
 
-        # 전량 매도 (보유 BTC 전체)
-        sell_volume = balance_info.btc_available
+        # 전량 매도 (보유 XRP 전체)
+        sell_volume = balance_info.xrp_available
 
         # 주문 실행 (T060: 재시도 로직)
         return await self._place_order_with_retry(
@@ -468,36 +468,36 @@ class OrderExecutor:
 
         krw_available = Decimal("0")
         krw_locked = Decimal("0")
-        btc_available = Decimal("0")
-        btc_locked = Decimal("0")
-        btc_avg_price = Decimal("0")
+        xrp_available = Decimal("0")
+        xrp_locked = Decimal("0")
+        xrp_avg_price = Decimal("0")
 
         for acc in accounts:
             if acc.currency == "KRW":
                 krw_available = acc.balance
                 krw_locked = acc.locked
-            elif acc.currency == "BTC":
-                btc_available = acc.balance
-                btc_locked = acc.locked
-                btc_avg_price = acc.avg_buy_price
+            elif acc.currency == "XRP":
+                xrp_available = acc.balance
+                xrp_locked = acc.locked
+                xrp_avg_price = acc.avg_buy_price
 
         # 현재가 조회
         try:
             ticker = await self._upbit_client.get_ticker(DEFAULT_MARKET)
             current_price = ticker.trade_price
         except UpbitError:
-            current_price = btc_avg_price  # 조회 실패 시 평균 매수가 사용
+            current_price = xrp_avg_price  # 조회 실패 시 평균 매수가 사용
 
         # 총 평가금액 계산
-        btc_value = (btc_available + btc_locked) * current_price
-        total_krw = krw_available + krw_locked + btc_value
+        xrp_value = (xrp_available + xrp_locked) * current_price
+        total_krw = krw_available + krw_locked + xrp_value
 
         return BalanceInfo(
             krw_available=krw_available,
             krw_locked=krw_locked,
-            btc_available=btc_available,
-            btc_locked=btc_locked,
-            btc_avg_price=btc_avg_price,
+            xrp_available=xrp_available,
+            xrp_locked=xrp_locked,
+            xrp_avg_price=xrp_avg_price,
             total_krw=total_krw,
         )
 
@@ -529,9 +529,9 @@ class OrderExecutor:
         if order.is_buy:
             # 매수: 수량 증가, 평균 매수가 재계산
             if order.executed_amount and order.executed_price:
-                # 시장가 매수의 경우 executed_amount는 KRW, 실제 BTC 수량 계산 필요
-                btc_quantity = order.executed_amount / order.executed_price
-                new_quantity = position.quantity + btc_quantity
+                # 시장가 매수의 경우 executed_amount는 KRW, 실제 XRP 수량 계산 필요
+                xrp_quantity = order.executed_amount / order.executed_price
+                new_quantity = position.quantity + xrp_quantity
 
                 if new_quantity > 0:
                     # 가중 평균 매수가 계산

@@ -26,7 +26,7 @@ from src.services.data_collector import get_data_collector
 from src.services.upbit_client import UpbitError, get_upbit_client
 
 # === 상수 ===
-DEFAULT_MARKET = "KRW-BTC"  # 기본 마켓 코드
+DEFAULT_MARKET = "KRW-XRP"  # 기본 마켓 코드
 MS_TO_SECONDS = 1000  # 밀리초 → 초 변환 상수
 MIN_HOURS = 1  # 최소 조회 시간 (시간)
 MAX_HOURS = 168  # 최대 조회 시간 (7일 = 168시간)
@@ -44,7 +44,7 @@ router = APIRouter(prefix="/dashboard")
     "/market",
     response_model=CurrentMarketResponse,
     summary="현재 시세 조회",
-    description="Upbit API에서 실시간 BTC/KRW 시세를 조회합니다.",
+    description="Upbit API에서 실시간 XRP/KRW 시세를 조회합니다.",
 )
 async def get_current_market() -> CurrentMarketResponse:
     """

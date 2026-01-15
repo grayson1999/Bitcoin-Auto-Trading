@@ -2,7 +2,7 @@
 포지션 모델
 
 이 모듈은 현재 보유 포지션 상태를 저장하는 SQLAlchemy 모델을 정의합니다.
-- BTC/KRW 단일 포지션
+- XRP/KRW 단일 포지션
 - 보유 수량 및 평균 매수가
 - 미실현 손익
 """
@@ -21,11 +21,11 @@ class Position(Base):
     포지션 모델
 
     현재 보유 포지션 상태를 저장합니다.
-    BTC/KRW 마켓 전용으로 단일 레코드만 유지됩니다.
+    XRP/KRW 마켓 전용으로 단일 레코드만 유지됩니다.
 
     Attributes:
         id: 고유 식별자 (자동 증가)
-        symbol: 심볼 (BTC-KRW)
+        symbol: 심볼 (XRP-KRW)
         quantity: 보유 수량
         avg_buy_price: 평균 매수가
         current_value: 현재 평가금액
@@ -45,13 +45,13 @@ class Position(Base):
         autoincrement=True,
     )
 
-    # 심볼 (BTC-KRW)
+    # 심볼 (XRP-KRW)
     symbol: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
         unique=True,
         index=True,
-        comment="심볼 (BTC-KRW)",
+        comment="심볼 (XRP-KRW)",
     )
 
     # === 포지션 정보 ===

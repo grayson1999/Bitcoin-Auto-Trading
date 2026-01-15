@@ -64,7 +64,7 @@ class UpbitTickerData(BaseModel):
     Upbit 시세 데이터 모델
 
     Attributes:
-        market: 마켓 코드 (예: KRW-BTC)
+        market: 마켓 코드 (예: KRW-XRP)
         trade_price: 현재 거래가
         acc_trade_volume_24h: 24시간 누적 거래량
         high_price: 24시간 고가
@@ -153,7 +153,7 @@ class UpbitClient:
 
     사용 예시:
         client = UpbitClient()
-        ticker = await client.get_ticker("KRW-BTC")
+        ticker = await client.get_ticker("KRW-XRP")
         print(f"현재가: {ticker.trade_price}")
     """
 
@@ -343,14 +343,14 @@ class UpbitClient:
 
     # ==================== 공개 API ====================
 
-    async def get_ticker(self, market: str = "KRW-BTC") -> UpbitTickerData:
+    async def get_ticker(self, market: str = "KRW-XRP") -> UpbitTickerData:
         """
         시세 조회
 
         특정 마켓의 현재 시세 정보를 조회합니다.
 
         Args:
-            market: 마켓 코드 (기본값: KRW-BTC)
+            market: 마켓 코드 (기본값: KRW-XRP)
 
         Returns:
             UpbitTickerData: 시세 데이터 (가격, 거래량 등)
@@ -377,7 +377,7 @@ class UpbitClient:
             timestamp=data["timestamp"],
         )
 
-    async def get_orderbook(self, market: str = "KRW-BTC") -> dict[str, Any]:
+    async def get_orderbook(self, market: str = "KRW-XRP") -> dict[str, Any]:
         """
         오더북 조회
 
@@ -457,7 +457,7 @@ class UpbitClient:
         주문 생성
 
         Args:
-            market: 마켓 코드 (예: KRW-BTC)
+            market: 마켓 코드 (예: KRW-XRP)
             side: 주문 방향 (bid=매수, ask=매도)
             volume: 주문 수량 (지정가/시장가매도 시 필수)
             price: 주문 가격 (지정가/시장가매수 시 필수)

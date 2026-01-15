@@ -23,7 +23,7 @@ from src.models.market_data import MarketData
 from src.services.upbit_client import UpbitClient, UpbitError, get_upbit_client
 
 # === 수집 관련 상수 ===
-DEFAULT_MARKET = "KRW-BTC"  # 기본 수집 마켓
+DEFAULT_MARKET = "KRW-XRP"  # 기본 수집 마켓
 RECONNECT_BASE_DELAY = 1.0  # 재연결 기본 대기 시간 (초)
 RECONNECT_MAX_DELAY = 60.0  # 재연결 최대 대기 시간 (초)
 RECONNECT_MAX_ATTEMPTS = 10  # 최대 재시도 횟수
@@ -44,7 +44,7 @@ class DataCollector:
     """
     시장 데이터 수집기
 
-    Upbit API에서 BTC/KRW 시세를 수집하여 데이터베이스에 저장합니다.
+    Upbit API에서 XRP/KRW 시세를 수집하여 데이터베이스에 저장합니다.
     네트워크 장애 시 지수 백오프를 사용한 자동 재시도를 지원합니다.
 
     Attributes:
@@ -72,7 +72,7 @@ class DataCollector:
 
         Args:
             upbit_client: Upbit API 클라이언트 (기본값: 싱글톤 사용)
-            market: 수집할 마켓 코드 (기본값: KRW-BTC)
+            market: 수집할 마켓 코드 (기본값: KRW-XRP)
         """
         self._client = upbit_client or get_upbit_client()
         self._market = market
