@@ -58,6 +58,7 @@ from src.models.risk_event import RiskEvent, RiskEventType  # noqa: E402, F401
 from src.models.daily_stats import DailyStats  # noqa: E402, F401
 from src.models.position import Position  # noqa: E402, F401
 from src.models.system_config import SystemConfig, DEFAULT_CONFIGS  # noqa: E402, F401
+from src.models.order import Order, OrderType, OrderSide, OrderStatus  # noqa: E402, F401
 
 __all__ = [
     "Base",
@@ -71,4 +72,8 @@ __all__ = [
     "Position",
     "SystemConfig",
     "DEFAULT_CONFIGS",
+    "Order",
+    "OrderType",
+    "OrderSide",
+    "OrderStatus",
 ]

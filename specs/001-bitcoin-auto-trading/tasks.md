@@ -147,20 +147,20 @@
 
 ### 사용자 스토리 1 구현
 
-- [ ] T056 [P] [US1] backend/src/models/order.py에 Order SQLAlchemy 모델 생성
-- [ ] T057 [US1] Order 테이블용 Alembic 마이그레이션 생성
-- [ ] T058 [US1] backend/src/services/upbit_client.py에 Upbit 주문 실행 (시장가/지정가) 구현
-- [ ] T059 [US1] backend/src/services/order_executor.py에 리스크 사전 체크가 포함된 OrderExecutor 서비스 구현
-- [ ] T060 [US1] backend/src/services/order_executor.py에 실패 시 주문 재시도 로직 추가
-- [ ] T061 [US1] backend/src/services/order_executor.py에 주문 실행 전 잔고 검증 추가
-- [ ] T062 [US1] backend/src/api/schemas/order.py에 Order용 Pydantic 스키마 생성
-- [ ] T063 [US1] backend/src/api/trading.py에 GET /trading/orders 엔드포인트 구현
-- [ ] T064 [US1] backend/src/api/trading.py에 GET /trading/orders/{order_id} 엔드포인트 구현
-- [ ] T065 [US1] backend/src/api/trading.py에 GET /trading/position 엔드포인트 구현
-- [ ] T066 [US1] backend/src/api/trading.py에 GET /trading/balance 엔드포인트 구현
-- [ ] T067 [US1] backend/src/scheduler/jobs.py에 신호 → 리스크 체크 → 주문 실행 플로우 통합
-- [ ] T068 [US1] backend/src/services/order_executor.py에 주문 실행 후 포지션 업데이트 추가
-- [ ] T069 [US1] backend/src/services/order_executor.py에 주문 생명주기 종합 로깅 추가
+- [x] T056 [P] [US1] backend/src/models/order.py에 Order SQLAlchemy 모델 생성
+- [x] T057 [US1] Order 테이블용 Alembic 마이그레이션 생성
+- [x] T058 [US1] backend/src/services/upbit_client.py에 Upbit 주문 실행 (시장가/지정가) 구현
+- [x] T059 [US1] backend/src/services/order_executor.py에 리스크 사전 체크가 포함된 OrderExecutor 서비스 구현
+- [x] T060 [US1] backend/src/services/order_executor.py에 실패 시 주문 재시도 로직 추가
+- [x] T061 [US1] backend/src/services/order_executor.py에 주문 실행 전 잔고 검증 추가
+- [x] T062 [US1] backend/src/api/schemas/order.py에 Order용 Pydantic 스키마 생성
+- [x] T063 [US1] backend/src/api/trading.py에 GET /trading/orders 엔드포인트 구현
+- [x] T064 [US1] backend/src/api/trading.py에 GET /trading/orders/{order_id} 엔드포인트 구현
+- [x] T065 [US1] backend/src/api/trading.py에 GET /trading/position 엔드포인트 구현
+- [x] T066 [US1] backend/src/api/trading.py에 GET /trading/balance 엔드포인트 구현
+- [x] T067 [US1] backend/src/scheduler/jobs.py에 신호 → 리스크 체크 → 주문 실행 플로우 통합
+- [x] T068 [US1] backend/src/services/order_executor.py에 주문 실행 후 포지션 업데이트 추가
+- [x] T069 [US1] backend/src/services/order_executor.py에 주문 생명주기 종합 로깅 추가
 
 **체크포인트**: 전체 자동 매매 루프 작동 (신호 → 리스크 체크 → 주문 → 포지션 업데이트)
 

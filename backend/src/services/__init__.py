@@ -7,6 +7,7 @@
 - AIClient: Gemini AI API 클라이언트
 - SignalGenerator: AI 매매 신호 생성기
 - RiskManager: 리스크 관리 서비스
+- OrderExecutor: 주문 실행 서비스
 - Notifier: 알림 서비스
 """
 
@@ -18,6 +19,14 @@ from src.services.notifier import (
     Notifier,
     NotifierError,
     get_notifier,
+)
+from src.services.order_executor import (
+    BalanceInfo,
+    OrderBlockedReason,
+    OrderExecutor,
+    OrderExecutorError,
+    OrderResult,
+    get_order_executor,
 )
 from src.services.risk_manager import (
     PositionCheckResult,
@@ -59,6 +68,13 @@ __all__ = [
     "PositionCheckResult",
     "StopLossCheckResult",
     "get_risk_manager",
+    # Order Executor
+    "OrderExecutor",
+    "OrderExecutorError",
+    "OrderResult",
+    "OrderBlockedReason",
+    "BalanceInfo",
+    "get_order_executor",
     # Notifier
     "Notifier",
     "NotifierError",

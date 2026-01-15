@@ -4,6 +4,7 @@ APScheduler 작업 정의 모듈
 이 모듈은 백그라운드에서 실행되는 예약 작업을 정의합니다.
 - 시장 데이터 수집 (1초 간격)
 - AI 신호 생성 (1시간 간격)
+- 자동 매매 실행 (신호 생성 후)
 - 오래된 데이터 정리 (24시간 간격)
 """
 
@@ -16,7 +17,9 @@ from loguru import logger
 
 from src.config import settings
 from src.database import async_session_factory
+from src.models import SignalType
 from src.services.data_collector import get_data_collector
+from src.services.order_executor import OrderExecutorError, get_order_executor
 from src.services.signal_generator import SignalGeneratorError, get_signal_generator
 
 # 스케줄러 인스턴스 (비동기)
@@ -99,6 +102,7 @@ async def generate_trading_signal_job() -> None:
         2. 최근 시장 데이터 분석
         3. AI 호출하여 신호 생성
         4. 결과 DB 저장
+        5. 신호가 BUY/SELL이면 자동 매매 실행
     """
     async with async_session_factory() as session:
         try:
@@ -112,12 +116,80 @@ async def generate_trading_signal_job() -> None:
                 f"(신뢰도: {signal.confidence}, 모델: {signal.model_name})"
             )
 
+            # T067: 신호가 BUY 또는 SELL이면 자동 매매 실행
+            if signal.signal_type in (SignalType.BUY.value, SignalType.SELL.value):
+                await execute_trading_from_signal_job(signal.id)
+
         except SignalGeneratorError as e:
             logger.warning(f"AI 신호 생성 실패: {e}")
 
         except Exception as e:
             await session.rollback()
             logger.exception(f"AI 신호 생성 작업 오류: {e}")
+
+
+async def execute_trading_from_signal_job(signal_id: int) -> None:
+    """
+    T067: 신호에 따른 자동 매매 실행 작업
+
+    AI 신호가 BUY 또는 SELL인 경우 리스크 체크 후 주문을 실행합니다.
+
+    처리 흐름:
+        1. 신호 조회
+        2. 거래 활성화 상태 확인
+        3. 리스크 체크 (일일 손실 한도, 변동성, 포지션 크기)
+        4. 잔고 확인
+        5. 주문 실행
+        6. 포지션 및 통계 업데이트
+
+    Args:
+        signal_id: 실행할 신호 ID
+    """
+    from sqlalchemy import select
+
+    from src.models import TradingSignal
+
+    async with async_session_factory() as session:
+        try:
+            # 1. 신호 조회
+            stmt = select(TradingSignal).where(TradingSignal.id == signal_id)
+            result = await session.execute(stmt)
+            signal = result.scalar_one_or_none()
+
+            if signal is None:
+                logger.error(f"신호를 찾을 수 없음: signal_id={signal_id}")
+                return
+
+            logger.info(
+                f"자동 매매 실행 시작: signal_id={signal_id}, "
+                f"type={signal.signal_type}, confidence={signal.confidence}"
+            )
+
+            # 2. OrderExecutor 생성 및 주문 실행
+            executor = await get_order_executor(session)
+            order_result = await executor.execute_from_signal(signal)
+
+            if order_result.success:
+                if order_result.order:
+                    logger.info(
+                        f"자동 매매 완료: order_id={order_result.order.id}, "
+                        f"status={order_result.order.status}, "
+                        f"message={order_result.message}"
+                    )
+                else:
+                    logger.info(f"자동 매매 결과: {order_result.message}")
+            else:
+                logger.warning(
+                    f"자동 매매 실패: {order_result.message}, "
+                    f"reason={order_result.blocked_reason}"
+                )
+
+        except OrderExecutorError as e:
+            logger.error(f"자동 매매 오류: {e.message}")
+
+        except Exception as e:
+            await session.rollback()
+            logger.exception(f"자동 매매 작업 오류: {e}")
 
 
 def setup_scheduler() -> AsyncIOScheduler:
@@ -129,7 +201,13 @@ def setup_scheduler() -> AsyncIOScheduler:
     등록되는 작업:
         - collect_market_data: 1초마다 시세 수집
         - generate_trading_signal: 설정된 주기(기본 1시간)마다 AI 신호 생성
+          → 신호가 BUY/SELL이면 자동으로 execute_trading_from_signal_job 호출
         - cleanup_old_data: 24시간마다 오래된 데이터 삭제
+
+    자동 매매 흐름:
+        1. generate_trading_signal_job에서 AI 신호 생성
+        2. 신호가 BUY 또는 SELL인 경우 execute_trading_from_signal_job 호출
+        3. 리스크 체크 → 잔고 확인 → 주문 실행 → 포지션 업데이트
 
     설정 옵션:
         - replace_existing: 기존 작업 교체
