@@ -22,6 +22,7 @@ from src.services.data_collector import get_data_collector
 from src.services.order_executor import OrderExecutorError, get_order_executor
 from src.services.risk_manager import RiskCheckResult, get_risk_manager
 from src.services.signal_generator import SignalGeneratorError, get_signal_generator
+from src.services.signal_performance_tracker import SignalPerformanceTracker
 
 # 스케줄러 인스턴스 (비동기)
 scheduler = AsyncIOScheduler()
@@ -30,6 +31,7 @@ scheduler = AsyncIOScheduler()
 DATA_COLLECTION_INTERVAL_SECONDS = 1  # 데이터 수집 주기 (초)
 DATA_CLEANUP_INTERVAL_HOURS = 24  # 데이터 정리 주기 (시간)
 VOLATILITY_CHECK_INTERVAL_SECONDS = 30  # 변동성 체크 주기 (초)
+SIGNAL_PERFORMANCE_EVAL_HOURS = 4  # 신호 성과 평가 주기 (시간)
 JOB_MAX_RETRY_ATTEMPTS = 3  # 작업 최대 재시도 횟수
 
 
@@ -233,6 +235,41 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
             logger.exception(f"자동 매매 작업 오류: {e}")
 
 
+async def evaluate_signal_performance_job() -> None:
+    """
+    신호 성과 평가 작업
+
+    4시간마다 실행되어 과거 신호의 성과를 평가합니다.
+
+    처리 흐름:
+        1. 4시간 이상 경과한 신호에 현재 가격 기록
+        2. 24시간 이상 경과한 신호 최종 평가
+        3. 정확도 및 수익률 계산
+    """
+    async with async_session_factory() as session:
+        try:
+            tracker = SignalPerformanceTracker(session)
+
+            # 미평가 신호 성과 평가
+            evaluated_count = await tracker.evaluate_pending_signals()
+
+            if evaluated_count > 0:
+                logger.info(f"신호 성과 평가 완료: {evaluated_count}건")
+
+                # 성과 요약 생성 및 로깅
+                summary = await tracker.generate_performance_summary(limit=50)
+                logger.info(
+                    f"최근 성과 요약: "
+                    f"총 {summary.total_signals}건, "
+                    f"매수 정확도 {summary.buy_accuracy:.1f}%, "
+                    f"매도 정확도 {summary.sell_accuracy:.1f}%"
+                )
+
+        except Exception as e:
+            await session.rollback()
+            logger.exception(f"신호 성과 평가 작업 오류: {e}")
+
+
 def setup_scheduler() -> AsyncIOScheduler:
     """
     스케줄러 설정
@@ -309,11 +346,23 @@ def setup_scheduler() -> AsyncIOScheduler:
         coalesce=True,
     )
 
+    # 신호 성과 평가 작업 (4시간 간격)
+    scheduler.add_job(
+        evaluate_signal_performance_job,
+        trigger=IntervalTrigger(hours=SIGNAL_PERFORMANCE_EVAL_HOURS),
+        id="evaluate_signal_performance",
+        name="신호 성과 평가",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+
     logger.info(
         f"스케줄러 설정 완료: "
         f"데이터 수집 ({DATA_COLLECTION_INTERVAL_SECONDS}초), "
         f"변동성 체크 ({VOLATILITY_CHECK_INTERVAL_SECONDS}초), "
         f"AI 신호 생성 ({signal_interval_hours}시간), "
+        f"성과 평가 ({SIGNAL_PERFORMANCE_EVAL_HOURS}시간), "
         f"데이터 정리 ({DATA_CLEANUP_INTERVAL_HOURS}시간)"
     )
 

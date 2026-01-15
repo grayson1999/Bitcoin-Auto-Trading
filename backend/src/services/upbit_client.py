@@ -80,6 +80,35 @@ class UpbitTickerData(BaseModel):
     timestamp: int
 
 
+class UpbitCandleData(BaseModel):
+    """
+    Upbit 캔들 데이터 모델
+
+    OHLCV (시가, 고가, 저가, 종가, 거래량) 캔들스틱 데이터입니다.
+
+    Attributes:
+        market: 마켓 코드 (예: KRW-XRP)
+        candle_date_time_utc: 캔들 시간 (UTC)
+        candle_date_time_kst: 캔들 시간 (KST)
+        opening_price: 시가
+        high_price: 고가
+        low_price: 저가
+        trade_price: 종가 (현재가)
+        candle_acc_trade_volume: 캔들 누적 거래량
+        candle_acc_trade_price: 캔들 누적 거래대금
+    """
+
+    market: str
+    candle_date_time_utc: str
+    candle_date_time_kst: str
+    opening_price: Decimal
+    high_price: Decimal
+    low_price: Decimal
+    trade_price: Decimal
+    candle_acc_trade_volume: Decimal
+    candle_acc_trade_price: Decimal
+
+
 class UpbitBalance(BaseModel):
     """
     Upbit 계좌 잔고 모델
@@ -395,6 +424,140 @@ class UpbitClient:
             params={"markets": market},
         )
         return response[FIRST_ITEM] if response else {}
+
+    async def get_minute_candles(
+        self,
+        market: str = "KRW-XRP",
+        unit: int = 60,
+        count: int = 200,
+    ) -> list[UpbitCandleData]:
+        """
+        분봉 캔들 조회
+
+        특정 마켓의 분봉 캔들 데이터를 조회합니다.
+
+        Args:
+            market: 마켓 코드 (기본값: KRW-XRP)
+            unit: 분 단위 (1, 3, 5, 10, 15, 30, 60, 240)
+            count: 조회할 캔들 개수 (최대 200)
+
+        Returns:
+            list[UpbitCandleData]: 캔들 데이터 목록 (최신순)
+
+        Raises:
+            UpbitError: API 오류 시
+        """
+        response = await self._request(
+            method="GET",
+            endpoint=f"/candles/minutes/{unit}",
+            params={"market": market, "count": min(count, 200)},
+        )
+
+        if not isinstance(response, list):
+            return []
+
+        return [
+            UpbitCandleData(
+                market=candle["market"],
+                candle_date_time_utc=candle["candle_date_time_utc"],
+                candle_date_time_kst=candle["candle_date_time_kst"],
+                opening_price=_to_decimal(candle["opening_price"]),
+                high_price=_to_decimal(candle["high_price"]),
+                low_price=_to_decimal(candle["low_price"]),
+                trade_price=_to_decimal(candle["trade_price"]),
+                candle_acc_trade_volume=_to_decimal(candle["candle_acc_trade_volume"]),
+                candle_acc_trade_price=_to_decimal(candle["candle_acc_trade_price"]),
+            )
+            for candle in response
+        ]
+
+    async def get_day_candles(
+        self,
+        market: str = "KRW-XRP",
+        count: int = 200,
+    ) -> list[UpbitCandleData]:
+        """
+        일봉 캔들 조회
+
+        특정 마켓의 일봉 캔들 데이터를 조회합니다.
+
+        Args:
+            market: 마켓 코드 (기본값: KRW-XRP)
+            count: 조회할 캔들 개수 (최대 200)
+
+        Returns:
+            list[UpbitCandleData]: 캔들 데이터 목록 (최신순)
+
+        Raises:
+            UpbitError: API 오류 시
+        """
+        response = await self._request(
+            method="GET",
+            endpoint="/candles/days",
+            params={"market": market, "count": min(count, 200)},
+        )
+
+        if not isinstance(response, list):
+            return []
+
+        return [
+            UpbitCandleData(
+                market=candle["market"],
+                candle_date_time_utc=candle["candle_date_time_utc"],
+                candle_date_time_kst=candle["candle_date_time_kst"],
+                opening_price=_to_decimal(candle["opening_price"]),
+                high_price=_to_decimal(candle["high_price"]),
+                low_price=_to_decimal(candle["low_price"]),
+                trade_price=_to_decimal(candle["trade_price"]),
+                candle_acc_trade_volume=_to_decimal(candle["candle_acc_trade_volume"]),
+                candle_acc_trade_price=_to_decimal(candle["candle_acc_trade_price"]),
+            )
+            for candle in response
+        ]
+
+    async def get_week_candles(
+        self,
+        market: str = "KRW-XRP",
+        count: int = 52,
+    ) -> list[UpbitCandleData]:
+        """
+        주봉 캔들 조회
+
+        특정 마켓의 주봉 캔들 데이터를 조회합니다.
+
+        Args:
+            market: 마켓 코드 (기본값: KRW-XRP)
+            count: 조회할 캔들 개수 (최대 200)
+
+        Returns:
+            list[UpbitCandleData]: 캔들 데이터 목록 (최신순)
+
+        Raises:
+            UpbitError: API 오류 시
+        """
+        response = await self._request(
+            method="GET",
+            endpoint="/candles/weeks",
+            params={"market": market, "count": min(count, 200)},
+        )
+
+        if not isinstance(response, list):
+            return []
+
+        return [
+            UpbitCandleData(
+                market=candle["market"],
+                candle_date_time_utc=candle["candle_date_time_utc"],
+                candle_date_time_kst=candle["candle_date_time_kst"],
+                opening_price=_to_decimal(candle["opening_price"]),
+                high_price=_to_decimal(candle["high_price"]),
+                low_price=_to_decimal(candle["low_price"]),
+                trade_price=_to_decimal(candle["trade_price"]),
+                candle_acc_trade_volume=_to_decimal(candle["candle_acc_trade_volume"]),
+                candle_acc_trade_price=_to_decimal(candle["candle_acc_trade_price"]),
+            )
+            for candle in response
+        ]
 
     # ==================== 비공개 API (인증 필요) ====================
 

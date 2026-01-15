@@ -13,7 +13,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Numeric, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models import Base
@@ -124,6 +124,51 @@ class TradingSignal(Base):
         nullable=False,
         default=0,
         comment="출력 토큰 수",
+    )
+
+    # === 성과 추적 필드 ===
+    # 신호 생성 시 가격 (성과 평가 기준)
+    price_at_signal: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True,
+        comment="신호 생성 시 가격",
+    )
+
+    # 4시간 후 가격 (단기 성과 평가)
+    price_after_4h: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True,
+        comment="4시간 후 가격",
+    )
+
+    # 24시간 후 가격 (중기 성과 평가)
+    price_after_24h: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True,
+        comment="24시간 후 가격",
+    )
+
+    # 성과 평가 완료 여부
+    outcome_evaluated: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        comment="성과 평가 완료 여부",
+    )
+
+    # 신호 정확성 (가격 방향 일치 여부)
+    # BUY 신호 후 가격 상승 = True, SELL 신호 후 가격 하락 = True
+    outcome_correct: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        comment="신호 정확성 (방향 일치 여부)",
+    )
+
+    # 기술적 지표 스냅샷 (JSON 형식)
+    technical_snapshot: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="기술적 지표 스냅샷 (JSON)",
     )
 
     # === 관계 ===

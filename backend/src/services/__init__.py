@@ -6,6 +6,9 @@
 - DataCollector: 실시간 시장 데이터 수집기
 - AIClient: Gemini AI API 클라이언트
 - SignalGenerator: AI 매매 신호 생성기
+- TechnicalIndicatorCalculator: 기술적 지표 계산기
+- MultiTimeframeAnalyzer: 멀티 타임프레임 분석기
+- SignalPerformanceTracker: 신호 성과 추적기
 - RiskManager: 리스크 관리 서비스
 - OrderExecutor: 주문 실행 서비스
 - Notifier: 알림 서비스
@@ -13,6 +16,22 @@
 
 from src.services.ai_client import AIClient, AIClientError, AIResponse, get_ai_client
 from src.services.data_collector import DataCollector, get_data_collector
+from src.services.multi_timeframe_analyzer import (
+    MultiTimeframeAnalyzer,
+    MultiTimeframeResult,
+    TimeframeAnalysis,
+    get_multi_timeframe_analyzer,
+)
+from src.services.signal_performance_tracker import (
+    PerformanceSummary,
+    SignalOutcome,
+    SignalPerformanceTracker,
+)
+from src.services.technical_indicators import (
+    IndicatorResult,
+    TechnicalIndicatorCalculator,
+    get_technical_calculator,
+)
 from src.services.notifier import (
     AlertLevel,
     AlertMessage,
@@ -60,6 +79,19 @@ __all__ = [
     "SignalGenerator",
     "SignalGeneratorError",
     "get_signal_generator",
+    # Technical Indicators
+    "TechnicalIndicatorCalculator",
+    "IndicatorResult",
+    "get_technical_calculator",
+    # Multi-Timeframe Analyzer
+    "MultiTimeframeAnalyzer",
+    "MultiTimeframeResult",
+    "TimeframeAnalysis",
+    "get_multi_timeframe_analyzer",
+    # Signal Performance Tracker
+    "SignalPerformanceTracker",
+    "SignalOutcome",
+    "PerformanceSummary",
     # Risk Manager
     "RiskManager",
     "RiskManagerError",
