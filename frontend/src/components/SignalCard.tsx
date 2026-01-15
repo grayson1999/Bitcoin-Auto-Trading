@@ -119,9 +119,9 @@ const SignalCard: FC<SignalCardProps> = ({ signal, compact = false }) => {
 
       {/* AI 분석 근거 (컴팩트 모드가 아닐 때) */}
       {!compact && (
-        <div className="mt-5">
-          <h4 className="text-sm font-semibold text-slate-900 mb-2">Analysis Reasoning</h4>
-          <p className="text-sm leading-relaxed text-slate-600 bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
+        <div className="mt-5 relative z-10">
+          <h4 className="text-sm font-semibold text-dark-text-secondary mb-2">Analysis Reasoning</h4>
+          <p className="text-sm leading-relaxed text-white bg-white/5 rounded-lg border border-white/10 p-3">
             {signal.reasoning}
           </p>
         </div>
