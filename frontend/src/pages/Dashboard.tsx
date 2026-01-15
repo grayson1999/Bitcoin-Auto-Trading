@@ -171,7 +171,18 @@ const Dashboard: FC = () => {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* 현재 포지션 */}
         <div className="rounded-2xl glass-panel p-6">
-          <h3 className="mb-6 text-lg font-bold text-white">현재 포지션</h3>
+          <h3 className="mb-6 text-lg font-bold text-white flex items-center gap-2">
+            현재 포지션
+            <span className="relative group">
+              <span className="inline-flex items-center justify-center w-4 h-4 text-xs text-dark-text-muted border border-dark-text-muted rounded-full cursor-help hover:text-white hover:border-white transition-colors">
+                ?
+              </span>
+              <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs font-normal text-white bg-gray-900 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-10">
+                현재 보유 중인 암호화폐 자산 현황
+                <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></span>
+              </span>
+            </span>
+          </h3>
           {summary.position && Number(summary.position.quantity) > 0 ? (
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
@@ -216,12 +227,12 @@ const Dashboard: FC = () => {
         </div>
 
         {/* 최신 AI 신호 */}
-        <div>
+        <div className="rounded-2xl glass-panel p-6">
           <h3 className="mb-6 text-lg font-bold text-white">최신 AI 신호</h3>
           {summary.latest_signal ? (
             <SignalCard signal={summary.latest_signal} />
           ) : (
-            <div className="rounded-2xl glass-panel p-6 text-center text-dark-text-muted">
+            <div className="text-center py-12 text-dark-text-muted bg-white/5 rounded-xl border-2 border-dashed border-white/10">
               생성된 신호가 없습니다
             </div>
           )}

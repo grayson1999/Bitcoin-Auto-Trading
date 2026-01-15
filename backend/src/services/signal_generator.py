@@ -150,6 +150,9 @@ class SignalGenerator:
         # 프롬프트 생성 (잔고 정보 포함)
         prompt = self._build_prompt(market_data_list, balance_info)
 
+        # 디버그: 생성된 프롬프트 로깅
+        logger.info(f"AI 프롬프트 생성 완료:\n{prompt}")
+
         # AI 호출
         try:
             response = await self.ai_client.generate(
