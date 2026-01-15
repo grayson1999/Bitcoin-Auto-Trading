@@ -10,6 +10,7 @@
 
 import type { FC } from "react";
 import type { RiskStatus as RiskStatusType } from "../hooks/useApi";
+import { ExclamationTriangleIcon, ShieldCheckIcon, HandRaisedIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 // === 타입 정의 ===
 interface RiskStatusProps {
@@ -22,16 +23,16 @@ interface RiskStatusProps {
 }
 
 // === 상수 ===
-const CARD_CLASSES = "rounded-lg bg-white p-6 shadow";
+const CARD_CLASSES = "rounded-2xl glass-panel p-6";
 
 /**
  * 게이지 색상 결정
  */
 function getGaugeColor(value: number, limit: number): string {
   const ratio = Math.abs(value) / limit;
-  if (ratio >= 0.8) return "bg-red-500";
-  if (ratio >= 0.5) return "bg-yellow-500";
-  return "bg-green-500";
+  if (ratio >= 0.8) return "bg-rose-500";
+  if (ratio >= 0.5) return "bg-amber-500";
+  return "bg-emerald-500";
 }
 
 /**
@@ -51,21 +52,29 @@ const RiskStatus: FC<RiskStatusProps> = ({ status, onHalt, onResume }) => {
     status.volatility_threshold_pct
   );
 
+  const isSafe = status.trading_enabled && !status.is_halted;
+
   return (
     <div className={CARD_CLASSES}>
       {/* 헤더: 거래 상태 */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">리스크 상태</h3>
-        <div className="flex items-center gap-2">
-          {status.trading_enabled && !status.is_halted ? (
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <ShieldCheckIcon className="w-5 h-5 text-banana-400" />
+          위험 관리
+        </h3>
+        <div className={`px-3 py-1 rounded-full flex items-center gap-2 text-sm font-semibold ${isSafe ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+          {isSafe ? (
             <>
-              <span className="inline-flex h-3 w-3 rounded-full bg-green-500"></span>
-              <span className="text-sm font-medium text-green-600">거래 활성</span>
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              활성
             </>
           ) : (
             <>
-              <span className="inline-flex h-3 w-3 rounded-full bg-red-500"></span>
-              <span className="text-sm font-medium text-red-600">거래 중단</span>
+              <HandRaisedIcon className="w-4 h-4" />
+              중단됨
             </>
           )}
         </div>
@@ -73,26 +82,32 @@ const RiskStatus: FC<RiskStatusProps> = ({ status, onHalt, onResume }) => {
 
       {/* 중단 사유 */}
       {status.is_halted && status.halt_reason && (
-        <div className="mt-3 rounded-md bg-red-50 p-3">
-          <p className="text-sm text-red-700">
-            <strong>중단 사유:</strong> {status.halt_reason}
-          </p>
+        <div className="mb-6 rounded-xl bg-rose-500/10 p-4 border border-rose-500/20">
+          <div className="flex gap-3">
+            <ExclamationTriangleIcon className="w-5 h-5 text-rose-500 flex-shrink-0" />
+            <div>
+              <h4 className="text-sm font-semibold text-rose-400">거래 중단 예외</h4>
+              <p className="text-sm text-rose-300/80 mt-1">
+                {status.halt_reason}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
       {/* 지표들 */}
-      <div className="mt-6 space-y-4">
+      <div className="space-y-6">
         {/* 일일 손실률 */}
         <div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">일일 손실</span>
-            <span className="font-medium text-gray-900">
-              {status.daily_loss_pct.toFixed(2)}% / -{status.daily_loss_limit_pct}%
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="text-dark-text-secondary font-medium">일일 손실</span>
+            <span className="font-semibold text-white tabular-nums">
+              {status.daily_loss_pct.toFixed(2)}% <span className="text-dark-text-muted font-normal">/ -{status.daily_loss_limit_pct}%</span>
             </span>
           </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
             <div
-              className={`h-full rounded-full ${dailyLossColor} transition-all duration-500`}
+              className={`h-full rounded-full ${dailyLossColor} transition-all duration-500 ease-out shadow-[0_0_10px_rgba(0,0,0,0.5)]`}
               style={{ width: `${Math.min(dailyLossRatio * 100, 100)}%` }}
             />
           </div>
@@ -100,54 +115,57 @@ const RiskStatus: FC<RiskStatusProps> = ({ status, onHalt, onResume }) => {
 
         {/* 현재 변동성 */}
         <div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">변동성</span>
-            <span className="font-medium text-gray-900">
-              {status.current_volatility_pct.toFixed(2)}% /{" "}
-              {status.volatility_threshold_pct}%
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="text-dark-text-secondary font-medium">변동성</span>
+            <span className="font-semibold text-white tabular-nums">
+              {status.current_volatility_pct.toFixed(2)}% <span className="text-dark-text-muted font-normal">/ {status.volatility_threshold_pct}%</span>
             </span>
           </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
             <div
-              className={`h-full rounded-full ${volatilityColor} transition-all duration-500`}
+              className={`h-full rounded-full ${volatilityColor} transition-all duration-500 ease-out`}
               style={{ width: `${Math.min(volatilityRatio * 100, 100)}%` }}
             />
           </div>
         </div>
 
         {/* 설정값 요약 */}
-        <div className="grid grid-cols-2 gap-4 border-t pt-4">
-          <div>
-            <span className="text-xs text-gray-500">포지션 크기</span>
-            <p className="font-medium text-gray-900">
+        <div className="grid grid-cols-2 gap-4 border-t border-dark-border pt-6">
+          <div className="bg-white/5 p-3 rounded-xl text-center border border-white/5">
+            <span className="text-xs font-medium text-dark-text-muted uppercase tracking-wider">포지션 크기</span>
+            <p className="mt-1 text-lg font-bold text-white">
               {status.position_size_pct}%
             </p>
           </div>
-          <div>
-            <span className="text-xs text-gray-500">손절 임계값</span>
-            <p className="font-medium text-gray-900">{status.stop_loss_pct}%</p>
+          <div className="bg-white/5 p-3 rounded-xl text-center border border-white/5">
+            <span className="text-xs font-medium text-dark-text-muted uppercase tracking-wider">손절매</span>
+            <p className="mt-1 text-lg font-bold text-rose-400">
+              {status.stop_loss_pct}%
+            </p>
           </div>
         </div>
       </div>
 
       {/* 액션 버튼 */}
       {(onHalt || onResume) && (
-        <div className="mt-6 flex gap-2">
+        <div className="mt-8">
           {status.trading_enabled && !status.is_halted ? (
             onHalt && (
               <button
                 onClick={onHalt}
-                className="w-full rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-600 shadow-sm hover:bg-rose-50 hover:border-rose-300 transition-all focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
               >
-                거래 중단
+                <HandRaisedIcon className="w-4 h-4" />
+                긴급 중단
               </button>
             )
           ) : (
             onResume && (
               <button
                 onClick={onResume}
-                className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 hover:bg-emerald-500 hover:shadow-emerald-500/20 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
               >
+                <ArrowPathIcon className="w-4 h-4" />
                 거래 재개
               </button>
             )

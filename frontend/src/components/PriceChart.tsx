@@ -32,14 +32,14 @@ interface PriceChartProps {
 
 // === 상수 ===
 const CHART_COLORS = {
-  positive: "#10B981", // green-500
-  negative: "#EF4444", // red-500
-  neutral: "#6B7280", // gray-500
-  fill: "#3B82F6", // blue-500
-  stroke: "#2563EB", // blue-600
+  positive: "#34D399", // emerald-400 (brighter for dark mode)
+  negative: "#F87171", // red-400
+  neutral: "#9CA3AF", // gray-400
+  fill: "#FACC15", // banana-400 (Nano Yellow)
+  stroke: "#EAB308", // banana-500
 } as const;
 
-const CARD_CLASSES = "rounded-lg bg-white p-6 shadow";
+const CARD_CLASSES = "rounded-2xl glass-panel p-6";
 
 /**
  * 가격 포맷 헬퍼
@@ -57,6 +57,7 @@ function formatPrice(price: number): string {
  */
 function getChangeColor(change: number | null): string {
   if (change === null) return CHART_COLORS.neutral;
+  // Use styling class or inline style with new colors
   return change >= 0 ? CHART_COLORS.positive : CHART_COLORS.negative;
 }
 
@@ -72,22 +73,22 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
     data && data.length > 0
       ? data
       : Array.from({ length: 24 }, (_, i) => ({
-          time: `${i}:00`,
-          price: currentPrice * (1 + (Math.random() - 0.5) * 0.02),
-        }));
+        time: `${i}:00`,
+        price: currentPrice * (1 + (Math.random() - 0.5) * 0.02),
+      }));
 
   return (
     <div className={CARD_CLASSES}>
       {/* 헤더: 현재가 및 변동률 */}
       <div className="mb-4 flex items-baseline justify-between">
         <div>
-          <h3 className="text-sm font-medium text-gray-500">XRP/KRW</h3>
-          <p className="mt-1 text-3xl font-semibold text-gray-900">
+          <h3 className="text-sm font-medium text-dark-text-secondary">XRP/KRW</h3>
+          <p className="mt-1 text-3xl font-bold text-white tracking-tight text-glow">
             {formatPrice(currentPrice)}
           </p>
         </div>
         <div className="text-right">
-          <span className="text-sm text-gray-500">24h</span>
+          <span className="text-sm text-dark-text-secondary">24h</span>
           <p className="text-lg font-medium" style={{ color: changeColor }}>
             {change24h !== null ? `${changeSign}${change24h.toFixed(2)}%` : "-"}
           </p>
@@ -103,7 +104,7 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
                 <stop
                   offset="5%"
                   stopColor={CHART_COLORS.fill}
-                  stopOpacity={0.3}
+                  stopOpacity={0.4}
                 />
                 <stop
                   offset="95%"
@@ -112,15 +113,15 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
                 />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis
               dataKey="time"
-              tick={{ fontSize: 12, fill: "#6B7280" }}
+              tick={{ fontSize: 12, fill: "#94A3B8" }}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: "#6B7280" }}
+              tick={{ fontSize: 12, fill: "#94A3B8" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `${(value / 1).toFixed(0)}`}
@@ -128,10 +129,13 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #E5E7EB",
-                borderRadius: "8px",
+                backgroundColor: "#0B0E14",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: "12px",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.5)",
+                color: "#F1F5F9"
               }}
+              itemStyle={{ color: "#F1F5F9" }}
               formatter={(value: number) => [formatPrice(value), "가격"]}
             />
             <Area

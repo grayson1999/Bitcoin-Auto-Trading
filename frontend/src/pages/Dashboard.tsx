@@ -86,21 +86,21 @@ const Dashboard: FC = () => {
       {/* 페이지 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">대시보드</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-white text-glow">대시보드</h2>
+          <p className="text-dark-text-secondary mt-1">
             거래 활동, 포지션, 성과 지표의 개요를 확인합니다.
           </p>
         </div>
         {/* 거래 상태 배지 */}
         <div className="flex items-center gap-2">
           {summary.is_trading_active ? (
-            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-              <span className="mr-1.5 h-2 w-2 rounded-full bg-green-500"></span>
-              거래 활성
+            <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+              <span className="mr-1.5 h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+              거래 중
             </span>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800">
-              <span className="mr-1.5 h-2 w-2 rounded-full bg-red-500"></span>
+            <span className="inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-sm font-medium text-rose-800 ring-1 ring-inset ring-rose-600/20">
+              <span className="mr-1.5 h-2 w-2 rounded-full bg-rose-500"></span>
               거래 중단
             </span>
           )}
@@ -128,31 +128,30 @@ const Dashboard: FC = () => {
       {/* 요약 카드들 */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* 총 평가금액 */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-medium text-gray-500">총 평가금액</h3>
-          <p className="mt-2 text-2xl font-semibold text-gray-900">
+        <div className="rounded-2xl glass-panel p-6">
+          <h3 className="text-sm font-medium text-dark-text-secondary">총 평가금액</h3>
+          <p className="mt-2 text-2xl font-bold text-white tracking-tight courier text-glow">
             {summary.balance ? formatKRW(summary.balance.total_krw) : "-"}
           </p>
         </div>
 
         {/* KRW 잔고 */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-medium text-gray-500">KRW 잔고</h3>
-          <p className="mt-2 text-2xl font-semibold text-gray-900">
+        <div className="rounded-2xl glass-panel p-6">
+          <h3 className="text-sm font-medium text-dark-text-secondary">KRW 보유량</h3>
+          <p className="mt-2 text-2xl font-bold text-white tracking-tight courier">
             {summary.balance ? formatKRW(summary.balance.krw) : "-"}
           </p>
         </div>
 
         {/* 일일 손익 */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-medium text-gray-500">일일 손익</h3>
+        <div className="rounded-2xl glass-panel p-6">
+          <h3 className="text-sm font-medium text-dark-text-secondary">일일 손익</h3>
           <p
-            className={`mt-2 text-2xl font-semibold ${
-              Number(summary.daily_pnl) >= 0 ? "text-green-600" : "text-red-600"
-            }`}
+            className={`mt-2 text-2xl font-bold tracking-tight courier text-glow ${Number(summary.daily_pnl) >= 0 ? "text-emerald-400" : "text-rose-400"
+              }`}
           >
             {formatKRW(summary.daily_pnl)}
-            <span className="ml-2 text-sm">
+            <span className="ml-2 text-sm font-medium text-dark-text-muted">
               ({summary.daily_pnl_pct >= 0 ? "+" : ""}
               {summary.daily_pnl_pct.toFixed(2)}%)
             </span>
@@ -160,10 +159,10 @@ const Dashboard: FC = () => {
         </div>
 
         {/* 오늘 거래 */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-medium text-gray-500">오늘 거래</h3>
-          <p className="mt-2 text-2xl font-semibold text-gray-900">
-            {summary.today_trade_count}건
+        <div className="rounded-2xl glass-panel p-6">
+          <h3 className="text-sm font-medium text-dark-text-secondary">오늘의 거래</h3>
+          <p className="mt-2 text-2xl font-bold text-white tracking-tight courier">
+            {summary.today_trade_count}
           </p>
         </div>
       </div>
@@ -171,39 +170,38 @@ const Dashboard: FC = () => {
       {/* 포지션 & 최신 신호 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* 현재 포지션 */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">현재 포지션</h3>
+        <div className="rounded-2xl glass-panel p-6">
+          <h3 className="mb-6 text-lg font-bold text-white">현재 포지션</h3>
           {summary.position && Number(summary.position.quantity) > 0 ? (
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">보유량</span>
-                <span className="font-medium">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
+                <span className="text-dark-text-secondary font-medium text-sm">보유량</span>
+                <span className="font-bold text-white courier">
                   {Number(summary.position.quantity).toFixed(4)} XRP
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">평균 매수가</span>
-                <span className="font-medium">
+              <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
+                <span className="text-dark-text-secondary font-medium text-sm">평균 매수가</span>
+                <span className="font-bold text-white courier">
                   {formatKRW(summary.position.avg_buy_price)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">평가금액</span>
-                <span className="font-medium">
+              <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
+                <span className="text-dark-text-secondary font-medium text-sm">평가금액</span>
+                <span className="font-bold text-white courier">
                   {formatKRW(summary.position.current_value)}
                 </span>
               </div>
-              <div className="flex justify-between border-t pt-3">
-                <span className="text-gray-600">미실현 손익</span>
+              <div className="flex justify-between items-center pt-4 border-t border-dark-border">
+                <span className="text-dark-text-secondary font-medium">미실현 손익</span>
                 <span
-                  className={`font-semibold ${
-                    Number(summary.position.unrealized_pnl) >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
+                  className={`font-bold courier text-lg ${Number(summary.position.unrealized_pnl) >= 0
+                    ? "text-emerald-600"
+                    : "text-rose-600"
+                    }`}
                 >
                   {formatKRW(summary.position.unrealized_pnl)}
-                  <span className="ml-1 text-sm">
+                  <span className="ml-2 text-sm font-medium opacity-80">
                     ({summary.position.unrealized_pnl_pct >= 0 ? "+" : ""}
                     {summary.position.unrealized_pnl_pct.toFixed(2)}%)
                   </span>
@@ -211,17 +209,19 @@ const Dashboard: FC = () => {
               </div>
             </div>
           ) : (
-            <p className="text-center text-gray-500">포지션 없음</p>
+            <div className="text-center py-12 text-dark-text-muted bg-white/5 rounded-xl border-2 border-dashed border-white/10">
+              보유 포지션 없음
+            </div>
           )}
         </div>
 
         {/* 최신 AI 신호 */}
         <div>
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">최신 AI 신호</h3>
+          <h3 className="mb-6 text-lg font-bold text-white">최신 AI 신호</h3>
           {summary.latest_signal ? (
             <SignalCard signal={summary.latest_signal} />
           ) : (
-            <div className="rounded-lg bg-white p-6 text-center text-gray-500 shadow">
+            <div className="rounded-2xl glass-panel p-6 text-center text-dark-text-muted">
               생성된 신호가 없습니다
             </div>
           )}

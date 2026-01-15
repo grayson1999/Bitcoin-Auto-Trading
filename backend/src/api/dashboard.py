@@ -31,6 +31,7 @@ from src.api.schemas.signal import TradingSignalResponse
 from src.database import get_session
 from src.models import DailyStats, Order, OrderStatus, Position, TradingSignal
 from src.services.data_collector import get_data_collector
+from src.services.order_executor import get_order_executor
 from src.services.risk_manager import get_risk_manager
 from src.services.upbit_client import UpbitError, get_upbit_client
 
@@ -101,13 +102,22 @@ async def get_dashboard_summary(
             detail=f"시세 조회 실패: {e.message}",
         ) from e
 
-    # === 2. 포지션 정보 조회 ===
+    # === 2. 포지션 정보 조회 (Upbit 잔고와 동기화) ===
     position_response: PositionResponse | None = None
-    stmt = select(Position).where(Position.symbol == DEFAULT_MARKET)
-    result = await session.execute(stmt)
-    position = result.scalar_one_or_none()
 
-    if position is not None:
+    # Upbit 실제 잔고와 Position 테이블 동기화
+    try:
+        executor = await get_order_executor(session)
+        position = await executor.sync_position_from_upbit()
+        await session.commit()
+    except Exception as e:
+        logger.warning(f"포지션 동기화 실패: {e}")
+        # 동기화 실패 시 기존 DB 데이터 조회
+        stmt = select(Position).where(Position.symbol == DEFAULT_MARKET)
+        result = await session.execute(stmt)
+        position = result.scalar_one_or_none()
+
+    if position is not None and position.quantity > 0:
         position.update_value(current_price)
         position_response = PositionResponse(
             symbol=position.symbol,

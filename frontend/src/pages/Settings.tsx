@@ -17,7 +17,7 @@ const AI_MODELS = [
   { value: "claude-3-haiku", label: "Claude 3 Haiku" },
 ];
 
-const CARD_CLASSES = "rounded-lg bg-white p-6 shadow";
+const CARD_CLASSES = "rounded-2xl glass-panel p-6";
 
 /**
  * Settings 컴포넌트
@@ -129,8 +129,8 @@ const Settings: FC = () => {
     <div className="space-y-6">
       {/* 페이지 헤더 */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">설정</h2>
-        <p className="text-gray-600">거래 파라미터와 위험 관리를 설정합니다.</p>
+        <h2 className="text-2xl font-bold text-white text-glow">설정</h2>
+        <p className="text-dark-text-secondary mt-1">거래 파라미터와 위험 관리를 설정합니다.</p>
       </div>
 
       {/* 저장 결과 메시지 */}
@@ -149,13 +149,13 @@ const Settings: FC = () => {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* 리스크 관리 설정 */}
         <div className={CARD_CLASSES}>
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+          <h3 className="mb-4 text-lg font-semibold text-white">
             리스크 관리
           </h3>
           <div className="space-y-4">
             {/* 포지션 크기 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-dark-text-secondary">
                 포지션 크기 (%)
               </label>
               <input
@@ -167,16 +167,16 @@ const Settings: FC = () => {
                 onChange={(e) =>
                   handleChange("position_size_pct", Number(e.target.value))
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-dark-text-muted">
                 주문당 자본의 비율 (1~5%)
               </p>
             </div>
 
             {/* 손절 임계값 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-dark-text-secondary">
                 손절 임계값 (%)
               </label>
               <input
@@ -188,16 +188,16 @@ const Settings: FC = () => {
                 onChange={(e) =>
                   handleChange("stop_loss_pct", Number(e.target.value))
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-dark-text-muted">
                 개별 손절 비율 (3~10%)
               </p>
             </div>
 
             {/* 일일 손실 한도 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-dark-text-secondary">
                 일일 손실 한도 (%)
               </label>
               <input
@@ -209,16 +209,16 @@ const Settings: FC = () => {
                 onChange={(e) =>
                   handleChange("daily_loss_limit_pct", Number(e.target.value))
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-dark-text-muted">
                 하루 최대 손실 허용 비율 (3~10%)
               </p>
             </div>
 
             {/* 변동성 임계값 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-dark-text-secondary">
                 변동성 임계값 (%)
               </label>
               <input
@@ -230,9 +230,9 @@ const Settings: FC = () => {
                 onChange={(e) =>
                   handleChange("volatility_threshold_pct", Number(e.target.value))
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-dark-text-muted">
                 5분 내 이 비율 초과 변동 시 거래 중단 (1~10%)
               </p>
             </div>
@@ -241,17 +241,17 @@ const Settings: FC = () => {
 
         {/* AI 설정 */}
         <div className={CARD_CLASSES}>
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">AI 설정</h3>
+          <h3 className="mb-4 text-lg font-semibold text-white">AI 설정</h3>
           <div className="space-y-4">
             {/* AI 모델 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-dark-text-secondary">
                 AI 모델
               </label>
               <select
                 value={formData.ai_model ?? "gemini-2.5-flash"}
                 onChange={(e) => handleChange("ai_model", e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
               >
                 {AI_MODELS.map((model) => (
                   <option key={model.value} value={model.value}>
@@ -259,14 +259,14 @@ const Settings: FC = () => {
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-dark-text-muted">
                 매매 신호 생성에 사용할 AI 모델
               </p>
             </div>
 
             {/* 신호 생성 주기 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-dark-text-secondary">
                 신호 생성 주기 (시간)
               </label>
               <select
@@ -274,13 +274,13 @@ const Settings: FC = () => {
                 onChange={(e) =>
                   handleChange("signal_interval_hours", Number(e.target.value))
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
               >
                 <option value={1}>1시간</option>
                 <option value={2}>2시간</option>
                 <option value={4}>4시간</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-dark-text-muted">
                 AI 신호 자동 생성 간격
               </p>
             </div>
@@ -290,15 +290,15 @@ const Settings: FC = () => {
 
       {/* 현재 상태 */}
       <div className={CARD_CLASSES}>
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">현재 상태</h3>
+        <h3 className="mb-4 text-lg font-semibold text-white">현재 상태</h3>
         <div className="flex items-center gap-3">
-          <span className="text-gray-600">거래 활성화:</span>
+          <span className="text-dark-text-secondary">거래 활성화:</span>
           {config.trading_enabled ? (
-            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+            <span className="inline-flex items-center rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-sm font-medium text-emerald-400">
               활성
             </span>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800">
+            <span className="inline-flex items-center rounded-full bg-rose-500/10 border border-rose-500/20 px-3 py-1 text-sm font-medium text-rose-400">
               비활성
             </span>
           )}
@@ -310,14 +310,14 @@ const Settings: FC = () => {
         <button
           onClick={handleReset}
           disabled={!hasChanges}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-dark-border px-4 py-2 text-sm font-medium text-dark-text-secondary hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-banana-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
         >
           초기화
         </button>
         <button
           onClick={handleSave}
           disabled={!hasChanges || updateMutation.isPending}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-banana-500 px-4 py-2 text-sm font-medium text-black hover:bg-banana-400 focus:outline-none focus:ring-2 focus:ring-banana-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 shadow-[0_0_15px_rgba(250,204,21,0.4)] transition-all hover:shadow-[0_0_20px_rgba(250,204,21,0.6)]"
         >
           {updateMutation.isPending ? "저장 중..." : "설정 저장"}
         </button>

@@ -21,16 +21,16 @@ interface OrderTableProps {
 }
 
 // === 상수 ===
-const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
-  PENDING: { bg: "bg-yellow-100", text: "text-yellow-800" },
-  EXECUTED: { bg: "bg-green-100", text: "text-green-800" },
-  CANCELLED: { bg: "bg-gray-100", text: "text-gray-800" },
-  FAILED: { bg: "bg-red-100", text: "text-red-800" },
+const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
+  PENDING: { bg: "bg-banana-500/10", text: "text-banana-400", dot: "bg-banana-500" },
+  EXECUTED: { bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-500" },
+  CANCELLED: { bg: "bg-white/5", text: "text-dark-text-muted", dot: "bg-slate-500" },
+  FAILED: { bg: "bg-rose-500/10", text: "text-rose-400", dot: "bg-rose-500" },
 };
 
 const SIDE_STYLES: Record<string, { bg: string; text: string }> = {
-  BUY: { bg: "bg-blue-100", text: "text-blue-800" },
-  SELL: { bg: "bg-red-100", text: "text-red-800" },
+  BUY: { bg: "bg-banana-500/10", text: "text-banana-400" },
+  SELL: { bg: "bg-rose-500/10", text: "text-rose-400" },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -45,7 +45,7 @@ const SIDE_LABELS: Record<string, string> = {
   SELL: "매도",
 };
 
-const CARD_CLASSES = "rounded-lg bg-white shadow overflow-hidden";
+const CARD_CLASSES = "rounded-xl glass-panel overflow-hidden";
 
 /**
  * 금액 포맷
@@ -80,9 +80,9 @@ const OrderTable: FC<OrderTableProps> = ({
   if (isLoading) {
     return (
       <div className={CARD_CLASSES}>
-        <div className="p-8 text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-          <p className="mt-2 text-gray-500">로딩 중...</p>
+        <div className="p-12 text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-banana-500 border-t-transparent"></div>
+          <p className="mt-4 text-sm font-medium text-dark-text-muted">데이터를 불러오는 중입니다...</p>
         </div>
       </div>
     );
@@ -91,74 +91,77 @@ const OrderTable: FC<OrderTableProps> = ({
   if (orders.length === 0) {
     return (
       <div className={CARD_CLASSES}>
-        <div className="p-8 text-center text-gray-500">{emptyMessage}</div>
+        <div className="p-12 text-center text-dark-text-muted font-medium">{emptyMessage}</div>
       </div>
     );
   }
 
   return (
     <div className={CARD_CLASSES}>
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-              시간
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-              방향
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-              타입
-            </th>
-            <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-              금액
-            </th>
-            <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-              체결가
-            </th>
-            <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-              상태
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
-          {orders.map((order) => {
-            const statusStyle = STATUS_STYLES[order.status] || STATUS_STYLES.PENDING;
-            const sideStyle = SIDE_STYLES[order.side] || SIDE_STYLES.BUY;
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-dark-border">
+          <thead className="bg-white/5">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-dark-text-secondary">
+                시간
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-dark-text-secondary">
+                방향
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-dark-text-secondary">
+                타입
+              </th>
+              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-dark-text-secondary">
+                금액
+              </th>
+              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-dark-text-secondary">
+                체결가
+              </th>
+              <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-dark-text-secondary">
+                상태
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-dark-border bg-transparent">
+            {orders.map((order) => {
+              const statusStyle = STATUS_STYLES[order.status] || STATUS_STYLES.PENDING;
+              const sideStyle = SIDE_STYLES[order.side] || SIDE_STYLES.BUY;
 
-            return (
-              <tr key={order.id} className="hover:bg-gray-50">
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                  {formatDate(order.created_at)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${sideStyle.bg} ${sideStyle.text}`}
-                  >
-                    {SIDE_LABELS[order.side]}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-                  {order.order_type === "MARKET" ? "시장가" : "지정가"}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">
-                  {formatAmount(order.amount)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">
-                  {order.executed_price ? formatAmount(order.executed_price) : "-"}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-center text-sm">
-                  <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text}`}
-                  >
-                    {STATUS_LABELS[order.status]}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              return (
+                <tr key={order.id} className="hover:bg-white/5 transition-colors">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-white font-medium">
+                    {formatDate(order.created_at)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    <span
+                      className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${sideStyle.bg} ${sideStyle.text} ring-current/10`}
+                    >
+                      {SIDE_LABELS[order.side]}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-dark-text-secondary font-medium">
+                    {order.order_type === "MARKET" ? "시장가" : "지정가"}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-white font-semibold courier">
+                    {formatAmount(order.amount)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-white font-semibold courier">
+                    {order.executed_price ? formatAmount(order.executed_price) : "-"}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-center text-sm">
+                    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ${statusStyle.bg} border border-transparent`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.dot}`} />
+                      <span className={`text-xs font-semibold ${statusStyle.text}`}>
+                        {STATUS_LABELS[order.status]}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

@@ -39,8 +39,8 @@ const Signals: FC = () => {
       {/* 페이지 헤더 */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">거래 신호</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-white text-glow">AI 거래 신호</h2>
+          <p className="text-dark-text-secondary mt-1">
             AI가 생성한 거래 신호와 신뢰도 점수를 확인합니다.
           </p>
         </div>
@@ -50,7 +50,7 @@ const Signals: FC = () => {
           <select
             value={signalType}
             onChange={(e) => setSignalType(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-xl border border-dark-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-dark-surface text-white shadow-lg"
           >
             {SIGNAL_TYPES.map((option) => (
               <option key={option.value} value={option.value}>
@@ -63,7 +63,7 @@ const Signals: FC = () => {
           <button
             onClick={handleGenerate}
             disabled={generateMutation.isPending}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all hover:shadow-[0_0_20px_rgba(14,165,233,0.6)]"
           >
             {generateMutation.isPending ? "생성 중..." : "신호 생성"}
           </button>
@@ -105,13 +105,13 @@ const Signals: FC = () => {
       {data && (
         <div className="space-y-4">
           {data.items.length === 0 ? (
-            <div className="rounded-lg bg-gray-50 p-8 text-center text-gray-500">
+            <div className="rounded-2xl glass-panel p-12 text-center text-dark-text-muted border-dashed border-2 border-white/10">
               생성된 신호가 없습니다. &quot;신호 생성&quot; 버튼을 눌러 AI 신호를 생성하세요.
             </div>
           ) : (
             <>
               {/* 신호 개수 표시 */}
-              <p className="text-sm text-gray-500">총 {data.total}개의 신호</p>
+              <p className="text-sm text-dark-text-secondary">총 {data.total}개의 신호</p>
 
               {/* 신호 카드 그리드 */}
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

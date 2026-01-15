@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import MarketData, TradingSignal
 from src.models.trading_signal import SignalType
 from src.services.ai_client import AIClient, AIClientError, get_ai_client
+from src.services.upbit_client import UpbitError, get_upbit_client
 
 # === 신호 생성 상수 ===
 MIN_CONFIDENCE = 0.0  # 최소 신뢰도
@@ -66,9 +67,16 @@ ANALYSIS_PROMPT_TEMPLATE = """## 리플(XRP/KRW) 시장 분석 요청
 ### 가격 추이 (최근 {data_hours}시간)
 {price_history}
 
+### 현재 자산 상태
+{asset_status}
+
 ### 분석 요청
-위 시장 데이터를 기반으로 매매 신호를 생성해주세요.
-가격 추세, 변동성, 거래량 패턴을 종합적으로 고려하세요.
+위 시장 데이터와 자산 상태를 기반으로 매매 신호를 생성해주세요.
+- BUY: KRW 잔고가 충분하고 매수 기회가 있을 때
+- SELL: XRP 보유 중이고 매도 기회가 있을 때
+- HOLD: 포지션 유지 또는 관망이 적절할 때
+
+가격 추세, 변동성, 거래량 패턴과 함께 현재 포지션 상태를 종합적으로 고려하세요.
 """
 
 
@@ -136,8 +144,11 @@ class SignalGenerator:
 
         latest_data = market_data_list[0]  # 가장 최근 데이터
 
-        # 프롬프트 생성
-        prompt = self._build_prompt(market_data_list)
+        # 잔고 정보 조회
+        balance_info = await self._get_balance_info()
+
+        # 프롬프트 생성 (잔고 정보 포함)
+        prompt = self._build_prompt(market_data_list, balance_info)
 
         # AI 호출
         try:
@@ -219,14 +230,77 @@ class SignalGenerator:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    def _build_prompt(self, market_data_list: list[MarketData]) -> str:
+    async def _get_balance_info(self) -> dict | None:
+        """
+        Upbit 잔고 정보 조회
+
+        Returns:
+            dict | None: 잔고 정보 딕셔너리 또는 None (조회 실패 시)
+        """
+        try:
+            client = get_upbit_client()
+            accounts = await client.get_accounts()
+
+            krw_available = Decimal("0")
+            xrp_available = Decimal("0")
+            xrp_avg_price = Decimal("0")
+
+            for acc in accounts:
+                if acc.currency == "KRW":
+                    krw_available = acc.balance
+                elif acc.currency == "XRP":
+                    xrp_available = acc.balance
+                    xrp_avg_price = acc.avg_buy_price
+
+            # 현재가 조회
+            try:
+                ticker = await client.get_ticker("KRW-XRP")
+                current_price = ticker.trade_price
+            except UpbitError:
+                current_price = xrp_avg_price
+
+            # 미실현 손익 계산
+            xrp_value = xrp_available * current_price
+            total_krw = krw_available + xrp_value
+            unrealized_pnl = Decimal("0")
+            unrealized_pnl_pct = 0.0
+
+            if xrp_available > 0 and xrp_avg_price > 0:
+                unrealized_pnl = (current_price - xrp_avg_price) * xrp_available
+                unrealized_pnl_pct = float(
+                    (current_price - xrp_avg_price) / xrp_avg_price * 100
+                )
+
+            return {
+                "krw_available": krw_available,
+                "xrp_available": xrp_available,
+                "xrp_avg_price": xrp_avg_price,
+                "current_price": current_price,
+                "total_krw": total_krw,
+                "unrealized_pnl": unrealized_pnl,
+                "unrealized_pnl_pct": unrealized_pnl_pct,
+            }
+
+        except UpbitError as e:
+            logger.warning(f"잔고 조회 실패: {e.message}")
+            return None
+        except Exception as e:
+            logger.warning(f"잔고 조회 중 오류: {e}")
+            return None
+
+    def _build_prompt(
+        self,
+        market_data_list: list[MarketData],
+        balance_info: dict | None = None,
+    ) -> str:
         """
         분석 프롬프트 생성
 
-        시장 데이터를 기반으로 AI 분석 프롬프트를 구성합니다.
+        시장 데이터와 잔고 정보를 기반으로 AI 분석 프롬프트를 구성합니다.
 
         Args:
             market_data_list: 시장 데이터 목록 (최신순)
+            balance_info: 잔고 정보 (선택)
 
         Returns:
             str: 구성된 프롬프트
@@ -245,6 +319,9 @@ class SignalGenerator:
         # 가격 추이 요약 (1시간 간격으로 샘플링)
         price_history = self._summarize_price_history(market_data_list)
 
+        # 자산 상태 문자열 생성
+        asset_status = self._format_asset_status(balance_info)
+
         return ANALYSIS_PROMPT_TEMPLATE.format(
             timestamp=latest.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC"),
             current_price=float(latest.price),
@@ -254,7 +331,38 @@ class SignalGenerator:
             price_change_pct=price_change_pct,
             data_hours=MARKET_DATA_HOURS,
             price_history=price_history,
+            asset_status=asset_status,
         )
+
+    def _format_asset_status(self, balance_info: dict | None) -> str:
+        """
+        자산 상태 문자열 생성
+
+        Args:
+            balance_info: 잔고 정보
+
+        Returns:
+            str: 자산 상태 문자열
+        """
+        if balance_info is None:
+            return "- 자산 정보 조회 불가 (API 키 미설정 또는 오류)"
+
+        lines = []
+        lines.append(f"- KRW 가용 잔고: {float(balance_info['krw_available']):,.0f} KRW")
+        lines.append(f"- XRP 보유량: {float(balance_info['xrp_available']):.4f} XRP")
+
+        if balance_info["xrp_available"] > 0:
+            lines.append(
+                f"- XRP 평균 매수가: {float(balance_info['xrp_avg_price']):,.0f} KRW"
+            )
+            lines.append(
+                f"- 미실현 손익: {float(balance_info['unrealized_pnl']):+,.0f} KRW "
+                f"({balance_info['unrealized_pnl_pct']:+.2f}%)"
+            )
+
+        lines.append(f"- 총 평가금액: {float(balance_info['total_krw']):,.0f} KRW")
+
+        return "\n".join(lines)
 
     def _summarize_price_history(
         self,

@@ -1,3 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  @apply font-sans antialiased;
+  background-color: theme('colors.dark.bg');
+  background-image: url('/nano-bg.png');
+  background-size: cover;
+  background-attachment: fixed;
+  background-blend-mode: overlay;
+  color: theme('colors.dark.text.primary');
+
+  ::selection {
+    background-color: rgba(250, 204, 21, 0.3);
+    /* banana-400 with opacity */
+    color: #FACC15;
+    /* banana-400 */
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-dark-surface/50 backdrop-blur-xl border border-dark-border shadow-xl;
+  }
+
+  .card-gradient {
+    @apply bg-gradient-to-br from-dark-surface to-dark-bg/50 border border-dark-border;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+  }
+}

@@ -20,6 +20,7 @@ from src.database import async_session_factory
 from src.models import SignalType
 from src.services.data_collector import get_data_collector
 from src.services.order_executor import OrderExecutorError, get_order_executor
+from src.services.risk_manager import RiskCheckResult, get_risk_manager
 from src.services.signal_generator import SignalGeneratorError, get_signal_generator
 
 # 스케줄러 인스턴스 (비동기)
@@ -28,6 +29,7 @@ scheduler = AsyncIOScheduler()
 # === 작업 설정 상수 ===
 DATA_COLLECTION_INTERVAL_SECONDS = 1  # 데이터 수집 주기 (초)
 DATA_CLEANUP_INTERVAL_HOURS = 24  # 데이터 정리 주기 (시간)
+VOLATILITY_CHECK_INTERVAL_SECONDS = 30  # 변동성 체크 주기 (초)
 JOB_MAX_RETRY_ATTEMPTS = 3  # 작업 최대 재시도 횟수
 
 
@@ -88,6 +90,45 @@ async def cleanup_old_data_job() -> None:
         except Exception as e:
             await session.rollback()
             logger.exception(f"데이터 정리 작업 오류: {e}")
+
+
+async def check_volatility_job() -> None:
+    """
+    변동성 모니터링 작업
+
+    30초마다 실행되어 시장 변동성을 체크하고,
+    임계값을 초과하면 자동으로 거래를 중단합니다.
+
+    처리 흐름:
+        1. RiskManager 인스턴스 생성
+        2. 최근 5분간의 변동성 계산
+        3. 임계값 초과 시 거래 중단
+        4. 변동성 정상화 시 별도 조치 없음 (수동 재개 필요)
+    """
+    async with async_session_factory() as session:
+        try:
+            risk_manager = await get_risk_manager(session)
+
+            # 변동성 체크
+            result, volatility_pct, message = await risk_manager.check_volatility()
+
+            if result == RiskCheckResult.BLOCKED:
+                # 고변동성 감지 - 거래 중단
+                logger.warning(f"고변동성 감지로 거래 중단: {volatility_pct:.2f}%")
+                await risk_manager.halt_trading(
+                    f"고변동성 자동 감지: {volatility_pct:.2f}% (5분 내)"
+                )
+                await session.commit()
+
+            elif result == RiskCheckResult.WARNING:
+                # 경고 수준 - 로그만 기록
+                logger.info(f"변동성 경고: {message}")
+
+            # PASS는 로그 없음 (너무 많은 로그 방지)
+
+        except Exception as e:
+            await session.rollback()
+            logger.exception(f"변동성 체크 작업 오류: {e}")
 
 
 async def generate_trading_signal_job() -> None:
@@ -200,6 +241,7 @@ def setup_scheduler() -> AsyncIOScheduler:
 
     등록되는 작업:
         - collect_market_data: 1초마다 시세 수집
+        - check_volatility: 30초마다 변동성 체크 및 자동 거래 중단
         - generate_trading_signal: 설정된 주기(기본 1시간)마다 AI 신호 생성
           → 신호가 BUY/SELL이면 자동으로 execute_trading_from_signal_job 호출
         - cleanup_old_data: 24시간마다 오래된 데이터 삭제
@@ -208,6 +250,11 @@ def setup_scheduler() -> AsyncIOScheduler:
         1. generate_trading_signal_job에서 AI 신호 생성
         2. 신호가 BUY 또는 SELL인 경우 execute_trading_from_signal_job 호출
         3. 리스크 체크 → 잔고 확인 → 주문 실행 → 포지션 업데이트
+
+    변동성 모니터링:
+        1. 30초마다 최근 5분간의 가격 변동률 계산
+        2. 임계값(기본 3%) 초과 시 자동 거래 중단
+        3. 거래 재개는 수동으로 필요
 
     설정 옵션:
         - replace_existing: 기존 작업 교체
@@ -251,9 +298,21 @@ def setup_scheduler() -> AsyncIOScheduler:
         coalesce=True,
     )
 
+    # 변동성 모니터링 작업 (30초 간격)
+    scheduler.add_job(
+        check_volatility_job,
+        trigger=IntervalTrigger(seconds=VOLATILITY_CHECK_INTERVAL_SECONDS),
+        id="check_volatility",
+        name="변동성 모니터링",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+
     logger.info(
         f"스케줄러 설정 완료: "
         f"데이터 수집 ({DATA_COLLECTION_INTERVAL_SECONDS}초), "
+        f"변동성 체크 ({VOLATILITY_CHECK_INTERVAL_SECONDS}초), "
         f"AI 신호 생성 ({signal_interval_hours}시간), "
         f"데이터 정리 ({DATA_CLEANUP_INTERVAL_HOURS}시간)"
     )
