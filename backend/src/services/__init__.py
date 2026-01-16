@@ -22,16 +22,6 @@ from src.services.multi_timeframe_analyzer import (
     TimeframeAnalysis,
     get_multi_timeframe_analyzer,
 )
-from src.services.signal_performance_tracker import (
-    PerformanceSummary,
-    SignalOutcome,
-    SignalPerformanceTracker,
-)
-from src.services.technical_indicators import (
-    IndicatorResult,
-    TechnicalIndicatorCalculator,
-    get_technical_calculator,
-)
 from src.services.notifier import (
     AlertLevel,
     AlertMessage,
@@ -60,6 +50,16 @@ from src.services.signal_generator import (
     SignalGenerator,
     SignalGeneratorError,
     get_signal_generator,
+)
+from src.services.signal_performance_tracker import (
+    PerformanceSummary,
+    SignalOutcome,
+    SignalPerformanceTracker,
+)
+from src.services.technical_indicators import (
+    IndicatorResult,
+    TechnicalIndicatorCalculator,
+    get_technical_calculator,
 )
 from src.services.upbit_client import UpbitClient, get_upbit_client
 

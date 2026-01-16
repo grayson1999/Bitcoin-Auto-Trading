@@ -13,6 +13,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import App from "./App";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 import Backtest from "./pages/Backtest";
 import Dashboard from "./pages/Dashboard";
@@ -82,10 +83,13 @@ const router = createBrowserRouter([
 
 // React 앱 마운트
 // StrictMode: 개발 중 잠재적 문제 감지
+// ErrorBoundary: 런타임 오류 포착 및 사용자 친화적 UI 표시
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </ErrorBoundary>
   </StrictMode>
 );

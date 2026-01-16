@@ -7,11 +7,14 @@
  * - AI 분석 근거
  */
 
-import type { FC } from "react";
+import type { ComponentType, FC, SVGProps } from "react";
 import type { TradingSignal } from "../hooks/useApi";
 import { ArrowTrendingUpIcon, HandRaisedIcon, ArrowTrendingDownIcon, CpuChipIcon } from "@heroicons/react/24/outline";
 
 // === 타입 정의 ===
+/** Heroicons 아이콘 컴포넌트 타입 */
+type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
+
 interface SignalCardProps {
   /** AI 신호 데이터 */
   signal: TradingSignal;
@@ -20,7 +23,7 @@ interface SignalCardProps {
 }
 
 // === 상수 ===
-const SIGNAL_STYLES: Record<string, { bg: string; text: string; label: string; icon: any; gradient: string }> = {
+const SIGNAL_STYLES: Record<string, { bg: string; text: string; label: string; icon: HeroIcon; gradient: string }> = {
   BUY: {
     bg: "bg-emerald-50",
     text: "text-emerald-700",

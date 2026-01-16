@@ -7,7 +7,6 @@
 
 import asyncio
 from dataclasses import dataclass, field
-from decimal import Decimal
 
 from loguru import logger
 
@@ -117,7 +116,7 @@ class MultiTimeframeAnalyzer:
         candle_data: dict[str, list[UpbitCandleData]] = {}
 
         timeframes = ["1h", "4h", "1d", "1w"]
-        for tf, result in zip(timeframes, results):
+        for tf, result in zip(timeframes, results, strict=True):
             if isinstance(result, Exception):
                 logger.warning(f"{tf} 캔들 데이터 조회 실패: {result}")
                 candle_data[tf] = []

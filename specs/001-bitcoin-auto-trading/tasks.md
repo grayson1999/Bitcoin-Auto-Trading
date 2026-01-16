@@ -225,12 +225,12 @@
 
 **목적**: 여러 사용자 스토리에 영향을 미치는 개선 사항
 
-- [ ] T095 [P] backend/Dockerfile에 백엔드 Dockerfile 생성
-- [ ] T096 [P] frontend/Dockerfile에 Nginx 포함 프론트엔드 Dockerfile 생성
-- [ ] T097 backend/src/scheduler/jobs.py에 데이터 보존 정리 작업 (1년 시장 데이터) 구현
-- [ ] T098 backend/src/config.py에 로그 내 API 키 마스킹 추가
-- [ ] T099 frontend/src/App.tsx에 오류 경계 컴포넌트 추가
-- [ ] T100 quickstart.md 검증 실행 (API 연결, 설정, 테스트 거래)
+- [x] T095 [P] backend/Dockerfile에 백엔드 Dockerfile 생성
+- [x] T096 [P] frontend/Dockerfile에 Nginx 포함 프론트엔드 Dockerfile 생성
+- [x] T097 backend/src/scheduler/jobs.py에 데이터 보존 정리 작업 (1년 시장 데이터) 구현
+- [x] T098 backend/src/config.py에 로그 내 API 키 마스킹 추가
+- [x] T099 frontend/src/App.tsx에 오류 경계 컴포넌트 추가
+- [x] T100 quickstart.md 검증 실행 (API 연결, 설정, 테스트 거래)
 
 ---
 

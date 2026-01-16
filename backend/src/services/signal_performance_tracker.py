@@ -316,7 +316,6 @@ class SignalPerformanceTracker:
         # 신호 타입별 분류
         buy_outcomes = [o for o in outcomes if o.signal_type == SignalType.BUY.value]
         sell_outcomes = [o for o in outcomes if o.signal_type == SignalType.SELL.value]
-        hold_outcomes = [o for o in outcomes if o.signal_type == SignalType.HOLD.value]
 
         # 매수 신호 피드백
         if buy_outcomes:
