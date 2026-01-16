@@ -2,13 +2,13 @@
 
 # PostgreSQL (Docker)
 dev-db:
-	docker-compose up -d
+	docker compose up -d
 
 dev-db-down:
-	docker-compose down
+	docker compose down
 
 dev-db-logs:
-	docker-compose logs -f db
+	docker compose logs -f db
 
 # Backend (local development)
 dev-backend:
