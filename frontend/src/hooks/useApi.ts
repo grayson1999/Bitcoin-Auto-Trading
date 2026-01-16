@@ -129,6 +129,68 @@ export interface RiskStatus {
   last_check_at: string;
 }
 
+/** 백테스트 결과 */
+export interface BacktestResult {
+  id: number;
+  name: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+  start_date: string;
+  end_date: string;
+  initial_capital: string;
+  final_capital: string | null;
+  total_return_pct: string | null;
+  max_drawdown_pct: string | null;
+  win_rate_pct: string | null;
+  profit_factor: string | null;
+  sharpe_ratio: string | null;
+  total_trades: number | null;
+  winning_trades: number | null;
+  losing_trades: number | null;
+  avg_profit_pct: string | null;
+  avg_loss_pct: string | null;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+/** 백테스트 거래 기록 */
+export interface TradeRecord {
+  timestamp: string;
+  signal_type: "BUY" | "SELL";
+  price: number;
+  quantity: number;
+  amount: number;
+  fee: number;
+  pnl: number;
+  pnl_pct: number;
+  balance_after: number;
+}
+
+/** 백테스트 결과 상세 */
+export interface BacktestResultDetail extends BacktestResult {
+  trade_history: TradeRecord[] | null;
+}
+
+/** 백테스트 결과 목록 응답 */
+export interface BacktestListResponse {
+  items: BacktestResult[];
+  total: number;
+}
+
+/** 백테스트 실행 요청 */
+export interface BacktestRequest {
+  name: string;
+  start_date: string;
+  end_date: string;
+  initial_capital: number;
+}
+
+/** 백테스트 실행 응답 */
+export interface BacktestRunResponse {
+  result: BacktestResult;
+  message: string;
+}
+
 // === 쿼리 키 상수 ===
 export const QUERY_KEYS = {
   DASHBOARD_SUMMARY: "dashboard-summary",
@@ -136,6 +198,8 @@ export const QUERY_KEYS = {
   ORDERS: "orders",
   CONFIG: "config",
   RISK_STATUS: "risk-status",
+  BACKTEST_RESULTS: "backtest-results",
+  BACKTEST_RESULT: "backtest-result",
 } as const;
 
 // === 훅 정의 ===
@@ -284,6 +348,59 @@ export function useResumeTrading() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RISK_STATUS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DASHBOARD_SUMMARY] });
+    },
+  });
+}
+
+/**
+ * 백테스트 결과 목록 조회 훅
+ *
+ * @param limit 조회 개수
+ * @param status 상태 필터
+ * @returns UseQueryResult<BacktestListResponse>
+ */
+export function useBacktestResults(limit = 20, status?: string) {
+  const params = new URLSearchParams();
+  params.append("limit", String(limit));
+  if (status && status !== "all") {
+    params.append("status", status);
+  }
+
+  return useQuery<BacktestListResponse>({
+    queryKey: [QUERY_KEYS.BACKTEST_RESULTS, limit, status],
+    queryFn: () =>
+      api.get<BacktestListResponse>(`/backtest/results?${params.toString()}`),
+    staleTime: 30000, // 30초
+  });
+}
+
+/**
+ * 백테스트 결과 상세 조회 훅
+ *
+ * @param resultId 결과 ID
+ * @returns UseQueryResult<BacktestResultDetail>
+ */
+export function useBacktestResult(resultId: number | null) {
+  return useQuery<BacktestResultDetail>({
+    queryKey: [QUERY_KEYS.BACKTEST_RESULT, resultId],
+    queryFn: () => api.get<BacktestResultDetail>(`/backtest/results/${resultId}`),
+    enabled: resultId !== null,
+    staleTime: 60000, // 1분
+  });
+}
+
+/**
+ * 백테스트 실행 훅
+ *
+ * @returns UseMutationResult
+ */
+export function useRunBacktest() {
+  const queryClient = useQueryClient();
+
+  return useMutation<BacktestRunResponse, Error, BacktestRequest>({
+    mutationFn: (data) => api.post<BacktestRunResponse>("/backtest/run", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BACKTEST_RESULTS] });
     },
   });
 }

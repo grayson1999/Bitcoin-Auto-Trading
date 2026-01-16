@@ -52,6 +52,7 @@ class TimestampMixin:
 
 
 # SQLAlchemy에 모델 등록을 위한 임포트
+from src.models.backtest_result import BacktestResult, BacktestStatus  # noqa: E402, F401
 from src.models.daily_stats import DailyStats  # noqa: E402, F401
 from src.models.market_data import MarketData  # noqa: E402, F401
 from src.models.order import (  # noqa: E402, F401
@@ -81,4 +82,6 @@ __all__ = [
     "OrderType",
     "OrderSide",
     "OrderStatus",
+    "BacktestResult",
+    "BacktestStatus",
 ]

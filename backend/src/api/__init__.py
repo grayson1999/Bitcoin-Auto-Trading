@@ -8,6 +8,7 @@ FastAPI 라우터 패키지
 
 from fastapi import APIRouter
 
+from src.api.backtest import router as backtest_router
 from src.api.config import router as config_router
 from src.api.dashboard import router as dashboard_router
 from src.api.health import router as health_router
@@ -26,5 +27,6 @@ api_router.include_router(signals_router, tags=["Signals"])  # AI 신호
 api_router.include_router(risk_router, tags=["Risk"])  # 리스크 관리
 api_router.include_router(trading_router, tags=["Trading"])  # 거래
 api_router.include_router(config_router, tags=["Config"])  # 설정
+api_router.include_router(backtest_router, tags=["Backtest"])  # 백테스트
 
 __all__ = ["api_router"]

@@ -7,12 +7,14 @@ import {
     Cog6ToothIcon,
     Bars3Icon,
     XMarkIcon,
+    BeakerIcon,
 } from '@heroicons/react/24/outline';
 
 const navItems = [
     { path: '/', label: '대시보드', icon: HomeIcon },
     { path: '/orders', label: '주문 내역', icon: CurrencyDollarIcon },
     { path: '/signals', label: 'AI 신호', icon: ChartBarIcon },
+    { path: '/backtest', label: '백테스트', icon: BeakerIcon },
     { path: '/settings', label: '설정', icon: Cog6ToothIcon },
 ];
 

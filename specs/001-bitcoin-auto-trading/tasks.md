@@ -206,16 +206,16 @@
 
 ### 사용자 스토리 6 구현
 
-- [ ] T085 [P] [US6] backend/src/models/backtest_result.py에 BacktestResult SQLAlchemy 모델 생성
-- [ ] T086 [US6] BacktestResult 테이블용 Alembic 마이그레이션 생성
-- [ ] T087 [US6] backend/src/services/backtest_runner.py에 신호 시뮬레이션이 포함된 BacktestRunner 서비스 구현
-- [ ] T088 [US6] backend/src/services/backtest_runner.py에 지표 계산 (수익률, MDD, 승률, 손익비) 추가
-- [ ] T089 [US6] backend/src/api/schemas/backtest.py에 BacktestRequest 및 BacktestResult용 Pydantic 스키마 생성
-- [ ] T090 [US6] backend/src/api/backtest.py에 POST /backtest/run 엔드포인트 구현
-- [ ] T091 [US6] backend/src/api/backtest.py에 GET /backtest/results 엔드포인트 구현
-- [ ] T092 [US6] backend/src/api/backtest.py에 GET /backtest/results/{result_id} 엔드포인트 구현
-- [ ] T093 [P] [US6] frontend/src/pages/Backtest.tsx에 Backtest 페이지 컴포넌트 생성
-- [ ] T094 [US6] frontend/src/pages/Backtest.tsx에 백테스트 진행 표시기 및 결과 표시 추가
+- [x] T085 [P] [US6] backend/src/models/backtest_result.py에 BacktestResult SQLAlchemy 모델 생성
+- [x] T086 [US6] BacktestResult 테이블용 Alembic 마이그레이션 생성
+- [x] T087 [US6] backend/src/services/backtest_runner.py에 신호 시뮬레이션이 포함된 BacktestRunner 서비스 구현
+- [x] T088 [US6] backend/src/services/backtest_runner.py에 지표 계산 (수익률, MDD, 승률, 손익비) 추가
+- [x] T089 [US6] backend/src/api/schemas/backtest.py에 BacktestRequest 및 BacktestResult용 Pydantic 스키마 생성
+- [x] T090 [US6] backend/src/api/backtest.py에 POST /backtest/run 엔드포인트 구현
+- [x] T091 [US6] backend/src/api/backtest.py에 GET /backtest/results 엔드포인트 구현
+- [x] T092 [US6] backend/src/api/backtest.py에 GET /backtest/results/{result_id} 엔드포인트 구현
+- [x] T093 [P] [US6] frontend/src/pages/Backtest.tsx에 Backtest 페이지 컴포넌트 생성
+- [x] T094 [US6] frontend/src/pages/Backtest.tsx에 백테스트 진행 표시기 및 결과 표시 추가
 
 **체크포인트**: 백테스팅이 실행되고 성과 지표 생성
 

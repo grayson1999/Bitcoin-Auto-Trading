@@ -14,6 +14,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import App from "./App";
 import "./index.css";
+import Backtest from "./pages/Backtest";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Settings from "./pages/Settings";
@@ -70,6 +71,10 @@ const router = createBrowserRouter([
       {
         path: "settings",
         element: <Settings />,
+      },
+      {
+        path: "backtest",
+        element: <Backtest />,
       },
     ],
   },
