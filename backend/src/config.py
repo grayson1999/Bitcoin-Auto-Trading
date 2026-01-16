@@ -240,4 +240,17 @@ def setup_logging() -> None:
         filter=mask_filter,
     )
 
+    # Slack 핸들러 추가 (ERROR 레벨 이상만)
+    if settings.slack_webhook_url:
+        from src.services.slack_log_handler import get_slack_log_handler
+
+        slack_handler = get_slack_log_handler()
+        logger.add(
+            slack_handler.sink,
+            level="ERROR",
+            filter=mask_filter,
+            format="{message}",  # 간단한 포맷 (AlertMessage에서 구조화)
+        )
+        logger.info("Slack 로그 핸들러 활성화됨")
+
     logger.info("로깅 설정 완료", debug_mode=settings.debug)

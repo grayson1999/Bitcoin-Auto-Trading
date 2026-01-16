@@ -78,6 +78,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Bitcoin Auto-Trading 백엔드 종료 중...")
     stop_scheduler()
     logger.info("스케줄러 중지됨")
+
+    # Slack 로그 핸들러 종료
+    if settings.slack_webhook_url:
+        from src.services.slack_log_handler import get_slack_log_handler
+
+        get_slack_log_handler().close()
+        logger.info("Slack 로그 핸들러 종료됨")
+
     await close_db()
     logger.info("데이터베이스 연결 해제됨")
 

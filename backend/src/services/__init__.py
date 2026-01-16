@@ -12,6 +12,7 @@
 - RiskManager: 리스크 관리 서비스
 - OrderExecutor: 주문 실행 서비스
 - Notifier: 알림 서비스
+- SlackLogHandler: ERROR 레벨 로그 자동 Slack 알림
 """
 
 from src.services.ai_client import AIClient, AIClientError, AIResponse, get_ai_client
@@ -56,6 +57,7 @@ from src.services.signal_performance_tracker import (
     SignalOutcome,
     SignalPerformanceTracker,
 )
+from src.services.slack_log_handler import SlackLogHandler, get_slack_log_handler
 from src.services.technical_indicators import (
     IndicatorResult,
     TechnicalIndicatorCalculator,
@@ -113,4 +115,7 @@ __all__ = [
     "AlertLevel",
     "AlertMessage",
     "get_notifier",
+    # Slack Log Handler
+    "SlackLogHandler",
+    "get_slack_log_handler",
 ]
