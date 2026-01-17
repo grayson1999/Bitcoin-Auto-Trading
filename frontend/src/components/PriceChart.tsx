@@ -88,7 +88,7 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
           </p>
         </div>
         <div className="text-right">
-          <span className="text-sm text-dark-text-secondary">24h</span>
+          <span className="block text-sm text-dark-text-secondary">24h</span>
           <p className="text-lg font-medium inline-flex items-center gap-1" style={{ color: changeColor }}>
             {change24h !== null ? `${changeSign}${change24h.toFixed(2)}%` : "-"}
             <span className="relative group">
