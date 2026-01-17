@@ -47,7 +47,7 @@ const SIGNAL_STYLES: Record<string, { bg: string; text: string; label: string; i
   },
 };
 
-const CARD_CLASSES = "group relative overflow-hidden rounded-2xl glass-panel p-6 transition-all hover:shadow-[0_0_20px_rgba(250,204,21,0.15)] hover:border-banana-500/30";
+const CARD_CLASSES = "group relative overflow-hidden rounded-2xl glass-panel p-6 transition-all duration-300 hover:shadow-[0_0_20px_rgba(250,204,21,0.15)] hover:border-banana-500/30 active:scale-[0.98]";
 
 /**
  * 날짜 포맷

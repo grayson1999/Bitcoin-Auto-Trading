@@ -96,7 +96,7 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
       </div>
 
       {/* 차트 영역 */}
-      <div className="h-48">
+      <div className="h-56 sm:h-72">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
             <defs>

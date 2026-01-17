@@ -84,15 +84,15 @@ const Dashboard: FC = () => {
   return (
     <div className="space-y-6">
       {/* 페이지 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white text-glow">대시보드</h2>
-          <p className="text-dark-text-secondary mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-white text-glow">대시보드</h2>
+          <p className="text-dark-text-secondary mt-1 text-sm sm:text-base">
             거래 활동, 포지션, 성과 지표의 개요를 확인합니다.
           </p>
         </div>
         {/* 거래 상태 배지 */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           {summary.is_trading_active ? (
             <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
               <span className="mr-1.5 h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
@@ -108,7 +108,7 @@ const Dashboard: FC = () => {
       </div>
 
       {/* T084: 반응형 그리드 레이아웃 */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         {/* 가격 차트 */}
         <PriceChart
           currentPrice={Number(summary.current_price)}
@@ -126,28 +126,28 @@ const Dashboard: FC = () => {
       </div>
 
       {/* 요약 카드들 */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* 총 평가금액 */}
-        <div className="rounded-2xl glass-panel p-6">
+        <div className="rounded-2xl glass-panel p-4 sm:p-6">
           <h3 className="text-sm font-medium text-dark-text-secondary">총 평가금액</h3>
-          <p className="mt-2 text-2xl font-bold text-white tracking-tight courier text-glow">
+          <p className="mt-2 text-xl sm:text-2xl font-bold text-white tracking-tight courier text-glow">
             {summary.balance ? formatKRW(summary.balance.total_krw) : "-"}
           </p>
         </div>
 
         {/* KRW 잔고 */}
-        <div className="rounded-2xl glass-panel p-6">
+        <div className="rounded-2xl glass-panel p-4 sm:p-6">
           <h3 className="text-sm font-medium text-dark-text-secondary">KRW 보유량</h3>
-          <p className="mt-2 text-2xl font-bold text-white tracking-tight courier">
+          <p className="mt-2 text-xl sm:text-2xl font-bold text-white tracking-tight courier">
             {summary.balance ? formatKRW(summary.balance.krw) : "-"}
           </p>
         </div>
 
         {/* 일일 손익 */}
-        <div className="rounded-2xl glass-panel p-6">
+        <div className="rounded-2xl glass-panel p-4 sm:p-6">
           <h3 className="text-sm font-medium text-dark-text-secondary">일일 손익</h3>
           <p
-            className={`mt-2 text-2xl font-bold tracking-tight courier text-glow ${Number(summary.daily_pnl) >= 0 ? "text-emerald-400" : "text-rose-400"
+            className={`mt-2 text-xl sm:text-2xl font-bold tracking-tight courier text-glow ${Number(summary.daily_pnl) >= 0 ? "text-emerald-400" : "text-rose-400"
               }`}
           >
             {formatKRW(summary.daily_pnl)}
@@ -159,18 +159,18 @@ const Dashboard: FC = () => {
         </div>
 
         {/* 오늘 거래 */}
-        <div className="rounded-2xl glass-panel p-6">
+        <div className="rounded-2xl glass-panel p-4 sm:p-6">
           <h3 className="text-sm font-medium text-dark-text-secondary">오늘의 거래</h3>
-          <p className="mt-2 text-2xl font-bold text-white tracking-tight courier">
+          <p className="mt-2 text-xl sm:text-2xl font-bold text-white tracking-tight courier">
             {summary.today_trade_count}
           </p>
         </div>
       </div>
 
       {/* 포지션 & 최신 신호 */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         {/* 현재 포지션 */}
-        <div className="rounded-2xl glass-panel p-6">
+        <div className="rounded-2xl glass-panel p-4 sm:p-6">
           <h3 className="mb-6 text-lg font-bold text-white flex items-center gap-2">
             현재 포지션
             <span className="relative group">
@@ -227,7 +227,7 @@ const Dashboard: FC = () => {
         </div>
 
         {/* 최신 AI 신호 */}
-        <div className="rounded-2xl glass-panel p-6">
+        <div className="rounded-2xl glass-panel p-4 sm:p-6">
           <h3 className="mb-6 text-lg font-bold text-white">최신 AI 신호</h3>
           {summary.latest_signal ? (
             <SignalCard signal={summary.latest_signal} />
