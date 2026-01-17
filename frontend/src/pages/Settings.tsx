@@ -12,9 +12,10 @@ import { useConfig, useUpdateConfig, type SystemConfigUpdate } from "../hooks/us
 
 // === 상수 ===
 const AI_MODELS = [
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (권장)" },
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+  { value: "gpt-4o", label: "GPT-4o" },
   { value: "gpt-4o-mini", label: "GPT-4o Mini" },
-  { value: "claude-3-haiku", label: "Claude 3 Haiku" },
 ];
 
 const CARD_CLASSES = "rounded-2xl glass-panel p-6";
@@ -258,7 +259,7 @@ const Settings: FC = () => {
                 AI 모델
               </label>
               <select
-                value={formData.ai_model ?? "gemini-2.5-flash"}
+                value={formData.ai_model ?? "gemini-2.5-pro"}
                 onChange={(e) => handleChange("ai_model", e.target.value)}
                 className="mt-1 block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
               >
