@@ -233,3 +233,19 @@ Thumbs.db
 ### Local env ###
 .env.local
 .env.*.local
+
+# === 환경 변수 파일 (민감 정보 보호) ===
+**/.env
+*.env.bak
+*.env.backup
+
+# === API 키/비밀 파일 ===
+**/secrets/
+**/credentials/
+*.pem
+*.key
+credentials.json
+
+# 예외: 템플릿 파일
+!.env.example
+!**/.env.example
