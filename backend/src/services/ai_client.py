@@ -260,9 +260,9 @@ class AIClient:
                         is_retryable=False,
                     ) from e
 
-                if "quota" in error_msg or "rate" in error_msg:
+                if "quota" in error_msg or "rate" in error_msg or "429" in error_msg:
                     raise AIClientError(
-                        f"Gemini API 할당량/Rate limit 초과: {e}",
+                        "AI API 요청 한도 초과 (Rate Limit). 잠시 후 다시 시도해주세요.",
                         is_retryable=True,
                     ) from e
 
@@ -338,9 +338,9 @@ class AIClient:
                         is_retryable=False,
                     ) from e
 
-                if "quota" in error_msg or "rate" in error_msg:
+                if "quota" in error_msg or "rate" in error_msg or "429" in error_msg:
                     raise AIClientError(
-                        f"OpenAI API 할당량/Rate limit 초과: {e}",
+                        "AI API 요청 한도 초과 (Rate Limit). 잠시 후 다시 시도해주세요.",
                         is_retryable=True,
                     ) from e
 

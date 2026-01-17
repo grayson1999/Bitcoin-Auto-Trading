@@ -179,6 +179,13 @@ async def generate_signal(
                 detail="분석할 시장 데이터가 없습니다. 데이터 수집을 확인하세요.",
             ) from e
 
+        # AI Rate Limit 오류
+        if "Rate Limit" in error_msg or "429" in error_msg:
+            raise HTTPException(
+                status_code=429,
+                detail="AI API 요청 한도 초과. 잠시 후 다시 시도해주세요.",
+            ) from e
+
         # AI API 오류
         logger.error(f"신호 생성 실패: {e}")
         raise HTTPException(
