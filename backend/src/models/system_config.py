@@ -33,7 +33,7 @@ class SystemConfig(Base):
         - stop_loss_pct: 5.0 (손절 %)
         - daily_loss_limit_pct: 5.0 (일일 손실 한도 %)
         - signal_interval_hours: 1 (신호 생성 주기)
-        - ai_model: gemini-2.5-flash
+        - ai_model: gemini-2.5-pro
         - volatility_threshold_pct: 3.0 (변동성 임계값 %)
     """
 
@@ -91,7 +91,7 @@ DEFAULT_CONFIGS = {
     "stop_loss_pct": "5.0",
     "daily_loss_limit_pct": "5.0",
     "signal_interval_hours": "1",
-    "ai_model": '"gemini-2.5-flash"',
+    "ai_model": '"gemini-2.5-pro"',
     "volatility_threshold_pct": "3.0",
     "trading_enabled": "true",
 }

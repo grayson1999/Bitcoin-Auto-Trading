@@ -42,7 +42,7 @@ class SystemConfigResponse(BaseModel):
         description="AI 신호 생성 주기 (시간)",
     )
     ai_model: str = Field(
-        default="gemini-2.5-flash",
+        default="gemini-2.5-pro",
         description="사용 중인 AI 모델",
     )
     volatility_threshold_pct: float = Field(
@@ -96,7 +96,7 @@ class SystemConfigUpdateRequest(BaseModel):
     )
     ai_model: str | None = Field(
         default=None,
-        description="AI 모델 (gemini-2.5-flash, gpt-4o-mini, claude-3-haiku)",
+        description="AI 모델 (gemini-2.5-pro, gemini-2.5-flash, gpt-4o-mini, claude-3-haiku)",
     )
     volatility_threshold_pct: float | None = Field(
         default=None,
