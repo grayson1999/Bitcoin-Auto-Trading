@@ -191,9 +191,27 @@ export interface BacktestRunResponse {
   message: string;
 }
 
+/** 시장 데이터 레코드 */
+export interface MarketDataItem {
+  id: number;
+  timestamp: string;
+  price: string;
+  volume: string;
+  high_price: string;
+  low_price: string;
+  trade_count: number;
+}
+
+/** 시장 데이터 목록 응답 */
+export interface MarketDataListResponse {
+  items: MarketDataItem[];
+  total: number;
+}
+
 // === 쿼리 키 상수 ===
 export const QUERY_KEYS = {
   DASHBOARD_SUMMARY: "dashboard-summary",
+  MARKET_HISTORY: "market-history",
   SIGNALS: "signals",
   ORDERS: "orders",
   CONFIG: "config",
@@ -214,6 +232,26 @@ export function useDashboardSummary(refetchInterval = 0) {
   return useQuery<DashboardSummary>({
     queryKey: [QUERY_KEYS.DASHBOARD_SUMMARY],
     queryFn: () => api.get<DashboardSummary>("/dashboard/summary"),
+    refetchInterval: refetchInterval > 0 ? refetchInterval : false,
+    staleTime: 5000, // 5초
+  });
+}
+
+/**
+ * 시장 데이터 히스토리 조회 훅
+ *
+ * @param hours 조회할 시간 범위 (기본 24시간)
+ * @param limit 최대 조회 개수 (기본 100)
+ * @param refetchInterval 자동 새로고침 주기 (ms), 0이면 비활성화
+ * @returns UseQueryResult<MarketDataListResponse>
+ */
+export function useMarketHistory(hours = 24, limit = 100, refetchInterval = 0) {
+  return useQuery<MarketDataListResponse>({
+    queryKey: [QUERY_KEYS.MARKET_HISTORY, hours, limit],
+    queryFn: () =>
+      api.get<MarketDataListResponse>(
+        `/dashboard/market/history?hours=${hours}&limit=${limit}`
+      ),
     refetchInterval: refetchInterval > 0 ? refetchInterval : false,
     staleTime: 5000, // 5초
   });

@@ -11,6 +11,7 @@
 import type { FC } from "react";
 import {
   useDashboardSummary,
+  useMarketHistory,
   useRiskStatus,
   useHaltTrading,
   useResumeTrading,
@@ -35,11 +36,23 @@ function formatKRW(amount: string | number): string {
 }
 
 /**
+ * 차트용 시간 포맷 (HH:MM KST)
+ */
+function formatChartTime(isoTimestamp: string): string {
+  return new Intl.DateTimeFormat("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Seoul",
+  }).format(new Date(isoTimestamp));
+}
+
+/**
  * Dashboard 컴포넌트
  */
 const Dashboard: FC = () => {
   // T083: 5초 자동 새로고침
   const { data: summary, isLoading, error } = useDashboardSummary(REFRESH_INTERVAL_MS);
+  const { data: marketHistory } = useMarketHistory(24, 100, REFRESH_INTERVAL_MS);
   const { data: riskStatus } = useRiskStatus();
 
   const haltMutation = useHaltTrading();
@@ -113,6 +126,12 @@ const Dashboard: FC = () => {
         <PriceChart
           currentPrice={Number(summary.current_price)}
           change24h={summary.price_change_24h}
+          data={
+            marketHistory?.items.map((item) => ({
+              time: formatChartTime(item.timestamp),
+              price: Number(item.price),
+            })) ?? []
+          }
         />
 
         {/* 리스크 상태 */}
@@ -241,7 +260,17 @@ const Dashboard: FC = () => {
 
       {/* 마지막 업데이트 시간 */}
       <div className="text-right text-xs text-gray-400">
-        마지막 업데이트: {new Date(summary.updated_at).toLocaleString("ko-KR")}
+        마지막 업데이트:{" "}
+        {new Intl.DateTimeFormat("ko-KR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          timeZone: "Asia/Seoul",
+        }).format(new Date(summary.updated_at))}{" "}
+        KST
       </div>
     </div>
   );
