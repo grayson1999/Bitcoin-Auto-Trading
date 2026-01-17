@@ -52,7 +52,8 @@ function formatChartTime(isoTimestamp: string): string {
 const Dashboard: FC = () => {
   // T083: 5초 자동 새로고침
   const { data: summary, isLoading, error } = useDashboardSummary(REFRESH_INTERVAL_MS);
-  const { data: marketHistory } = useMarketHistory(24, 100, REFRESH_INTERVAL_MS);
+  // 24시간 동안 60분 간격 (시간당 1개) - 하루 전체 보기
+  const { data: marketHistory } = useMarketHistory(24, 100, REFRESH_INTERVAL_MS, 60);
   const { data: riskStatus } = useRiskStatus();
 
   const haltMutation = useHaltTrading();
@@ -127,10 +128,12 @@ const Dashboard: FC = () => {
           currentPrice={Number(summary.current_price)}
           change24h={summary.price_change_24h}
           data={
-            marketHistory?.items.map((item) => ({
-              time: formatChartTime(item.timestamp),
-              price: Number(item.price),
-            })) ?? []
+            marketHistory?.items && marketHistory.items.length > 0
+              ? marketHistory.items.map((item) => ({
+                  time: formatChartTime(item.timestamp),
+                  price: Number(item.price),
+                }))
+              : undefined
           }
         />
 

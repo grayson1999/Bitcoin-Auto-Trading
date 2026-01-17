@@ -5,27 +5,51 @@
 - 신호 시뮬레이션 (과거 데이터 기반)
 - 성과 지표 계산 (수익률, MDD, 승률, 손익비, 샤프 비율)
 - 거래 내역 기록
+- Upbit 캔들 API 활용 (장기 백테스트 지원)
 """
 
 import json
 import math
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from loguru import logger
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import BacktestResult, BacktestStatus, MarketData, TradingSignal
+from src.models import BacktestResult, BacktestStatus, TradingSignal
 from src.models.trading_signal import SignalType
+from src.services.upbit_client import UpbitClient, get_upbit_client
 
 # === 백테스트 상수 ===
 DEFAULT_INITIAL_CAPITAL = Decimal("1000000")  # 기본 초기 자본금 (100만원)
 TRADING_FEE_PCT = Decimal("0.0005")  # 거래 수수료 0.05%
+CANDLE_FETCH_LIMIT = 200  # Upbit API 캔들 조회 최대 개수
 SLIPPAGE_PCT = Decimal("0.001")  # 슬리피지 0.1%
 MIN_TRADE_AMOUNT_PCT = Decimal("0.02")  # 최소 거래 비율 2%
 RISK_FREE_RATE = 0.035  # 무위험 수익률 (연 3.5%)
+
+
+@dataclass
+class CandlePriceData:
+    """
+    캔들 가격 데이터 (백테스트용)
+
+    Upbit 캔들 API에서 가져온 데이터를 백테스트에서 사용하기 위한 구조체입니다.
+
+    Attributes:
+        timestamp: 캔들 시간 (UTC)
+        price: 종가 (현재가)
+        high_price: 고가
+        low_price: 저가
+        volume: 거래량
+    """
+    timestamp: datetime
+    price: Decimal
+    high_price: Decimal | None = None
+    low_price: Decimal | None = None
+    volume: Decimal | None = None
 
 
 @dataclass
@@ -133,14 +157,16 @@ class BacktestRunner:
         print(f"수익률: {result.total_return_pct}%")
     """
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, upbit_client: UpbitClient | None = None):
         """
         백테스트 러너 초기화
 
         Args:
             db: SQLAlchemy 비동기 세션
+            upbit_client: Upbit API 클라이언트 (없으면 자동 생성)
         """
         self.db = db
+        self.upbit_client = upbit_client or get_upbit_client()
 
     async def run_backtest(
         self,
@@ -273,41 +299,85 @@ class BacktestRunner:
         self,
         start_date: datetime,
         end_date: datetime,
-    ) -> dict[datetime, MarketData]:
+    ) -> dict[datetime, CandlePriceData]:
         """
-        기간 내 시장 데이터 조회 (시간별 인덱싱)
+        기간 내 시장 데이터 조회 (Upbit 캔들 API 사용)
+
+        Upbit의 60분봉 캔들 API를 사용하여 과거 데이터를 조회합니다.
+        7일 이상의 장기 백테스트도 지원합니다.
 
         Args:
             start_date: 시작 날짜
             end_date: 종료 날짜
 
         Returns:
-            dict[datetime, MarketData]: 시간대별 시장 데이터
+            dict[datetime, CandlePriceData]: 시간대별 시장 데이터
         """
-        stmt = (
-            select(MarketData)
-            .where(
-                MarketData.timestamp >= start_date,
-                MarketData.timestamp <= end_date,
-            )
-            .order_by(MarketData.timestamp)
-        )
-        result = await self.db.execute(stmt)
-        data_list = list(result.scalars().all())
+        indexed: dict[datetime, CandlePriceData] = {}
 
-        # 시간대별로 인덱싱 (시간 단위로 그룹화)
-        indexed: dict[datetime, MarketData] = {}
-        for data in data_list:
-            hour_key = data.timestamp.replace(minute=0, second=0, microsecond=0)
-            indexed[hour_key] = data  # 각 시간대의 마지막 데이터 사용
+        # 필요한 시간 수 계산
+        total_hours = int((end_date - start_date).total_seconds() / 3600) + 1
+        logger.info(f"캔들 데이터 조회: {total_hours}시간 분량")
 
+        # 페이지네이션으로 캔들 데이터 수집 (200개씩)
+        current_to = end_date
+        remaining = total_hours
+
+        while remaining > 0:
+            fetch_count = min(remaining, CANDLE_FETCH_LIMIT)
+
+            try:
+                # 60분봉 캔들 조회 (to 파라미터로 페이지네이션)
+                candles = await self.upbit_client.get_minute_candles(
+                    market="KRW-XRP",
+                    unit=60,
+                    count=fetch_count,
+                )
+
+                if not candles:
+                    break
+
+                for candle in candles:
+                    # UTC 시간 파싱
+                    candle_time = datetime.fromisoformat(
+                        candle.candle_date_time_utc.replace("Z", "+00:00")
+                    ).replace(tzinfo=UTC)
+
+                    # 기간 내 데이터만 저장
+                    if start_date <= candle_time <= end_date:
+                        hour_key = candle_time.replace(minute=0, second=0, microsecond=0)
+                        indexed[hour_key] = CandlePriceData(
+                            timestamp=candle_time,
+                            price=candle.trade_price or Decimal("0"),
+                            high_price=candle.high_price,
+                            low_price=candle.low_price,
+                            volume=candle.candle_acc_trade_volume,
+                        )
+
+                # 다음 페이지를 위해 가장 오래된 캔들 시간으로 이동
+                oldest_candle = candles[-1]
+                oldest_time = datetime.fromisoformat(
+                    oldest_candle.candle_date_time_utc.replace("Z", "+00:00")
+                ).replace(tzinfo=UTC)
+
+                if oldest_time <= start_date:
+                    break
+
+                current_to = oldest_time - timedelta(hours=1)
+                remaining -= fetch_count
+
+            except Exception as e:
+                logger.warning(f"캔들 데이터 조회 실패: {e}")
+                break
+
+        logger.info(f"캔들 데이터 조회 완료: {len(indexed)}개 시간대")
         return indexed
 
     async def _simulate_trading(
         self,
         state: BacktestState,
         signals: list[TradingSignal],
-        market_data: dict[datetime, MarketData],
+        market_data: dict[datetime, CandlePriceData],
     ) -> BacktestState:
         """
         거래 시뮬레이션
@@ -317,7 +387,7 @@ class BacktestRunner:
         Args:
             state: 현재 상태
             signals: 신호 목록
-            market_data: 시장 데이터 (시간별 인덱싱)
+            market_data: 시장 데이터 (시간별 인덱싱, CandlePriceData)
 
         Returns:
             BacktestState: 업데이트된 상태

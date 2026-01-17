@@ -29,7 +29,7 @@ from src.api.schemas.market import (
 from src.api.schemas.order import BalanceResponse, PositionResponse
 from src.api.schemas.signal import TradingSignalResponse
 from src.database import get_session
-from src.models import DailyStats, Order, OrderStatus, Position, TradingSignal
+from src.models import DailyStats, MarketData, Order, OrderStatus, Position, TradingSignal
 from src.services.data_collector import get_data_collector
 from src.services.order_executor import get_order_executor
 from src.services.risk_manager import get_risk_manager
@@ -283,16 +283,22 @@ async def get_market_history(
             ge=MIN_LIMIT, le=MAX_LIMIT_HISTORY, description="최대 레코드 수 (1-1000)"
         ),
     ] = DEFAULT_LIMIT_HISTORY,
+    interval: Annotated[
+        int | None,
+        Query(ge=1, le=60, description="샘플링 간격 (분, 1-60). 지정 시 균등 간격으로 데이터 반환"),
+    ] = None,
 ) -> MarketDataListResponse:
     """
     과거 시세 데이터 조회
 
     데이터베이스에 저장된 과거 시세 데이터를 시간 범위로 조회합니다.
+    interval 파라미터로 시간당 N개 데이터를 균등 간격으로 가져올 수 있습니다.
 
     Args:
         session: 데이터베이스 세션
         hours: 조회할 시간 범위 (1-168시간, 기본값: 24)
         limit: 최대 반환 레코드 수 (1-1000, 기본값: 100)
+        interval: 샘플링 간격 (분). 지정 시 해당 간격으로 데이터 샘플링
 
     Returns:
         MarketDataListResponse: 시세 데이터 목록과 총 개수
@@ -302,6 +308,20 @@ async def get_market_history(
 
     # 시간 범위 내 데이터 조회
     data = await collector.get_data_range(session, start_time)
+
+    if interval and len(data) > 0:
+        # interval 분 간격으로 데이터 샘플링 (시간대별 마지막 데이터 사용)
+        sampled: dict[str, MarketData] = {}
+        for d in data:
+            # interval 분 단위로 시간 키 생성
+            minute_bucket = (d.timestamp.minute // interval) * interval
+            time_key = d.timestamp.replace(
+                minute=minute_bucket, second=0, microsecond=0
+            ).isoformat()
+            sampled[time_key] = d  # 같은 버킷의 마지막 데이터 사용
+
+        # 시간순 정렬
+        data = sorted(sampled.values(), key=lambda x: x.timestamp)
 
     # limit 초과 시 최근 데이터만 반환
     data = data[-limit:] if len(data) > limit else data

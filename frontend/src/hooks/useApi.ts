@@ -243,14 +243,27 @@ export function useDashboardSummary(refetchInterval = 0) {
  * @param hours 조회할 시간 범위 (기본 24시간)
  * @param limit 최대 조회 개수 (기본 100)
  * @param refetchInterval 자동 새로고침 주기 (ms), 0이면 비활성화
+ * @param interval 샘플링 간격 (분), 지정 시 균등 간격으로 데이터 반환
  * @returns UseQueryResult<MarketDataListResponse>
  */
-export function useMarketHistory(hours = 24, limit = 100, refetchInterval = 0) {
+export function useMarketHistory(
+  hours = 24,
+  limit = 100,
+  refetchInterval = 0,
+  interval?: number
+) {
+  const params = new URLSearchParams();
+  params.append("hours", String(hours));
+  params.append("limit", String(limit));
+  if (interval) {
+    params.append("interval", String(interval));
+  }
+
   return useQuery<MarketDataListResponse>({
-    queryKey: [QUERY_KEYS.MARKET_HISTORY, hours, limit],
+    queryKey: [QUERY_KEYS.MARKET_HISTORY, hours, limit, interval],
     queryFn: () =>
       api.get<MarketDataListResponse>(
-        `/dashboard/market/history?hours=${hours}&limit=${limit}`
+        `/dashboard/market/history?${params.toString()}`
       ),
     refetchInterval: refetchInterval > 0 ? refetchInterval : false,
     staleTime: 5000, // 5초

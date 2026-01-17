@@ -28,7 +28,7 @@ from src.services.signal_performance_tracker import SignalPerformanceTracker
 scheduler = AsyncIOScheduler()
 
 # === 작업 설정 상수 ===
-DATA_COLLECTION_INTERVAL_SECONDS = 1  # 데이터 수집 주기 (초)
+DATA_COLLECTION_INTERVAL_SECONDS = 10  # 데이터 수집 주기 (초)
 DATA_CLEANUP_INTERVAL_HOURS = 24  # 데이터 정리 주기 (시간)
 VOLATILITY_CHECK_INTERVAL_SECONDS = 30  # 변동성 체크 주기 (초)
 SIGNAL_PERFORMANCE_EVAL_HOURS = 4  # 신호 성과 평가 주기 (시간)
