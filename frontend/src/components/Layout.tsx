@@ -27,6 +27,12 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scroll-smooth">
                     <div className="max-w-7xl mx-auto space-y-6 pb-20 lg:pb-0">
                         {children}
+
+                        <footer className="mt-12 py-6 text-center border-t border-dark-border/30">
+                            <p className="text-xs text-dark-text-muted">
+                                Copyright © 2026 <span className="font-semibold text-dark-text-secondary">comgongStone - Grayson</span>. All rights reserved.
+                            </p>
+                        </footer>
                     </div>
                 </div>
             </main>
