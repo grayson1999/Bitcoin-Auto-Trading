@@ -89,8 +89,17 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
         </div>
         <div className="text-right">
           <span className="text-sm text-dark-text-secondary">24h</span>
-          <p className="text-lg font-medium" style={{ color: changeColor }}>
+          <p className="text-lg font-medium inline-flex items-center gap-1" style={{ color: changeColor }}>
             {change24h !== null ? `${changeSign}${change24h.toFixed(2)}%` : "-"}
+            <span className="relative group">
+              <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-[10px] text-dark-text-muted border border-dark-text-muted rounded-full cursor-help hover:text-white hover:border-white transition-colors">
+                ?
+              </span>
+              <span className="absolute right-0 bottom-full mb-2 px-3 py-2 text-xs font-normal text-white bg-gray-900 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-10">
+                24시간 전 대비 가격 변동률
+                <span className="absolute right-3 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></span>
+              </span>
+            </span>
           </p>
         </div>
       </div>
