@@ -118,7 +118,7 @@ class Settings(BaseSettings):
     # === AI 모델 설정 ===
     ai_model: str = Field(default="gemini-2.5-pro", description="AI 신호 생성 모델")
     ai_fallback_model: str = Field(
-        default="gpt-4o", description="AI Fallback 모델 (Gemini 실패 시)"
+        default="gpt-4.1-mini", description="AI Fallback 모델 (Gemini 실패 시)"
     )
 
     # === Auth Server 설정 ===

@@ -30,6 +30,7 @@ COST_CONFIG = {
     "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
     "gpt-4o": {"input": 2.50, "output": 10.00},
     "gpt-4o-mini": {"input": 0.15, "output": 0.60},
+    "gpt-4.1-mini": {"input": 0.40, "output": 1.60},
 }
 TOKENS_PER_M = 1_000_000  # 1M 토큰
 

@@ -2,7 +2,7 @@
 
 > 비트코인 자동 거래 시스템 - Gemini AI 기반 매매 신호 생성 및 Upbit 자동 거래
 
-마지막 업데이트: 2026-01-11
+마지막 업데이트: 2026-01-18
 
 ---
 
@@ -13,7 +13,7 @@ Upbit 거래소 API를 통해 자동으로 거래를 실행하는 시스템입�
 
 ### 주요 기능
 - **실시간 시세 수집**: Upbit API에서 1초 간격으로 비트코인 시세 수집
-- **AI 매매 신호**: Gemini 2.5 Flash 모델을 통한 매수/매도/홀드 신호 생성
+- **AI 매매 신호**: Gemini 2.5 Pro 모델을 통한 매수/매도/홀드 신호 생성 (Fallback: GPT-4.1-mini)
 - **자동 거래 실행**: 신호에 따른 자동 주문 실행 (개발 예정)
 - **위험 관리**: 손절매, 일일 손실 한도 등 리스크 관리
 - **대시보드**: 실시간 포지션, 수익률, 거래 내역 모니터링
@@ -254,7 +254,8 @@ VITE_API_URL=http://localhost:8000
 | `STOP_LOSS_PCT` | 5% | 개별 손절 비율 |
 | `DAILY_LOSS_LIMIT_PCT` | 5% | 일일 손실 한도 |
 | `SIGNAL_INTERVAL_HOURS` | 1 | AI 신호 생성 주기 |
-| `AI_MODEL` | gemini-2.5-flash | Gemini AI 모델 |
+| `AI_MODEL` | gemini-2.5-pro | Primary AI 모델 |
+| `AI_FALLBACK_MODEL` | gpt-4.1-mini | Fallback AI 모델 (Gemini 실패 시) |
 | `DATA_COLLECT_INTERVAL` | 1초 | 시세 수집 간격 |
 | `DATA_RETENTION_DAYS` | 7일 | 시세 데이터 보관 기간 |
 
@@ -270,9 +271,16 @@ VITE_API_URL=http://localhost:8000
 
 ### Google Gemini AI
 - **용도**: 매매 신호 생성, 시장 분석
-- **모델**: gemini-2.5-flash
-- **무료 티어**: 1,000회/일
+- **Primary 모델**: gemini-2.5-pro
+- **무료 티어**: ~25 RPD (2025년 12월 이후 축소됨)
+- **Rate Limit 리셋**: Pacific Time 자정 (00:00 PT = **KST 17:00**)
 - **문서**: https://ai.google.dev
+
+### OpenAI (Fallback)
+- **용도**: Gemini 실패 시 백업
+- **모델**: gpt-4.1-mini ($0.40/$1.60 per 1M tokens)
+- **특징**: 멀티스텝 추론, 구조화된 출력에 최적화
+- **문서**: https://platform.openai.com/docs
 
 ### Slack Webhook (선택)
 - **용도**: 거래 알림, 오류 알림
