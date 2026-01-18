@@ -244,11 +244,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     // Auth Server에 로그아웃 요청 (실패해도 로컬 정리)
-    if (tokens?.accessToken) {
+    if (tokens?.accessToken && tokens?.refreshToken) {
       try {
         await authApi.post(
           "/auth/logout",
-          {},
+          { refresh_token: tokens.refreshToken },
           {
             headers: {
               Authorization: `Bearer ${tokens.accessToken}`,
@@ -268,7 +268,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (import.meta.env.DEV) {
       console.log("[Auth] 로그아웃 완료");
     }
-  }, [tokens?.accessToken]);
+  }, [tokens?.accessToken, tokens?.refreshToken]);
 
   // 앱 로드 시 저장된 인증 상태 복원
   useEffect(() => {
