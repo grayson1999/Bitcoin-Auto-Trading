@@ -25,6 +25,7 @@ from src.api.schemas.risk import (
     RiskEventTypeEnum,
     RiskStatusResponse,
 )
+from src.config import settings
 from src.database import get_session
 from src.models import RiskEventType
 from src.services.risk_manager import RiskManagerError, get_risk_manager
@@ -133,6 +134,11 @@ async def get_risk_status(
         is_halted=status.is_halted,
         halt_reason=status.halt_reason,
         last_check_at=status.last_check_at,
+        # AI 신호 설정값 (환경변수에서 로드, 0.015 -> 1.5% 변환)
+        signal_stop_loss_pct=settings.signal_stop_loss_pct * 100,
+        signal_take_profit_pct=settings.signal_take_profit_pct * 100,
+        signal_trailing_stop_pct=settings.signal_trailing_stop_pct * 100,
+        signal_breakeven_pct=settings.signal_breakeven_pct * 100,
     )
 
 

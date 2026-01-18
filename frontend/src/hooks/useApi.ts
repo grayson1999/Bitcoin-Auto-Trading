@@ -128,6 +128,11 @@ export interface RiskStatus {
   is_halted: boolean;
   halt_reason: string | null;
   last_check_at: string;
+  // AI 신호 설정값
+  signal_stop_loss_pct: number;
+  signal_take_profit_pct: number;
+  signal_trailing_stop_pct: number;
+  signal_breakeven_pct: number;
 }
 
 /** 백테스트 결과 */

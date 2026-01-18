@@ -41,7 +41,7 @@ const CHART_COLORS = {
   stroke: "#EAB308", // banana-500
 } as const;
 
-const CARD_CLASSES = "rounded-2xl glass-panel p-6";
+const CARD_CLASSES = "rounded-2xl glass-panel p-6 h-full flex flex-col";
 
 /**
  * 가격 포맷 헬퍼
@@ -95,7 +95,7 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, symbol, data
   return (
     <div className={CARD_CLASSES}>
       {/* 헤더: 현재가 및 변동률 */}
-      <div className="mb-4 flex items-baseline justify-between">
+      <div className="mb-4 flex items-baseline justify-between shrink-0">
         <div>
           <h3 className="text-sm font-medium text-dark-text-secondary">{marketName}</h3>
           <p className="mt-1 text-3xl font-bold text-white tracking-tight text-glow">
@@ -120,7 +120,7 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, symbol, data
       </div>
 
       {/* 차트 영역 */}
-      <div className="h-56 sm:h-72">
+      <div className="flex-1 min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
             <defs>

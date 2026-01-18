@@ -87,6 +87,10 @@ class RiskStatusResponse(BaseModel):
         is_halted: 거래 중단 상태
         halt_reason: 중단 사유
         last_check_at: 마지막 체크 시간
+        signal_stop_loss_pct: AI 신호 손절 비율 (%)
+        signal_take_profit_pct: AI 신호 익절 비율 (%)
+        signal_trailing_stop_pct: AI 신호 트레일링 스탑 비율 (%)
+        signal_breakeven_pct: AI 신호 본전 청산 비율 (%)
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -101,6 +105,13 @@ class RiskStatusResponse(BaseModel):
     is_halted: bool = Field(description="거래 중단 상태")
     halt_reason: str | None = Field(default=None, description="중단 사유")
     last_check_at: datetime = Field(description="마지막 체크 시간")
+    # AI 신호 설정값
+    signal_stop_loss_pct: float = Field(description="AI 신호 손절 비율 (%)")
+    signal_take_profit_pct: float = Field(description="AI 신호 익절 비율 (%)")
+    signal_trailing_stop_pct: float = Field(
+        description="AI 신호 트레일링 스탑 비율 (%)"
+    )
+    signal_breakeven_pct: float = Field(description="AI 신호 본전 청산 비율 (%)")
 
 
 class HaltTradingRequest(BaseModel):

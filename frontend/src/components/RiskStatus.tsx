@@ -129,7 +129,7 @@ const RiskStatus: FC<RiskStatusProps> = ({ status, onHalt, onResume }) => {
           </div>
         </div>
 
-        {/* 설정값 요약 */}
+        {/* 시스템 설정값 요약 */}
         <div className="grid grid-cols-2 gap-4 border-t border-dark-border pt-6">
           <div className="bg-white/5 p-3 rounded-xl text-center border border-white/5">
             <span className="text-xs font-medium text-dark-text-muted uppercase tracking-wider inline-flex items-center gap-1">
@@ -149,10 +149,63 @@ const RiskStatus: FC<RiskStatusProps> = ({ status, onHalt, onResume }) => {
             </p>
           </div>
           <div className="bg-white/5 p-3 rounded-xl text-center border border-white/5">
-            <span className="text-xs font-medium text-dark-text-muted uppercase tracking-wider">손절매</span>
+            <span className="text-xs font-medium text-dark-text-muted uppercase tracking-wider inline-flex items-center gap-1">
+              손절매
+              <span className="relative group">
+                <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-[10px] text-dark-text-muted border border-dark-text-muted rounded-full cursor-help hover:text-white hover:border-white transition-colors">
+                  ?
+                </span>
+                <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs font-normal normal-case text-white bg-gray-900 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-10">
+                  시스템 레벨 강제 청산 임계값
+                  <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></span>
+                </span>
+              </span>
+            </span>
             <p className="mt-1 text-lg font-bold text-rose-400">
               {status.stop_loss_pct}%
             </p>
+          </div>
+        </div>
+
+        {/* AI 신호 설정 */}
+        <div className="border-t border-dark-border pt-6">
+          <h4 className="text-xs font-medium text-dark-text-muted uppercase tracking-wider mb-3 flex items-center gap-1">
+            AI 신호 설정
+            <span className="relative group">
+              <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-[10px] text-dark-text-muted border border-dark-text-muted rounded-full cursor-help hover:text-white hover:border-white transition-colors">
+                ?
+              </span>
+              <span className="absolute left-0 bottom-full mb-2 px-3 py-2 text-xs font-normal normal-case text-white bg-gray-900 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-10">
+                AI가 매매 신호를 생성할 때 사용하는 기준값
+                <span className="absolute left-3 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></span>
+              </span>
+            </span>
+          </h4>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-white/5 p-2 rounded-lg text-center border border-white/5">
+              <span className="text-[10px] font-medium text-dark-text-muted uppercase">손절</span>
+              <p className="mt-0.5 text-sm font-bold text-rose-400">
+                {status.signal_stop_loss_pct}%
+              </p>
+            </div>
+            <div className="bg-white/5 p-2 rounded-lg text-center border border-white/5">
+              <span className="text-[10px] font-medium text-dark-text-muted uppercase">익절</span>
+              <p className="mt-0.5 text-sm font-bold text-emerald-400">
+                {status.signal_take_profit_pct}%
+              </p>
+            </div>
+            <div className="bg-white/5 p-2 rounded-lg text-center border border-white/5">
+              <span className="text-[10px] font-medium text-dark-text-muted uppercase">트레일</span>
+              <p className="mt-0.5 text-sm font-bold text-banana-400">
+                {status.signal_trailing_stop_pct}%
+              </p>
+            </div>
+            <div className="bg-white/5 p-2 rounded-lg text-center border border-white/5">
+              <span className="text-[10px] font-medium text-dark-text-muted uppercase">본전</span>
+              <p className="mt-0.5 text-sm font-bold text-sky-400">
+                {status.signal_breakeven_pct}%
+              </p>
+            </div>
           </div>
         </div>
       </div>
