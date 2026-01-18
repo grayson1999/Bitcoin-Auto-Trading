@@ -6,6 +6,8 @@
 - DataCollector: 실시간 시장 데이터 수집기
 - AIClient: Gemini AI API 클라이언트
 - SignalGenerator: AI 매매 신호 생성기
+- HybridSignalGenerator: AI + 변동성 돌파 하이브리드 신호 생성기
+- VolatilityBreakoutStrategy: 변동성 돌파 전략
 - TechnicalIndicatorCalculator: 기술적 지표 계산기
 - MultiTimeframeAnalyzer: 멀티 타임프레임 분석기
 - SignalPerformanceTracker: 신호 성과 추적기
@@ -17,6 +19,11 @@
 
 from src.services.ai_client import AIClient, AIClientError, AIResponse, get_ai_client
 from src.services.data_collector import DataCollector, get_data_collector
+from src.services.hybrid_signal_generator import (
+    HybridSignalGenerator,
+    HybridSignalResult,
+    get_hybrid_signal_generator,
+)
 from src.services.multi_timeframe_analyzer import (
     MultiTimeframeAnalyzer,
     MultiTimeframeResult,
@@ -64,6 +71,12 @@ from src.services.technical_indicators import (
     get_technical_calculator,
 )
 from src.services.upbit_client import UpbitClient, get_upbit_client
+from src.services.volatility_breakout import (
+    BreakoutCalculationError,
+    BreakoutResult,
+    VolatilityBreakoutStrategy,
+    get_volatility_breakout_strategy,
+)
 
 __all__ = [
     # Upbit
@@ -81,6 +94,15 @@ __all__ = [
     "SignalGenerator",
     "SignalGeneratorError",
     "get_signal_generator",
+    # Hybrid Signal Generator
+    "HybridSignalGenerator",
+    "HybridSignalResult",
+    "get_hybrid_signal_generator",
+    # Volatility Breakout Strategy
+    "VolatilityBreakoutStrategy",
+    "BreakoutResult",
+    "BreakoutCalculationError",
+    "get_volatility_breakout_strategy",
     # Technical Indicators
     "TechnicalIndicatorCalculator",
     "IndicatorResult",
