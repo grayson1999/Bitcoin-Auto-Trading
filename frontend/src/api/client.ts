@@ -26,6 +26,12 @@ const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503,
 } as const;
 
+// === 오류 메시지 상수 ===
+const ERROR_MESSAGES = {
+  SERVICE_UNAVAILABLE: "서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+  NETWORK_ERROR: "서버에 연결할 수 없습니다. 네트워크 연결을 확인해 주세요.",
+} as const;
+
 // === 로깅 상수 ===
 const LOG_PREFIX = {
   API: "[API]",
@@ -232,15 +238,18 @@ apiClient.interceptors.response.use(
         }
       }
 
-      console.error(`${LOG_PREFIX.ERROR} ${status}: ${message}`);
-
-      // 503 서비스 불가
+      // 503 서비스 불가 - 사용자 친화적 메시지 설정
       if (status === HTTP_STATUS.SERVICE_UNAVAILABLE) {
-        console.error("서비스 일시 중단");
+        console.error(`${LOG_PREFIX.ERROR} 503: ${ERROR_MESSAGES.SERVICE_UNAVAILABLE}`);
+        // 오류 객체에 사용자 친화적 메시지 추가
+        (error as AxiosError & { userMessage?: string }).userMessage = ERROR_MESSAGES.SERVICE_UNAVAILABLE;
+      } else {
+        console.error(`${LOG_PREFIX.ERROR} ${status}: ${message}`);
       }
     } else if (error.request) {
-      // 요청은 보냈으나 응답이 없는 경우
-      console.error(`${LOG_PREFIX.ERROR} 서버로부터 응답 없음`);
+      // 요청은 보냈으나 응답이 없는 경우 (네트워크 오류)
+      console.error(`${LOG_PREFIX.ERROR} ${ERROR_MESSAGES.NETWORK_ERROR}`);
+      (error as AxiosError & { userMessage?: string }).userMessage = ERROR_MESSAGES.NETWORK_ERROR;
     } else {
       // 요청 설정 중 오류 발생
       console.error(LOG_PREFIX.ERROR, error.message);
@@ -327,5 +336,36 @@ export const api = {
     return response.data;
   },
 };
+
+/**
+ * API 오류에서 사용자 친화적 메시지 추출
+ *
+ * @param error 오류 객체
+ * @returns 사용자에게 표시할 메시지
+ */
+export function getApiErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    // 사용자 친화적 메시지가 설정된 경우
+    const extendedError = error as AxiosError & { userMessage?: string };
+    if (extendedError.userMessage) {
+      return extendedError.userMessage;
+    }
+
+    // 응답이 있는 경우 서버 메시지 사용
+    if (error.response?.data) {
+      const data = error.response.data as ErrorResponse;
+      if (data.detail) {
+        return data.detail;
+      }
+    }
+
+    // 네트워크 오류
+    if (!error.response) {
+      return ERROR_MESSAGES.NETWORK_ERROR;
+    }
+  }
+
+  return "오류가 발생했습니다. 다시 시도해 주세요.";
+}
 
 export default apiClient;

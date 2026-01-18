@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from loguru import logger
-from sqlalchemy import desc, select, func
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import MarketData, TradingSignal

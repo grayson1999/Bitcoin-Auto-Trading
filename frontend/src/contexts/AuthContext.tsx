@@ -26,6 +26,14 @@ const DEFAULT_AUTH_API_URL = "http://localhost:9000";
 const AUTH_API_URL =
   import.meta.env.VITE_AUTH_API_URL ?? DEFAULT_AUTH_API_URL;
 
+// === HTTP 상태 코드 상수 ===
+const HTTP_STATUS = {
+  UNAUTHORIZED: 401,
+  LOCKED: 423,
+  TOO_MANY_REQUESTS: 429,
+  SERVICE_UNAVAILABLE: 503,
+} as const;
+
 // === 타입 정의 ===
 export interface User {
   id: string;
@@ -65,9 +73,11 @@ interface AuthContextValue {
   tokens: AuthTokens | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  authError: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
+  clearAuthError: () => void;
 }
 
 // === Auth API 클라이언트 ===
@@ -107,13 +117,51 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+/**
+ * 사용자 친화적 오류 메시지 반환
+ * Auth Server 연결 오류를 적절한 메시지로 변환
+ */
+function getAuthErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    // 네트워크 오류 (Auth Server 연결 불가)
+    if (!error.response) {
+      return "인증 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.";
+    }
+
+    const status = error.response.status;
+    const detail = (error.response.data as { detail?: string })?.detail;
+
+    // HTTP 상태 코드별 메시지
+    switch (status) {
+      case HTTP_STATUS.UNAUTHORIZED:
+        return "이메일 또는 비밀번호가 올바르지 않습니다.";
+      case HTTP_STATUS.LOCKED:
+        return "계정이 잠겼습니다. 15분 후 다시 시도해 주세요.";
+      case HTTP_STATUS.TOO_MANY_REQUESTS:
+        return "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
+      case HTTP_STATUS.SERVICE_UNAVAILABLE:
+        return "인증 서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.";
+      default:
+        return detail || "로그인 중 오류가 발생했습니다.";
+    }
+  }
+
+  return "알 수 없는 오류가 발생했습니다.";
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [tokens, setTokens] = useState<AuthTokens | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
 
   const isAuthenticated = useMemo(() => !!user && !!tokens, [user, tokens]);
+
+  // 인증 오류 초기화
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
 
   // 토큰 갱신 타이머 설정
   const startRefreshTimer = useCallback(() => {
@@ -199,37 +247,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // 로그인 함수
   const login = useCallback(
     async (email: string, password: string): Promise<void> => {
-      const response = await authApi.post<LoginResponse>("/auth/login", {
-        email,
-        password,
-      });
+      // 이전 오류 초기화
+      setAuthError(null);
 
-      const { access_token, refresh_token, expires_in, user: userData } = response.data;
+      try {
+        const response = await authApi.post<LoginResponse>("/auth/login", {
+          email,
+          password,
+        });
 
-      const newTokens: AuthTokens = {
-        accessToken: access_token,
-        refreshToken: refresh_token,
-      };
+        const { access_token, refresh_token, expires_in, user: userData } = response.data;
 
-      const expiresAt = Date.now() + expires_in * 1000;
+        const newTokens: AuthTokens = {
+          accessToken: access_token,
+          refreshToken: refresh_token,
+        };
 
-      // 상태 업데이트
-      setUser(userData);
-      setTokens(newTokens);
+        const expiresAt = Date.now() + expires_in * 1000;
 
-      // localStorage에 저장
-      saveStoredAuth({
-        accessToken: access_token,
-        refreshToken: refresh_token,
-        user: userData,
-        expiresAt,
-      });
+        // 상태 업데이트
+        setUser(userData);
+        setTokens(newTokens);
 
-      // 토큰 갱신 타이머 시작
-      startRefreshTimer();
+        // localStorage에 저장
+        saveStoredAuth({
+          accessToken: access_token,
+          refreshToken: refresh_token,
+          user: userData,
+          expiresAt,
+        });
 
-      if (import.meta.env.DEV) {
-        console.log("[Auth] 로그인 성공:", userData.email);
+        // 토큰 갱신 타이머 시작
+        startRefreshTimer();
+
+        if (import.meta.env.DEV) {
+          console.log("[Auth] 로그인 성공:", userData.email);
+        }
+      } catch (error) {
+        const errorMessage = getAuthErrorMessage(error);
+        setAuthError(errorMessage);
+
+        if (import.meta.env.DEV) {
+          console.error("[Auth] 로그인 실패:", errorMessage, error);
+        }
+
+        throw error;
       }
     },
     [startRefreshTimer]
@@ -347,11 +409,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       tokens,
       isAuthenticated,
       isLoading,
+      authError,
       login,
       logout,
       refreshAccessToken,
+      clearAuthError,
     }),
-    [user, tokens, isAuthenticated, isLoading, login, logout, refreshAccessToken]
+    [user, tokens, isAuthenticated, isLoading, authError, login, logout, refreshAccessToken, clearAuthError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

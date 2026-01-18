@@ -169,10 +169,10 @@
 
 **목적**: 여러 사용자 스토리에 영향을 미치는 개선 사항
 
-- [ ] T054 [P] frontend/src/contexts/AuthContext.tsx에 사용자 친화적 메시지와 함께 Auth Server 연결 오류 처리 추가
-- [ ] T055 [P] frontend/src/api/client.ts에 503 서비스 불가 응답 처리 추가
-- [ ] T056 quickstart.md 테스트 시나리오에 따른 수동 검증 실행
-- [ ] T057 backend/tests/conftest.py에 테스트용 mock_auth 픽스처 업데이트
+- [X] T054 [P] frontend/src/contexts/AuthContext.tsx에 사용자 친화적 메시지와 함께 Auth Server 연결 오류 처리 추가
+- [X] T055 [P] frontend/src/api/client.ts에 503 서비스 불가 응답 처리 추가
+- [X] T056 quickstart.md 테스트 시나리오에 따른 수동 검증 실행
+- [X] T057 backend/tests/conftest.py에 테스트용 mock_auth 픽스처 업데이트
 
 ---
 
