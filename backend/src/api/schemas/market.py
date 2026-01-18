@@ -90,7 +90,7 @@ class CurrentMarketResponse(BaseModel):
     Upbit API에서 직접 조회한 실시간 시세 정보입니다.
 
     Attributes:
-        market: 마켓 코드 (예: KRW-XRP)
+        market: 마켓 코드 (예: KRW-SOL)
         price: 현재 가격 (KRW)
         volume_24h: 24시간 거래량
         high_24h: 24시간 최고가
@@ -99,7 +99,7 @@ class CurrentMarketResponse(BaseModel):
         change_24h_pct: 24시간 변동률 (%)
     """
 
-    market: str = Field(default="KRW-XRP", description="마켓 코드")
+    market: str = Field(description="마켓 코드")
     price: Decimal = Field(description="현재 가격 (KRW)")
     volume_24h: Decimal = Field(description="24시간 거래량")
     high_24h: Decimal = Field(description="24시간 최고가")

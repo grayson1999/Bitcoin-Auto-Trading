@@ -1,7 +1,7 @@
 /**
  * 가격 차트 컴포넌트 (T078)
  *
- * Recharts를 사용하여 XRP 가격 추이를 표시합니다.
+ * Recharts를 사용하여 암호화폐 가격 추이를 표시합니다.
  * - 현재가 및 24시간 변동률
  * - 영역 차트로 가격 추이 시각화
  */
@@ -23,6 +23,8 @@ interface PriceChartProps {
   currentPrice: number;
   /** 24시간 변동률 (%) */
   change24h: number | null;
+  /** 마켓 심볼 (예: "KRW-SOL") */
+  symbol?: string;
   /** 차트 데이터 (선택) */
   data?: Array<{
     time: string;
@@ -62,11 +64,24 @@ function getChangeColor(change: number | null): string {
 }
 
 /**
+ * 마켓 심볼에서 표시용 이름 추출 (예: "KRW-SOL" → "SOL/KRW")
+ */
+function formatMarketName(symbol?: string): string {
+  if (!symbol) return "COIN/KRW";
+  const parts = symbol.split("-");
+  if (parts.length === 2) {
+    return `${parts[1]}/${parts[0]}`;
+  }
+  return symbol;
+}
+
+/**
  * PriceChart 컴포넌트
  */
-const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
+const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, symbol, data }) => {
   const changeColor = getChangeColor(change24h);
   const changeSign = change24h !== null && change24h >= 0 ? "+" : "";
+  const marketName = formatMarketName(symbol);
 
   // 임시 샘플 데이터 (실제 데이터가 없을 경우)
   const chartData =
@@ -82,7 +97,7 @@ const PriceChart: FC<PriceChartProps> = ({ currentPrice, change24h, data }) => {
       {/* 헤더: 현재가 및 변동률 */}
       <div className="mb-4 flex items-baseline justify-between">
         <div>
-          <h3 className="text-sm font-medium text-dark-text-secondary">XRP/KRW</h3>
+          <h3 className="text-sm font-medium text-dark-text-secondary">{marketName}</h3>
           <p className="mt-1 text-3xl font-bold text-white tracking-tight text-glow">
             {formatPrice(currentPrice)}
           </p>

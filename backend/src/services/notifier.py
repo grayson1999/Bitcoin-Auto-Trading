@@ -250,7 +250,7 @@ class Notifier:
         side: str,
         amount: float,
         price: float,
-        symbol: str = "XRP-KRW",
+        symbol: str | None = None,
     ) -> bool:
         """
         거래 체결 알림
@@ -259,11 +259,12 @@ class Notifier:
             side: 매수/매도
             amount: 거래량
             price: 체결가
-            symbol: 심볼
+            symbol: 심볼 (기본값: settings.trading_ticker)
 
         Returns:
             bool: 성공 여부
         """
+        symbol = symbol or settings.trading_ticker
         emoji = "🟢" if side.upper() == "BUY" else "🔴"
         return await self.send_alert(
             title=f"{emoji} {side.upper()} 체결",

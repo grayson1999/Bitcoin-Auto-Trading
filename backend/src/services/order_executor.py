@@ -30,6 +30,7 @@ from src.models import (
     SignalType,
     TradingSignal,
 )
+from src.config import settings
 from src.services.risk_manager import RiskCheckResult, RiskManager
 from src.services.upbit_client import UpbitClient, UpbitError
 
@@ -37,7 +38,7 @@ if TYPE_CHECKING:
     from src.services.notifier import Notifier
 
 # === 상수 ===
-DEFAULT_MARKET = "KRW-XRP"
+# settings.trading_ticker은 settings.trading_ticker에서 동적으로 로드됨
 MAX_ORDER_RETRIES = 3  # 주문 재시도 횟수
 RETRY_DELAY_SECONDS = 1.0  # 재시도 대기 시간
 MIN_ORDER_AMOUNT_KRW = Decimal("5000")  # 최소 주문 금액 (원)
@@ -79,13 +80,13 @@ class OrderResult:
 
 @dataclass
 class BalanceInfo:
-    """잔고 정보"""
+    """잔고 정보 (동적 코인 지원)"""
 
     krw_available: Decimal
     krw_locked: Decimal
-    xrp_available: Decimal
-    xrp_locked: Decimal
-    xrp_avg_price: Decimal
+    coin_available: Decimal  # 보유 코인 수량
+    coin_locked: Decimal  # 잠긴 코인 수량
+    coin_avg_price: Decimal  # 평균 매수가
     total_krw: Decimal  # 총 평가금액
 
 
@@ -274,13 +275,13 @@ class OrderExecutor:
         """매도 주문 실행"""
         logger.info("매도 주문 처리 시작")
 
-        # 보유 XRP 확인
-        if balance_info.xrp_available <= 0:
-            logger.warning("보유 XRP 없음 - 매도 불가")
+        # 보유 코인 확인
+        if balance_info.coin_available <= 0:
+            logger.warning(f"보유 {settings.trading_currency} 없음 - 매도 불가")
             return OrderResult(
                 success=False,
                 order=None,
-                message="보유 XRP가 없습니다",
+                message=f"보유 {settings.trading_currency}가 없습니다",
                 blocked_reason=OrderBlockedReason.INSUFFICIENT_BALANCE,
             )
 
@@ -296,7 +297,7 @@ class OrderExecutor:
 
         # 현재가 조회
         try:
-            ticker = await self._upbit_client.get_ticker(DEFAULT_MARKET)
+            ticker = await self._upbit_client.get_ticker(settings.trading_ticker)
             current_price = ticker.trade_price
         except UpbitError as e:
             logger.error(f"현재가 조회 실패: {e.message}")
@@ -321,8 +322,8 @@ class OrderExecutor:
                     blocked_reason=OrderBlockedReason.STOP_LOSS_TRIGGERED,
                 )
 
-        # 전량 매도 (보유 XRP 전체)
-        sell_volume = balance_info.xrp_available
+        # 전량 매도 (보유 코인 전체)
+        sell_volume = balance_info.coin_available
 
         # 주문 실행 (T060: 재시도 로직)
         return await self._place_order_with_retry(
@@ -372,7 +373,7 @@ class OrderExecutor:
                 if side == OrderSide.BUY:
                     # 시장가 매수: price에 총액 지정
                     upbit_response = await self._upbit_client.place_order(
-                        market=DEFAULT_MARKET,
+                        market=settings.trading_ticker,
                         side="bid",
                         price=amount,
                         ord_type="price",  # 시장가 매수
@@ -380,7 +381,7 @@ class OrderExecutor:
                 else:
                     # 시장가 매도: volume에 수량 지정
                     upbit_response = await self._upbit_client.place_order(
-                        market=DEFAULT_MARKET,
+                        market=settings.trading_ticker,
                         side="ask",
                         volume=amount,
                         ord_type="market",  # 시장가 매도
@@ -476,36 +477,36 @@ class OrderExecutor:
 
         krw_available = Decimal("0")
         krw_locked = Decimal("0")
-        xrp_available = Decimal("0")
-        xrp_locked = Decimal("0")
-        xrp_avg_price = Decimal("0")
+        coin_available = Decimal("0")
+        coin_locked = Decimal("0")
+        coin_avg_price = Decimal("0")
 
         for acc in accounts:
             if acc.currency == "KRW":
                 krw_available = acc.balance
                 krw_locked = acc.locked
-            elif acc.currency == "XRP":
-                xrp_available = acc.balance
-                xrp_locked = acc.locked
-                xrp_avg_price = acc.avg_buy_price
+            elif acc.currency == settings.trading_currency:
+                coin_available = acc.balance
+                coin_locked = acc.locked
+                coin_avg_price = acc.avg_buy_price
 
         # 현재가 조회
         try:
-            ticker = await self._upbit_client.get_ticker(DEFAULT_MARKET)
+            ticker = await self._upbit_client.get_ticker(settings.trading_ticker)
             current_price = ticker.trade_price
         except UpbitError:
-            current_price = xrp_avg_price  # 조회 실패 시 평균 매수가 사용
+            current_price = coin_avg_price  # 조회 실패 시 평균 매수가 사용
 
         # 총 평가금액 계산
-        xrp_value = (xrp_available + xrp_locked) * current_price
-        total_krw = krw_available + krw_locked + xrp_value
+        coin_value = (coin_available + coin_locked) * current_price
+        total_krw = krw_available + krw_locked + coin_value
 
         return BalanceInfo(
             krw_available=krw_available,
             krw_locked=krw_locked,
-            xrp_available=xrp_available,
-            xrp_locked=xrp_locked,
-            xrp_avg_price=xrp_avg_price,
+            coin_available=coin_available,
+            coin_locked=coin_locked,
+            coin_avg_price=coin_avg_price,
             total_krw=total_krw,
         )
 
@@ -525,7 +526,7 @@ class OrderExecutor:
         if position is None:
             # 포지션 생성
             position = Position(
-                symbol=DEFAULT_MARKET,
+                symbol=settings.trading_ticker,
                 quantity=Decimal("0"),
                 avg_buy_price=Decimal("0"),
                 current_value=Decimal("0"),
@@ -537,9 +538,9 @@ class OrderExecutor:
         if order.is_buy:
             # 매수: 수량 증가, 평균 매수가 재계산
             if order.executed_amount and order.executed_price:
-                # 시장가 매수의 경우 executed_amount는 KRW, 실제 XRP 수량 계산 필요
-                xrp_quantity = order.executed_amount / order.executed_price
-                new_quantity = position.quantity + xrp_quantity
+                # 시장가 매수의 경우 executed_amount는 KRW, 실제 코인 수량 계산 필요
+                coin_quantity = order.executed_amount / order.executed_price
+                new_quantity = position.quantity + coin_quantity
 
                 if new_quantity > 0:
                     # 가중 평균 매수가 계산
@@ -562,7 +563,7 @@ class OrderExecutor:
 
         # 현재가로 평가금액 업데이트
         try:
-            ticker = await self._upbit_client.get_ticker(DEFAULT_MARKET)
+            ticker = await self._upbit_client.get_ticker(settings.trading_ticker)
             position.update_value(ticker.trade_price)
         except UpbitError:
             pass
@@ -649,7 +650,7 @@ class OrderExecutor:
             signal_id=signal_id,
             order_type=order_type.value,
             side=side.value,
-            market=DEFAULT_MARKET,
+            market=settings.trading_ticker,
             amount=amount,
             price=price,
             status=OrderStatus.PENDING.value,
@@ -807,7 +808,7 @@ class OrderExecutor:
 
     async def _get_position(self) -> Position | None:
         """현재 포지션 조회"""
-        stmt = select(Position).where(Position.symbol == DEFAULT_MARKET)
+        stmt = select(Position).where(Position.symbol == settings.trading_ticker)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -819,11 +820,11 @@ class OrderExecutor:
         """
         Upbit 실제 잔고와 Position 테이블 동기화
 
-        Upbit API에서 실제 XRP 잔고를 조회하여 Position 테이블에 반영합니다.
+        Upbit API에서 실제 코인 잔고를 조회하여 Position 테이블에 반영합니다.
         외부에서 직접 거래한 내역도 Position에 반영됩니다.
 
         Returns:
-            Position | None: 동기화된 포지션 (XRP가 없으면 None)
+            Position | None: 동기화된 포지션 (코인이 없으면 None)
         """
         try:
             balance_info = await self._get_balance_info()
@@ -831,22 +832,22 @@ class OrderExecutor:
             logger.warning(f"포지션 동기화 실패 - 잔고 조회 오류: {e.message}")
             return None
 
-        # XRP 보유량이 없으면 포지션 삭제 또는 0으로 설정
+        # 코인 보유량이 없으면 포지션 삭제 또는 0으로 설정
         position = await self._get_position()
 
-        if balance_info.xrp_available <= 0 and balance_info.xrp_locked <= 0:
+        if balance_info.coin_available <= 0 and balance_info.coin_locked <= 0:
             if position:
                 position.quantity = Decimal("0")
                 position.current_value = Decimal("0")
                 position.unrealized_pnl = Decimal("0")
                 position.updated_at = datetime.now(UTC)
-                logger.info("포지션 동기화: XRP 보유량 없음 - 포지션 초기화")
+                logger.info(f"포지션 동기화: {settings.trading_currency} 보유량 없음 - 포지션 초기화")
             return position
 
         # 포지션이 없으면 새로 생성
         if position is None:
             position = Position(
-                symbol=DEFAULT_MARKET,
+                symbol=settings.trading_ticker,
                 quantity=Decimal("0"),
                 avg_buy_price=Decimal("0"),
                 current_value=Decimal("0"),
@@ -856,24 +857,24 @@ class OrderExecutor:
             self._session.add(position)
 
         # Upbit 잔고로 포지션 업데이트
-        total_xrp = balance_info.xrp_available + balance_info.xrp_locked
-        position.quantity = total_xrp
-        position.avg_buy_price = balance_info.xrp_avg_price
+        total_coin = balance_info.coin_available + balance_info.coin_locked
+        position.quantity = total_coin
+        position.avg_buy_price = balance_info.coin_avg_price
 
         # 현재가로 평가금액 및 손익 계산
         try:
-            ticker = await self._upbit_client.get_ticker(DEFAULT_MARKET)
+            ticker = await self._upbit_client.get_ticker(settings.trading_ticker)
             position.update_value(ticker.trade_price)
         except UpbitError:
             # 현재가 조회 실패 시 평균 매수가로 계산
-            position.current_value = total_xrp * balance_info.xrp_avg_price
+            position.current_value = total_coin * balance_info.coin_avg_price
             position.unrealized_pnl = Decimal("0")
 
         position.updated_at = datetime.now(UTC)
         await self._session.flush()
 
         logger.info(
-            f"포지션 동기화 완료: quantity={position.quantity:.4f} XRP, "
+            f"포지션 동기화 완료: quantity={position.quantity:.4f} {settings.trading_currency}, "
             f"avg_price={position.avg_buy_price:,.0f}, "
             f"unrealized_pnl={position.unrealized_pnl:,.0f}"
         )

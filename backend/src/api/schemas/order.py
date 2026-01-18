@@ -172,10 +172,10 @@ class PositionResponse(BaseModel):
     """
     포지션 응답 스키마
 
-    현재 XRP 포지션 정보입니다.
+    현재 거래 코인의 포지션 정보입니다.
 
     Attributes:
-        symbol: 심볼 (XRP-KRW)
+        symbol: 마켓 심볼 (예: KRW-SOL)
         quantity: 보유 수량
         avg_buy_price: 평균 매수가
         current_value: 현재 평가금액
@@ -204,17 +204,17 @@ class BalanceResponse(BaseModel):
     Attributes:
         krw: KRW 잔고
         krw_locked: KRW 잠금 금액 (주문 중)
-        xrp: XRP 잔고
-        xrp_locked: XRP 잠금 수량 (주문 중)
-        xrp_avg_buy_price: XRP 평균 매수가
+        coin: 거래 코인 잔고
+        coin_locked: 거래 코인 잠금 수량 (주문 중)
+        coin_avg_buy_price: 거래 코인 평균 매수가
         total_krw: 총 평가금액 (KRW 환산)
     """
 
     krw: Decimal = Field(description="KRW 가용 잔고")
-    krw_locked: Decimal = Field(default=Decimal("0"), description="KRW 잠금 금액")
-    xrp: Decimal = Field(description="XRP 가용 잔고")
-    xrp_locked: Decimal = Field(default=Decimal("0"), description="XRP 잠금 수량")
-    xrp_avg_buy_price: Decimal = Field(description="XRP 평균 매수가")
+    krw_locked: Decimal = Field(default=Decimal("0"), description="KRW 잠금")
+    coin: Decimal = Field(description="거래 코인 가용 잔고")
+    coin_locked: Decimal = Field(default=Decimal("0"), description="거래 코인 잠금")
+    coin_avg_buy_price: Decimal = Field(description="거래 코인 평균 매수가")
     total_krw: Decimal = Field(description="총 평가금액 (KRW 환산)")
 
 

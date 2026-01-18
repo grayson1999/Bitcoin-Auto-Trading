@@ -64,7 +64,7 @@ class UpbitTickerData(BaseModel):
     Upbit 시세 데이터 모델
 
     Attributes:
-        market: 마켓 코드 (예: KRW-XRP)
+        market: 마켓 코드
         trade_price: 현재 거래가
         acc_trade_volume_24h: 24시간 누적 거래량
         high_price: 24시간 고가
@@ -87,7 +87,7 @@ class UpbitCandleData(BaseModel):
     OHLCV (시가, 고가, 저가, 종가, 거래량) 캔들스틱 데이터입니다.
 
     Attributes:
-        market: 마켓 코드 (예: KRW-XRP)
+        market: 마켓 코드
         candle_date_time_utc: 캔들 시간 (UTC)
         candle_date_time_kst: 캔들 시간 (KST)
         opening_price: 시가
@@ -182,7 +182,7 @@ class UpbitClient:
 
     사용 예시:
         client = UpbitClient()
-        ticker = await client.get_ticker("KRW-XRP")
+        ticker = await client.get_ticker()
         print(f"현재가: {ticker.trade_price}")
     """
 
@@ -372,14 +372,14 @@ class UpbitClient:
 
     # ==================== 공개 API ====================
 
-    async def get_ticker(self, market: str = "KRW-XRP") -> UpbitTickerData:
+    async def get_ticker(self, market: str | None = None) -> UpbitTickerData:
         """
         시세 조회
 
         특정 마켓의 현재 시세 정보를 조회합니다.
 
         Args:
-            market: 마켓 코드 (기본값: KRW-XRP)
+            market: 마켓 코드 (기본값: settings.trading_ticker)
 
         Returns:
             UpbitTickerData: 시세 데이터 (가격, 거래량 등)
@@ -387,6 +387,7 @@ class UpbitClient:
         Raises:
             UpbitError: API 오류 시
         """
+        market = market or settings.trading_ticker
         response = await self._request(
             method="GET",
             endpoint="/ticker",
@@ -406,18 +407,19 @@ class UpbitClient:
             timestamp=data["timestamp"],
         )
 
-    async def get_orderbook(self, market: str = "KRW-XRP") -> dict[str, Any]:
+    async def get_orderbook(self, market: str | None = None) -> dict[str, Any]:
         """
         오더북 조회
 
         특정 마켓의 호가 정보를 조회합니다.
 
         Args:
-            market: 마켓 코드
+            market: 마켓 코드 (기본값: settings.trading_ticker)
 
         Returns:
             dict: 오더북 데이터 (매수/매도 호가 목록)
         """
+        market = market or settings.trading_ticker
         response = await self._request(
             method="GET",
             endpoint="/orderbook",
@@ -427,7 +429,7 @@ class UpbitClient:
 
     async def get_minute_candles(
         self,
-        market: str = "KRW-XRP",
+        market: str | None = None,
         unit: int = 60,
         count: int = 200,
     ) -> list[UpbitCandleData]:
@@ -437,7 +439,7 @@ class UpbitClient:
         특정 마켓의 분봉 캔들 데이터를 조회합니다.
 
         Args:
-            market: 마켓 코드 (기본값: KRW-XRP)
+            market: 마켓 코드 (기본값: settings.trading_ticker)
             unit: 분 단위 (1, 3, 5, 10, 15, 30, 60, 240)
             count: 조회할 캔들 개수 (최대 200)
 
@@ -447,6 +449,7 @@ class UpbitClient:
         Raises:
             UpbitError: API 오류 시
         """
+        market = market or settings.trading_ticker
         response = await self._request(
             method="GET",
             endpoint=f"/candles/minutes/{unit}",
@@ -473,7 +476,7 @@ class UpbitClient:
 
     async def get_day_candles(
         self,
-        market: str = "KRW-XRP",
+        market: str | None = None,
         count: int = 200,
     ) -> list[UpbitCandleData]:
         """
@@ -482,7 +485,7 @@ class UpbitClient:
         특정 마켓의 일봉 캔들 데이터를 조회합니다.
 
         Args:
-            market: 마켓 코드 (기본값: KRW-XRP)
+            market: 마켓 코드 (기본값: settings.trading_ticker)
             count: 조회할 캔들 개수 (최대 200)
 
         Returns:
@@ -491,6 +494,7 @@ class UpbitClient:
         Raises:
             UpbitError: API 오류 시
         """
+        market = market or settings.trading_ticker
         response = await self._request(
             method="GET",
             endpoint="/candles/days",
@@ -517,7 +521,7 @@ class UpbitClient:
 
     async def get_week_candles(
         self,
-        market: str = "KRW-XRP",
+        market: str | None = None,
         count: int = 52,
     ) -> list[UpbitCandleData]:
         """
@@ -526,7 +530,7 @@ class UpbitClient:
         특정 마켓의 주봉 캔들 데이터를 조회합니다.
 
         Args:
-            market: 마켓 코드 (기본값: KRW-XRP)
+            market: 마켓 코드 (기본값: settings.trading_ticker)
             count: 조회할 캔들 개수 (최대 200)
 
         Returns:
@@ -535,6 +539,7 @@ class UpbitClient:
         Raises:
             UpbitError: API 오류 시
         """
+        market = market or settings.trading_ticker
         response = await self._request(
             method="GET",
             endpoint="/candles/weeks",
@@ -620,7 +625,7 @@ class UpbitClient:
         주문 생성
 
         Args:
-            market: 마켓 코드 (예: KRW-XRP)
+            market: 마켓 코드
             side: 주문 방향 (bid=매수, ask=매도)
             volume: 주문 수량 (지정가/시장가매도 시 필수)
             price: 주문 가격 (지정가/시장가매수 시 필수)

@@ -13,6 +13,7 @@ from loguru import logger
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.models import TradingSignal
 from src.models.trading_signal import SignalType
 from src.services.upbit_client import UpbitClient, get_upbit_client
@@ -109,18 +110,20 @@ class SignalPerformanceTracker:
         self.db = db
         self.upbit_client = upbit_client or get_upbit_client()
 
-    async def evaluate_pending_signals(self, market: str = "KRW-XRP") -> int:
+    async def evaluate_pending_signals(self, market: str | None = None) -> int:
         """
         미평가 신호들의 성과 평가
 
         4시간 이상 경과한 신호 중 아직 평가되지 않은 신호를 평가합니다.
 
         Args:
-            market: 마켓 코드
+            market: 마켓 코드 (기본값: settings.trading_ticker)
 
         Returns:
             int: 평가된 신호 수
         """
+        market = market or settings.trading_ticker
+
         # 현재 가격 조회
         try:
             ticker = await self.upbit_client.get_ticker(market)

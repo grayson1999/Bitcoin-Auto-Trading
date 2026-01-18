@@ -25,13 +25,13 @@ from src.api.schemas.order import (
     OrderStatusFilterEnum,
     PositionResponse,
 )
+from src.config import settings
 from src.database import get_session
 from src.models import OrderStatus, Position
 from src.services.order_executor import get_order_executor
 from src.services.upbit_client import UpbitError, get_upbit_client
 
 # === 상수 ===
-DEFAULT_MARKET = "KRW-XRP"
 MIN_LIMIT = 1  # 최소 조회 개수
 MAX_LIMIT = 100  # 최대 조회 개수
 DEFAULT_LIMIT = 50  # 기본 조회 개수
@@ -164,7 +164,7 @@ async def get_order(
     "/position",
     response_model=PositionResponse,
     summary="현재 포지션 조회",
-    description="현재 XRP 포지션 정보를 조회합니다.",
+    description="현재 거래 코인의 포지션 정보를 조회합니다.",
     responses={
         404: {"description": "포지션 없음"},
     },
@@ -176,7 +176,7 @@ async def get_position(
     """
     현재 포지션 조회
 
-    현재 XRP-KRW 포지션 정보를 반환합니다.
+    현재 거래 코인의 포지션 정보를 반환합니다.
     포지션이 없는 경우 빈 포지션을 반환합니다.
 
     Args:
@@ -185,14 +185,14 @@ async def get_position(
     Returns:
         PositionResponse: 포지션 정보
     """
-    stmt = select(Position).where(Position.symbol == DEFAULT_MARKET)
+    stmt = select(Position).where(Position.symbol == settings.trading_ticker)
     result = await session.execute(stmt)
     position = result.scalar_one_or_none()
 
     if position is None:
         # 빈 포지션 반환
         return PositionResponse(
-            symbol=DEFAULT_MARKET,
+            symbol=settings.trading_ticker,
             quantity=Decimal("0"),
             avg_buy_price=Decimal("0"),
             current_value=Decimal("0"),
@@ -204,7 +204,7 @@ async def get_position(
     # 현재가로 평가금액 업데이트
     try:
         upbit_client = get_upbit_client()
-        ticker = await upbit_client.get_ticker(DEFAULT_MARKET)
+        ticker = await upbit_client.get_ticker()
         position.update_value(ticker.trade_price)
     except UpbitError as e:
         logger.warning(f"현재가 조회 실패, 마지막 평가금액 사용: {e.message}")
@@ -229,7 +229,7 @@ async def get_position(
     "/balance",
     response_model=BalanceResponse,
     summary="계좌 잔고 조회",
-    description="Upbit 계좌 잔고(KRW, XRP)를 실시간 조회합니다.",
+    description="Upbit 계좌 잔고(KRW, 거래 코인)를 실시간 조회합니다.",
     responses={
         503: {"description": "Upbit API 오류"},
     },
@@ -241,7 +241,7 @@ async def get_balance(
     """
     계좌 잔고 조회
 
-    Upbit 계좌의 KRW, XRP 잔고를 실시간으로 조회합니다.
+    Upbit 계좌의 KRW, 거래 코인 잔고를 실시간으로 조회합니다.
 
     Args:
         session: 데이터베이스 세션
@@ -265,9 +265,9 @@ async def get_balance(
     return BalanceResponse(
         krw=balance_info.krw_available,
         krw_locked=balance_info.krw_locked,
-        xrp=balance_info.xrp_available,
-        xrp_locked=balance_info.xrp_locked,
-        xrp_avg_buy_price=balance_info.xrp_avg_price,
+        coin=balance_info.coin_available,
+        coin_locked=balance_info.coin_locked,
+        coin_avg_buy_price=balance_info.coin_avg_price,
         total_krw=balance_info.total_krw,
     )
 

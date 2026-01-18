@@ -11,13 +11,14 @@
 import json
 import math
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from loguru import logger
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.models import BacktestResult, BacktestStatus, TradingSignal
 from src.models.trading_signal import SignalType
 from src.services.upbit_client import UpbitClient, get_upbit_client
@@ -121,7 +122,7 @@ class BacktestState:
 
     Attributes:
         cash: 현금 잔고 (KRW)
-        position_quantity: 보유 수량 (XRP)
+        position_quantity: 보유 수량
         avg_buy_price: 평균 매수가
         trades: 거래 내역
         equity_curve: 자산 곡선 (일별 자산 가치)
@@ -320,7 +321,6 @@ class BacktestRunner:
         logger.info(f"캔들 데이터 조회: {total_hours}시간 분량")
 
         # 페이지네이션으로 캔들 데이터 수집 (200개씩)
-        current_to = end_date
         remaining = total_hours
 
         while remaining > 0:
@@ -329,7 +329,7 @@ class BacktestRunner:
             try:
                 # 60분봉 캔들 조회 (to 파라미터로 페이지네이션)
                 candles = await self.upbit_client.get_minute_candles(
-                    market="KRW-XRP",
+                    market=settings.trading_ticker,
                     unit=60,
                     count=fetch_count,
                 )
@@ -363,7 +363,6 @@ class BacktestRunner:
                 if oldest_time <= start_date:
                     break
 
-                current_to = oldest_time - timedelta(hours=1)
                 remaining -= fetch_count
 
             except Exception as e:

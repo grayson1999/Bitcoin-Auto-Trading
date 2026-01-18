@@ -127,6 +127,42 @@ class Settings(BaseSettings):
         description="Auth Server URL for token verification",
     )
 
+    # === 거래 대상 설정 ===
+    trading_ticker: str = Field(
+        default="KRW-SOL",
+        description="거래 마켓 코드 (예: KRW-SOL, KRW-BTC, KRW-MOODENG)",
+    )
+    trading_currency: str = Field(
+        default="SOL",
+        description="거래 코인 심볼 (예: SOL, BTC, MOODENG)",
+    )
+
+    # === AI 신호 손절/익절 비율 ===
+    signal_stop_loss_pct: float = Field(
+        default=0.015,
+        ge=0.005,
+        le=0.10,
+        description="AI 신호 손절 비율 (0.015 = 1.5%)",
+    )
+    signal_take_profit_pct: float = Field(
+        default=0.025,
+        ge=0.01,
+        le=0.20,
+        description="AI 신호 익절 비율 (0.025 = 2.5%)",
+    )
+    signal_trailing_stop_pct: float = Field(
+        default=0.02,
+        ge=0.005,
+        le=0.10,
+        description="트레일링 스탑 활성화 수익률 (0.02 = 2%)",
+    )
+    signal_breakeven_pct: float = Field(
+        default=0.01,
+        ge=0.005,
+        le=0.05,
+        description="본전 손절 활성화 수익률 (0.01 = 1%)",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

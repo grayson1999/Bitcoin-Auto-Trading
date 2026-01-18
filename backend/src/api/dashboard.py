@@ -38,13 +38,13 @@ from src.models import (
     Position,
     TradingSignal,
 )
+from src.config import settings
 from src.services.data_collector import get_data_collector
 from src.services.order_executor import get_order_executor
 from src.services.risk_manager import get_risk_manager
 from src.services.upbit_client import UpbitError, get_upbit_client
 
 # === 상수 ===
-DEFAULT_MARKET = "KRW-XRP"  # 기본 마켓 코드
 MS_TO_SECONDS = 1000  # 밀리초 → 초 변환 상수
 MIN_HOURS = 1  # 최소 조회 시간 (시간)
 MAX_HOURS = 168  # 최대 조회 시간 (7일 = 168시간)
@@ -93,7 +93,7 @@ async def get_dashboard_summary(
     # === 1. 현재 시세 조회 ===
     client = get_upbit_client()
     try:
-        ticker = await client.get_ticker(DEFAULT_MARKET)
+        ticker = await client.get_ticker()
         current_price = ticker.trade_price
 
         # 24시간 변동률 계산
@@ -122,7 +122,7 @@ async def get_dashboard_summary(
     except Exception as e:
         logger.warning(f"포지션 동기화 실패: {e}")
         # 동기화 실패 시 기존 DB 데이터 조회
-        stmt = select(Position).where(Position.symbol == DEFAULT_MARKET)
+        stmt = select(Position).where(Position.symbol == settings.trading_ticker)
         result = await session.execute(stmt)
         position = result.scalar_one_or_none()
 
@@ -144,29 +144,29 @@ async def get_dashboard_summary(
         accounts = await client.get_accounts()
         krw_balance = Decimal("0")
         krw_locked = Decimal("0")
-        xrp_balance = Decimal("0")
-        xrp_locked = Decimal("0")
-        xrp_avg_price = Decimal("0")
+        coin_balance = Decimal("0")
+        coin_locked = Decimal("0")
+        coin_avg_price = Decimal("0")
 
         for acc in accounts:
             if acc.currency == "KRW":
                 krw_balance = acc.balance
                 krw_locked = acc.locked
-            elif acc.currency == "XRP":
-                xrp_balance = acc.balance
-                xrp_locked = acc.locked
-                xrp_avg_price = acc.avg_buy_price
+            elif acc.currency == settings.trading_currency:
+                coin_balance = acc.balance
+                coin_locked = acc.locked
+                coin_avg_price = acc.avg_buy_price
 
         total_krw = (
-            krw_balance + krw_locked + (xrp_balance + xrp_locked) * current_price
+            krw_balance + krw_locked + (coin_balance + coin_locked) * current_price
         )
 
         balance_response = BalanceResponse(
             krw=krw_balance,
             krw_locked=krw_locked,
-            xrp=xrp_balance,
-            xrp_locked=xrp_locked,
-            xrp_avg_buy_price=xrp_avg_price,
+            coin=coin_balance,
+            coin_locked=coin_locked,
+            coin_avg_buy_price=coin_avg_price,
             total_krw=total_krw,
         )
     except UpbitError as e:
@@ -227,7 +227,7 @@ async def get_dashboard_summary(
     "/market",
     response_model=CurrentMarketResponse,
     summary="현재 시세 조회",
-    description="Upbit API에서 실시간 XRP/KRW 시세를 조회합니다.",
+    description="Upbit API에서 실시간 시세를 조회합니다.",
 )
 async def get_current_market(
     current_user: CurrentUser,
@@ -247,7 +247,7 @@ async def get_current_market(
     client = get_upbit_client()
 
     try:
-        ticker = await client.get_ticker(DEFAULT_MARKET)
+        ticker = await client.get_ticker()
 
         # 24시간 변동률 계산 (고가/저가 중간값 기준)
         change_24h_pct = None
@@ -260,7 +260,7 @@ async def get_current_market(
                 )
 
         return CurrentMarketResponse(
-            market=DEFAULT_MARKET,
+            market=settings.trading_ticker,
             price=ticker.trade_price,
             volume_24h=ticker.acc_trade_volume_24h,
             high_24h=ticker.high_price,

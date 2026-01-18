@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 from loguru import logger
 
+from src.config import settings
 from src.services.technical_indicators import (
     IndicatorResult,
     TechnicalIndicatorCalculator,
@@ -72,7 +73,7 @@ class MultiTimeframeAnalyzer:
 
     사용 예시:
         analyzer = MultiTimeframeAnalyzer()
-        result = await analyzer.analyze("KRW-XRP")
+        result = await analyzer.analyze()  # settings.trading_ticker 사용
         print(result.overall_bias)
     """
 
@@ -93,17 +94,18 @@ class MultiTimeframeAnalyzer:
 
     async def fetch_candle_data(
         self,
-        market: str = "KRW-XRP",
+        market: str | None = None,
     ) -> dict[str, list[UpbitCandleData]]:
         """
         모든 타임프레임의 캔들 데이터 병렬 조회
 
         Args:
-            market: 마켓 코드
+            market: 마켓 코드 (기본값: settings.trading_ticker)
 
         Returns:
             dict: 타임프레임별 캔들 데이터
         """
+        market = market or settings.trading_ticker
         tasks = [
             self.upbit_client.get_minute_candles(market, unit=60, count=200),
             self.upbit_client.get_minute_candles(market, unit=240, count=200),
@@ -456,13 +458,13 @@ class MultiTimeframeAnalyzer:
 
     async def analyze(
         self,
-        market: str = "KRW-XRP",
+        market: str | None = None,
     ) -> MultiTimeframeResult:
         """
         멀티 타임프레임 종합 분석 수행
 
         Args:
-            market: 마켓 코드
+            market: 마켓 코드 (기본값: settings.trading_ticker)
 
         Returns:
             MultiTimeframeResult: 종합 분석 결과

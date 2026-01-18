@@ -85,7 +85,7 @@ class AIClient:
 
     사용 예시:
         client = AIClient()
-        response = await client.generate("XRP 시장 분석을 해주세요.")
+        response = await client.generate("시장 분석을 해주세요.")
         print(f"응답: {response.text}")
         print(f"토큰 사용량: {response.total_tokens}")
         print(f"Fallback 사용: {response.is_fallback}")

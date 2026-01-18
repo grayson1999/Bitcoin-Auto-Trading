@@ -127,6 +127,7 @@ const Dashboard: FC = () => {
         <PriceChart
           currentPrice={Number(summary.current_price)}
           change24h={summary.price_change_24h}
+          symbol={summary.position?.symbol}
           data={
             marketHistory?.items && marketHistory.items.length > 0
               ? marketHistory.items.map((item) => ({
@@ -210,7 +211,7 @@ const Dashboard: FC = () => {
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
                 <span className="text-dark-text-secondary font-medium text-sm">보유량</span>
                 <span className="font-bold text-white courier">
-                  {Number(summary.position.quantity).toFixed(4)} XRP
+                  {Number(summary.position.quantity).toFixed(4)} {summary.position.symbol?.split("-")[1] || "COIN"}
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
