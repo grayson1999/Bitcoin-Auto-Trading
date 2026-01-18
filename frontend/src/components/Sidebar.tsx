@@ -8,7 +8,9 @@ import {
     Bars3Icon,
     XMarkIcon,
     BeakerIcon,
+    ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
+import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
     { path: '/', label: '대시보드', icon: HomeIcon },
@@ -21,6 +23,12 @@ const navItems = [
 export const Sidebar: FC = () => {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
+    const { logout } = useAuth();
+
+    const handleLogout = async () => {
+        setIsOpen(false);
+        await logout();
+    };
 
     return (
         <>
@@ -106,8 +114,17 @@ export const Sidebar: FC = () => {
                             <Cog6ToothIcon className="w-5 h-5 text-dark-text-muted group-hover:text-white transition-colors" />
                         </div>
 
+                        {/* Logout Button */}
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-dark-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group"
+                        >
+                            <ArrowRightOnRectangleIcon className="w-5 h-5 text-dark-text-muted group-hover:text-red-400 transition-colors" />
+                            로그아웃
+                        </button>
+
                         {/* Copyright Notice */}
-                        <div className="text-center pt-2 border-t border-white/5">
+                        <div className="text-center pt-2 mt-2 border-t border-white/5">
                             <p className="text-[10px] text-dark-text-muted leading-relaxed">
                                 Copyright © {new Date().getFullYear()}
                                 <br />

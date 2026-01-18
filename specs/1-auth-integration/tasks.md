@@ -115,14 +115,14 @@
 
 ### 토큰 갱신 구현
 
-- [ ] T041 [US2] frontend/src/contexts/AuthContext.tsx에 리프레시 토큰 API 호출 함수 구현
-- [ ] T042 [US2] frontend/src/contexts/AuthContext.tsx에 갱신 실패 시 사용자 로그아웃 처리
-- [ ] T043 [US2] frontend/src/contexts/AuthContext.tsx에 앱 로드 시 localStorage에서 인증 상태 복원
+- [X] T041 [US2] frontend/src/contexts/AuthContext.tsx에 리프레시 토큰 API 호출 함수 구현
+- [X] T042 [US2] frontend/src/contexts/AuthContext.tsx에 갱신 실패 시 사용자 로그아웃 처리
+- [X] T043 [US2] frontend/src/contexts/AuthContext.tsx에 앱 로드 시 localStorage에서 인증 상태 복원
 
 ### API 클라이언트 갱신 로직
 
-- [ ] T044 [US2] frontend/src/api/client.ts에 토큰 갱신 재시도를 포함한 401 응답 인터셉터 구현
-- [ ] T045 [US2] frontend/src/api/client.ts에 토큰 갱신 중 대기 요청 큐잉 처리
+- [X] T044 [US2] frontend/src/api/client.ts에 토큰 갱신 재시도를 포함한 401 응답 인터셉터 구현
+- [X] T045 [US2] frontend/src/api/client.ts에 토큰 갱신 중 대기 요청 큐잉 처리
 
 **체크포인트**: 이 시점에서 US1, US2, US4가 작동해야 함 - 끊김 없는 토큰 갱신
 
@@ -136,14 +136,14 @@
 
 ### 로그아웃 구현
 
-- [ ] T046 [US3] frontend/src/contexts/AuthContext.tsx에 Auth Server로 로그아웃 API 호출 구현
-- [ ] T047 [US3] frontend/src/contexts/AuthContext.tsx에 로그아웃 시 localStorage 삭제
+- [X] T046 [US3] frontend/src/contexts/AuthContext.tsx에 Auth Server로 로그아웃 API 호출 구현
+- [X] T047 [US3] frontend/src/contexts/AuthContext.tsx에 로그아웃 시 localStorage 삭제
 
 ### 사이드바 로그아웃 버튼
 
-- [ ] T048 [US3] frontend/src/components/Sidebar.tsx의 사용자 프로필 섹션에 로그아웃 버튼 추가
-- [ ] T049 [US3] frontend/src/components/Sidebar.tsx에서 로그아웃 버튼을 useAuth().logout()에 연결
-- [ ] T050 [US3] frontend/src/components/Sidebar.tsx에서 Tailwind로 로그아웃 버튼 스타일링
+- [X] T048 [US3] frontend/src/components/Sidebar.tsx의 사용자 프로필 섹션에 로그아웃 버튼 추가
+- [X] T049 [US3] frontend/src/components/Sidebar.tsx에서 로그아웃 버튼을 useAuth().logout()에 연결
+- [X] T050 [US3] frontend/src/components/Sidebar.tsx에서 Tailwind로 로그아웃 버튼 스타일링
 
 **체크포인트**: 이 시점에서 US1-4가 작동해야 함 - 전체 로그인/로그아웃 흐름 완성
 
