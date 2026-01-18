@@ -20,6 +20,7 @@ from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.models import (
     DailyStats,
     Order,
@@ -30,7 +31,6 @@ from src.models import (
     SignalType,
     TradingSignal,
 )
-from src.config import settings
 from src.services.risk_manager import RiskCheckResult, RiskManager
 from src.services.upbit_client import UpbitClient, UpbitError
 
@@ -841,7 +841,9 @@ class OrderExecutor:
                 position.current_value = Decimal("0")
                 position.unrealized_pnl = Decimal("0")
                 position.updated_at = datetime.now(UTC)
-                logger.info(f"포지션 동기화: {settings.trading_currency} 보유량 없음 - 포지션 초기화")
+                logger.info(
+                    f"포지션 동기화: {settings.trading_currency} 보유량 없음 - 포지션 초기화"
+                )
             return position
 
         # 포지션이 없으면 새로 생성

@@ -113,8 +113,8 @@ class SignalGenerator:
 
         logger.info(
             f"SignalGenerator 초기화: {self.currency} ({self.coin_type.value}), "
-            f"손절: {self.prompt_config.stop_loss_pct*100:.1f}%, "
-            f"익절: {self.prompt_config.take_profit_pct*100:.1f}%"
+            f"손절: {self.prompt_config.stop_loss_pct * 100:.1f}%, "
+            f"익절: {self.prompt_config.take_profit_pct * 100:.1f}%"
         )
 
     async def generate_signal(
@@ -321,7 +321,9 @@ class SignalGenerator:
             return "- 자산 정보 조회 불가 (API 키 미설정 또는 오류)"
 
         lines = []
-        lines.append(f"- KRW 가용 잔고: {float(balance_info['krw_available']):,.0f} KRW")
+        lines.append(
+            f"- KRW 가용 잔고: {float(balance_info['krw_available']):,.0f} KRW"
+        )
         lines.append(
             f"- {self.currency} 보유량: {float(balance_info['coin_available']):.4f} {self.currency}"
         )
@@ -352,14 +354,20 @@ class SignalGenerator:
         stop_loss_display = stop_loss_pct * 100
 
         lines = [f"- 미실현 손익률: {pnl_pct:+.2f}%"]
-        lines.append(f"- 손절 기준가: {stop_loss:,.0f} KRW (평균매수가 -{stop_loss_display:.1f}%)")
-        lines.append(f"- 현재가와 손절가 차이: {((current - stop_loss) / stop_loss * 100):+.2f}%")
+        lines.append(
+            f"- 손절 기준가: {stop_loss:,.0f} KRW (평균매수가 -{stop_loss_display:.1f}%)"
+        )
+        lines.append(
+            f"- 현재가와 손절가 차이: {((current - stop_loss) / stop_loss * 100):+.2f}%"
+        )
 
         # 손절 조건 판단
         if pnl_pct <= -stop_loss_display:
             lines.append("")
             lines.append("=" * 50)
-            lines.append(f"**[손절 조건 충족] 미실현 손실 {stop_loss_display:.1f}% 초과!**")
+            lines.append(
+                f"**[손절 조건 충족] 미실현 손실 {stop_loss_display:.1f}% 초과!**"
+            )
             lines.append("-> 즉시 SELL 신호 생성 필수 (신뢰도 0.9)")
             lines.append("=" * 50)
         elif current <= stop_loss:
@@ -371,7 +379,9 @@ class SignalGenerator:
         elif pnl_pct <= -(stop_loss_display * 0.7):
             warning_threshold = stop_loss_display * 0.7
             lines.append("")
-            lines.append(f"**[경고] 미실현 손실 {warning_threshold:.1f}% 초과 - 추세 확인 후 손절 검토**")
+            lines.append(
+                f"**[경고] 미실현 손실 {warning_threshold:.1f}% 초과 - 추세 확인 후 손절 검토**"
+            )
 
         return "\n".join(lines)
 
@@ -431,7 +441,11 @@ class SignalGenerator:
         )
 
         # MACD
-        macd_status = {"bullish": "매수 신호", "bearish": "매도 신호", "neutral": "중립"}
+        macd_status = {
+            "bullish": "매수 신호",
+            "bearish": "매도 신호",
+            "neutral": "중립",
+        }
         lines.append(
             f"**MACD (12-26-9):** Line={ind.macd_line:.4f}, Signal={ind.signal_line:.4f}, "
             f"Histogram={ind.macd_histogram:.4f} ({macd_status.get(ind.macd_signal, ind.macd_signal)})"
@@ -492,7 +506,9 @@ class SignalGenerator:
             "strong_sell": "강한 매도",
         }
         lines.append("")
-        lines.append(f"**타임프레임 합류 점수:** {mtf_result.confluence_score:.2f}/1.00")
+        lines.append(
+            f"**타임프레임 합류 점수:** {mtf_result.confluence_score:.2f}/1.00"
+        )
         lines.append(
             f"**종합 편향:** {bias_kr.get(mtf_result.overall_bias, mtf_result.overall_bias)}"
         )
@@ -620,7 +636,8 @@ class SignalGenerator:
                     key_facts = []
                     for fact in reasoning_raw["facts"][:5]:
                         if any(
-                            kw in fact for kw in ["RSI", "볼린저", "BB", "합류", "타임프레임"]
+                            kw in fact
+                            for kw in ["RSI", "볼린저", "BB", "합류", "타임프레임"]
                         ):
                             key_facts.append(fact)
                     if key_facts:
@@ -636,13 +653,13 @@ class SignalGenerator:
                     )
 
                 if "risks" in reasoning_raw and reasoning_raw["risks"]:
-                    reasoning_parts.append(
-                        "위험: " + ", ".join(reasoning_raw["risks"])
-                    )
+                    reasoning_parts.append("위험: " + ", ".join(reasoning_raw["risks"]))
 
                 if "action_levels" in reasoning_raw:
                     levels = reasoning_raw["action_levels"]
-                    validated_levels = self._validate_action_levels(levels, balance_info)
+                    validated_levels = self._validate_action_levels(
+                        levels, balance_info
+                    )
                     level_parts = []
                     if validated_levels.get("stop_loss"):
                         level_parts.append(f"손절: {validated_levels['stop_loss']}")
@@ -651,7 +668,9 @@ class SignalGenerator:
                     if level_parts:
                         reasoning_parts.append(" / ".join(level_parts))
 
-                reasoning = " | ".join(reasoning_parts) if reasoning_parts else "분석 근거 없음"
+                reasoning = (
+                    " | ".join(reasoning_parts) if reasoning_parts else "분석 근거 없음"
+                )
             else:
                 reasoning = str(reasoning_raw)
 

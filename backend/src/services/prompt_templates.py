@@ -448,7 +448,9 @@ ANALYSIS_PROMPT_TEMPLATE = """## {currency}/KRW 매매 신호 분석
 """
 
 
-def get_system_instruction(currency: str, coin_type: CoinType, config: PromptConfig) -> str:
+def get_system_instruction(
+    currency: str, coin_type: CoinType, config: PromptConfig
+) -> str:
     """
     코인 유형에 맞는 시스템 프롬프트 생성
 
@@ -544,7 +546,9 @@ def get_analysis_prompt(
     return ANALYSIS_PROMPT_TEMPLATE.format(**format_vars)
 
 
-def get_config_for_coin(coin_type: CoinType, custom_config: PromptConfig | None = None) -> PromptConfig:
+def get_config_for_coin(
+    coin_type: CoinType, custom_config: PromptConfig | None = None
+) -> PromptConfig:
     """
     코인 유형에 맞는 설정 반환
 

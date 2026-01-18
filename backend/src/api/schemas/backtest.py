@@ -138,12 +138,8 @@ class BacktestResultResponse(BaseModel):
     start_date: datetime = Field(description="시작 날짜")
     end_date: datetime = Field(description="종료 날짜")
     initial_capital: Decimal = Field(description="초기 자본금 (KRW)")
-    final_capital: Decimal | None = Field(
-        default=None, description="최종 자본금 (KRW)"
-    )
-    total_return_pct: Decimal | None = Field(
-        default=None, description="총 수익률 (%)"
-    )
+    final_capital: Decimal | None = Field(default=None, description="최종 자본금 (KRW)")
+    total_return_pct: Decimal | None = Field(default=None, description="총 수익률 (%)")
     max_drawdown_pct: Decimal | None = Field(
         default=None, description="최대 낙폭 MDD (%)"
     )
@@ -159,9 +155,7 @@ class BacktestResultResponse(BaseModel):
     avg_loss_pct: Decimal | None = Field(
         default=None, description="평균 손실 거래 손실률 (%)"
     )
-    error_message: str | None = Field(
-        default=None, description="실패 시 오류 메시지"
-    )
+    error_message: str | None = Field(default=None, description="실패 시 오류 메시지")
     created_at: datetime = Field(description="생성 시간")
     completed_at: datetime | None = Field(default=None, description="완료 시간")
 

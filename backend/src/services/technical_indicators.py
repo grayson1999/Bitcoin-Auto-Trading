@@ -225,9 +225,13 @@ class TechnicalIndicatorCalculator:
         for i in range(slow, len(closes_asc)):
             # EMA 업데이트
             if i >= fast:
-                ema_fast = (float(closes_asc[i]) - ema_fast) * multiplier_fast + ema_fast
+                ema_fast = (
+                    float(closes_asc[i]) - ema_fast
+                ) * multiplier_fast + ema_fast
             if i >= slow:
-                ema_slow = (float(closes_asc[i]) - ema_slow) * multiplier_slow + ema_slow
+                ema_slow = (
+                    float(closes_asc[i]) - ema_slow
+                ) * multiplier_slow + ema_slow
 
             macd_line = ema_fast - ema_slow
             macd_values.append(macd_line)
@@ -240,7 +244,9 @@ class TechnicalIndicatorCalculator:
         signal_line = sum(macd_values[:signal_period]) / signal_period
 
         for i in range(signal_period, len(macd_values)):
-            signal_line = (macd_values[i] - signal_line) * multiplier_signal + signal_line
+            signal_line = (
+                macd_values[i] - signal_line
+            ) * multiplier_signal + signal_line
 
         # 최신 값
         current_macd = macd_values[-1]

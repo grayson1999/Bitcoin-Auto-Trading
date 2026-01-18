@@ -127,7 +127,10 @@ class SlackLogHandler:
         # 1. 분당 메시지 제한 체크
         # 오래된 타임스탬프 제거
         cutoff = now.timestamp() - 60
-        while self._message_timestamps and self._message_timestamps[0].timestamp() < cutoff:
+        while (
+            self._message_timestamps
+            and self._message_timestamps[0].timestamp() < cutoff
+        ):
             self._message_timestamps.popleft()
 
         if len(self._message_timestamps) >= self._max_messages_per_minute:

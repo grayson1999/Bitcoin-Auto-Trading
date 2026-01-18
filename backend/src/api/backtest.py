@@ -82,8 +82,7 @@ async def run_backtest(
         )
 
         logger.info(
-            f"백테스트 완료: {request.name} - "
-            f"수익률 {result.total_return_pct:.2f}%"
+            f"백테스트 완료: {request.name} - 수익률 {result.total_return_pct:.2f}%"
         )
 
         return BacktestRunResponse(

@@ -278,12 +278,16 @@ class MultiTimeframeAnalyzer:
 
         # 추세
         trend_text = {"bullish": "상승", "bearish": "하락", "sideways": "횡보"}
-        parts.append(f"{tf_name} {trend_text.get(trend, trend)} 추세 (강도 {strength:.0%})")
+        parts.append(
+            f"{tf_name} {trend_text.get(trend, trend)} 추세 (강도 {strength:.0%})"
+        )
 
         # RSI
         if indicators.rsi_signal != "neutral":
             rsi_text = {"oversold": "과매도", "overbought": "과매수"}
-            parts.append(f"RSI {indicators.rsi_14:.1f} ({rsi_text.get(indicators.rsi_signal, '')})")
+            parts.append(
+                f"RSI {indicators.rsi_14:.1f} ({rsi_text.get(indicators.rsi_signal, '')})"
+            )
 
         # MACD
         if indicators.macd_signal != "neutral":

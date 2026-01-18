@@ -46,6 +46,7 @@ class CandlePriceData:
         low_price: 저가
         volume: 거래량
     """
+
     timestamp: datetime
     price: Decimal
     high_price: Decimal | None = None
@@ -193,9 +194,7 @@ class BacktestRunner:
         Raises:
             BacktestRunnerError: 실행 실패 시
         """
-        logger.info(
-            f"백테스트 시작: {name} ({start_date.date()} ~ {end_date.date()})"
-        )
+        logger.info(f"백테스트 시작: {name} ({start_date.date()} ~ {end_date.date()})")
 
         # 1. 결과 레코드 생성 (RUNNING 상태)
         result = BacktestResult(
@@ -345,7 +344,9 @@ class BacktestRunner:
 
                     # 기간 내 데이터만 저장
                     if start_date <= candle_time <= end_date:
-                        hour_key = candle_time.replace(minute=0, second=0, microsecond=0)
+                        hour_key = candle_time.replace(
+                            minute=0, second=0, microsecond=0
+                        )
                         indexed[hour_key] = CandlePriceData(
                             timestamp=candle_time,
                             price=candle.trade_price or Decimal("0"),
@@ -440,7 +441,9 @@ class BacktestRunner:
         # 투자 금액 계산 (전체 현금의 일정 비율)
         # 신뢰도가 높을수록 더 많이 투자 (2% ~ 10%)
         confidence = float(signal.confidence)
-        invest_pct = Decimal(str(MIN_TRADE_AMOUNT_PCT + Decimal("0.08") * Decimal(str(confidence))))
+        invest_pct = Decimal(
+            str(MIN_TRADE_AMOUNT_PCT + Decimal("0.08") * Decimal(str(confidence)))
+        )
         invest_amount = state.cash * invest_pct
 
         if invest_amount <= 0 or state.cash < invest_amount:
@@ -584,7 +587,9 @@ class BacktestRunner:
             )
 
         # 거래 통계
-        sell_trades = [t for t in state.trades if t.signal_type == SignalType.SELL.value]
+        sell_trades = [
+            t for t in state.trades if t.signal_type == SignalType.SELL.value
+        ]
         metrics.total_trades = len(sell_trades)
 
         if sell_trades:
@@ -595,9 +600,7 @@ class BacktestRunner:
             metrics.losing_trades = len(losing)
 
             # 승률
-            metrics.win_rate_pct = Decimal(
-                str(len(winning) / len(sell_trades) * 100)
-            )
+            metrics.win_rate_pct = Decimal(str(len(winning) / len(sell_trades) * 100))
 
             # 평균 수익률/손실률
             if winning:
@@ -719,17 +722,19 @@ class BacktestRunner:
         """
         trade_list = []
         for trade in trades:
-            trade_list.append({
-                "timestamp": trade.timestamp.isoformat(),
-                "signal_type": trade.signal_type,
-                "price": float(trade.price),
-                "quantity": float(trade.quantity),
-                "amount": float(trade.amount),
-                "fee": float(trade.fee),
-                "pnl": float(trade.pnl),
-                "pnl_pct": trade.pnl_pct,
-                "balance_after": float(trade.balance_after),
-            })
+            trade_list.append(
+                {
+                    "timestamp": trade.timestamp.isoformat(),
+                    "signal_type": trade.signal_type,
+                    "price": float(trade.price),
+                    "quantity": float(trade.quantity),
+                    "amount": float(trade.amount),
+                    "fee": float(trade.fee),
+                    "pnl": float(trade.pnl),
+                    "pnl_pct": trade.pnl_pct,
+                    "balance_after": float(trade.balance_after),
+                }
+            )
 
         return json.dumps(trade_list, ensure_ascii=False)
 

@@ -10,7 +10,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, DateTime, Index, Numeric
+from sqlalchemy import BigInteger, DateTime, Index, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.models import Base
@@ -25,6 +25,7 @@ class MarketData(Base):
 
     Attributes:
         id: 고유 식별자 (자동 증가)
+        symbol: 마켓 심볼 (예: KRW-BTC, KRW-SOL)
         timestamp: 데이터 수집 시간 (UTC, 타임존 포함)
         price: 현재 가격 (KRW)
         volume: 24시간 누적 거래량
@@ -33,6 +34,7 @@ class MarketData(Base):
         trade_count: 거래 건수
 
     인덱스:
+        - idx_market_data_symbol_timestamp: 심볼별 시간순 조회 최적화
         - idx_market_data_timestamp_desc: 최신 데이터 조회 최적화 (내림차순)
         - idx_market_data_date: 날짜 범위 조회 최적화 (오름차순)
     """
@@ -44,6 +46,14 @@ class MarketData(Base):
         BigInteger,
         primary_key=True,
         autoincrement=True,
+    )
+
+    # 마켓 심볼 (예: KRW-BTC, KRW-SOL)
+    symbol: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        index=True,
+        comment="마켓 심볼 (예: KRW-BTC)",
     )
 
     # 데이터 수집 시간 (타임존 포함)
@@ -88,6 +98,8 @@ class MarketData(Base):
 
     # === 테이블 인덱스 정의 ===
     __table_args__ = (
+        # 심볼별 시간순 조회를 위한 복합 인덱스 (가장 중요)
+        Index("idx_market_data_symbol_timestamp", "symbol", timestamp.desc()),
         # 최신 데이터 빠른 조회를 위한 내림차순 인덱스
         Index("idx_market_data_timestamp_desc", timestamp.desc()),
         # 날짜 범위 검색을 위한 오름차순 인덱스
@@ -102,6 +114,6 @@ class MarketData(Base):
             str: 모델 정보 문자열
         """
         return (
-            f"<MarketData(id={self.id}, timestamp={self.timestamp}, "
-            f"price={self.price})>"
+            f"<MarketData(id={self.id}, symbol={self.symbol}, "
+            f"timestamp={self.timestamp}, price={self.price})>"
         )

@@ -22,7 +22,12 @@ from src.models import DEFAULT_CONFIGS, SystemConfig
 router = APIRouter(prefix="/config")
 
 # 유효한 AI 모델 목록
-VALID_AI_MODELS = ["gemini-2.5-pro", "gemini-2.5-flash", "gpt-4o-mini", "claude-3-haiku"]
+VALID_AI_MODELS = [
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+    "gpt-4o-mini",
+    "claude-3-haiku",
+]
 
 
 async def _get_config_value(

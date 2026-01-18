@@ -117,7 +117,9 @@ class AuthClient:
                 detail = response.json().get("detail", "인증 실패")
                 raise AuthError(detail, 401)
 
-            raise AuthError(f"토큰 검증 실패: {response.status_code}", response.status_code)
+            raise AuthError(
+                f"토큰 검증 실패: {response.status_code}", response.status_code
+            )
 
         except httpx.ConnectError as e:
             logger.error(f"Auth Server 연결 실패: {e}")

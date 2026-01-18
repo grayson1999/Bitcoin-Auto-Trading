@@ -305,7 +305,11 @@ async def sync_pending_orders(
     pending_orders = list(result.scalars().all())
 
     if not pending_orders:
-        return {"synced_count": 0, "updated_orders": [], "message": "대기 중인 주문 없음"}
+        return {
+            "synced_count": 0,
+            "updated_orders": [],
+            "message": "대기 중인 주문 없음",
+        }
 
     updated_orders = []
     for order in pending_orders:
@@ -322,13 +326,15 @@ async def sync_pending_orders(
                     executed_amount=upbit_response.executed_volume,
                     fee=upbit_response.executed_volume * Decimal("0.0005"),
                 )
-                updated_orders.append({
-                    "order_id": order.id,
-                    "old_status": "PENDING",
-                    "new_status": "EXECUTED",
-                    "executed_price": float(order.executed_price),
-                    "executed_amount": float(order.executed_amount),
-                })
+                updated_orders.append(
+                    {
+                        "order_id": order.id,
+                        "old_status": "PENDING",
+                        "new_status": "EXECUTED",
+                        "executed_price": float(order.executed_price),
+                        "executed_amount": float(order.executed_amount),
+                    }
+                )
                 logger.info(
                     f"[주문 동기화] order_id={order.id} PENDING → EXECUTED, "
                     f"price={order.executed_price}, amount={order.executed_amount}"
@@ -336,11 +342,13 @@ async def sync_pending_orders(
 
             elif upbit_response.state == "cancel":
                 order.mark_cancelled()
-                updated_orders.append({
-                    "order_id": order.id,
-                    "old_status": "PENDING",
-                    "new_status": "CANCELLED",
-                })
+                updated_orders.append(
+                    {
+                        "order_id": order.id,
+                        "old_status": "PENDING",
+                        "new_status": "CANCELLED",
+                    }
+                )
                 logger.info(f"[주문 동기화] order_id={order.id} PENDING → CANCELLED")
 
         except UpbitError as e:

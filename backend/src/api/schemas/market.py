@@ -21,6 +21,7 @@ class MarketDataResponse(BaseModel):
 
     Attributes:
         id: 레코드 고유 식별자
+        symbol: 마켓 심볼 (예: KRW-BTC, KRW-SOL)
         timestamp: 데이터 수집 시간 (UTC)
         price: 현재 가격 (KRW)
         volume: 24시간 거래량
@@ -33,6 +34,7 @@ class MarketDataResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int = Field(description="고유 식별자")
+    symbol: str = Field(description="마켓 심볼 (예: KRW-BTC)")
     timestamp: datetime = Field(description="데이터 수집 시간 (UTC)")
     price: Decimal = Field(description="현재 가격 (KRW)")
     volume: Decimal = Field(description="24시간 거래량")

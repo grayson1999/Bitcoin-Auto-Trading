@@ -18,9 +18,9 @@ import { api } from "../api/client";
 export interface Balance {
   krw: string;
   krw_locked: string;
-  xrp: string;
-  xrp_locked: string;
-  xrp_avg_buy_price: string;
+  coin: string;
+  coin_locked: string;
+  coin_avg_buy_price: string;
   total_krw: string;
 }
 
@@ -49,6 +49,7 @@ export interface TradingSignal {
 
 /** 대시보드 요약 */
 export interface DashboardSummary {
+  market: string;
   current_price: string;
   price_change_24h: number | null;
   position: Position | null;
@@ -194,6 +195,7 @@ export interface BacktestRunResponse {
 /** 시장 데이터 레코드 */
 export interface MarketDataItem {
   id: number;
+  symbol: string;
   timestamp: string;
   price: string;
   volume: string;

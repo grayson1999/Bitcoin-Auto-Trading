@@ -127,7 +127,7 @@ const Dashboard: FC = () => {
         <PriceChart
           currentPrice={Number(summary.current_price)}
           change24h={summary.price_change_24h}
-          symbol={summary.position?.symbol}
+          symbol={summary.market}
           data={
             marketHistory?.items && marketHistory.items.length > 0
               ? marketHistory.items.map((item) => ({

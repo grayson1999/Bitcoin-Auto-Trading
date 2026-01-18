@@ -22,6 +22,7 @@ class DashboardSummaryResponse(BaseModel):
     현재 가격, 포지션, 잔고, 일일 손익 등 대시보드에 필요한 전체 요약 정보입니다.
 
     Attributes:
+        market: 현재 거래 마켓 (예: KRW-SOL)
         current_price: 현재 가격 (KRW)
         price_change_24h: 24시간 가격 변동률 (%)
         position: 현재 포지션 정보
@@ -34,6 +35,7 @@ class DashboardSummaryResponse(BaseModel):
         updated_at: 데이터 갱신 시간
     """
 
+    market: str = Field(description="현재 거래 마켓 (예: KRW-SOL)")
     current_price: Decimal = Field(description="현재 가격 (KRW)")
     price_change_24h: float | None = Field(
         default=None, description="24시간 가격 변동률 (%)"

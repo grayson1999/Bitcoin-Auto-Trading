@@ -29,6 +29,7 @@ from src.api.schemas.market import (
 )
 from src.api.schemas.order import BalanceResponse, PositionResponse
 from src.api.schemas.signal import TradingSignalResponse
+from src.config import settings
 from src.database import get_session
 from src.models import (
     DailyStats,
@@ -38,7 +39,6 @@ from src.models import (
     Position,
     TradingSignal,
 )
-from src.config import settings
 from src.services.data_collector import get_data_collector
 from src.services.order_executor import get_order_executor
 from src.services.risk_manager import get_risk_manager
@@ -210,6 +210,7 @@ async def get_dashboard_summary(
     today_trade_count = result_orders.scalar() or 0
 
     return DashboardSummaryResponse(
+        market=settings.trading_ticker,
         current_price=current_price,
         price_change_24h=change_24h_pct,
         position=position_response,
@@ -297,7 +298,11 @@ async def get_market_history(
     ] = DEFAULT_LIMIT_HISTORY,
     interval: Annotated[
         int | None,
-        Query(ge=1, le=60, description="샘플링 간격 (분, 1-60). 지정 시 균등 간격으로 데이터 반환"),
+        Query(
+            ge=1,
+            le=60,
+            description="샘플링 간격 (분, 1-60). 지정 시 균등 간격으로 데이터 반환",
+        ),
     ] = None,
 ) -> MarketDataListResponse:
     """

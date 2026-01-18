@@ -261,9 +261,15 @@ class SignalPerformanceTracker:
                     signal_id=sig.id,
                     signal_type=sig.signal_type,
                     confidence=float(sig.confidence),
-                    price_at_signal=float(sig.price_at_signal) if sig.price_at_signal else 0,
-                    price_after_4h=float(sig.price_after_4h) if sig.price_after_4h else None,
-                    price_after_24h=float(sig.price_after_24h) if sig.price_after_24h else None,
+                    price_at_signal=float(sig.price_at_signal)
+                    if sig.price_at_signal
+                    else 0,
+                    price_after_4h=float(sig.price_after_4h)
+                    if sig.price_after_4h
+                    else None,
+                    price_after_24h=float(sig.price_after_24h)
+                    if sig.price_after_24h
+                    else None,
                     pnl_percent_4h=round(pnl_4h, 2) if pnl_4h is not None else None,
                     pnl_percent_24h=round(pnl_24h, 2) if pnl_24h is not None else None,
                     was_correct=sig.outcome_correct,
@@ -363,18 +369,16 @@ class SignalPerformanceTracker:
                     "최근 5개 신호가 모두 HOLD - 명확한 추세 형성 시 적극적 신호 고려"
                 )
             elif recent_types.count(SignalType.BUY.value) >= 4:
-                feedback_parts.append(
-                    "최근 매수 신호 빈발 - 과매수 가능성 고려 필요"
-                )
+                feedback_parts.append("최근 매수 신호 빈발 - 과매수 가능성 고려 필요")
             elif recent_types.count(SignalType.SELL.value) >= 4:
-                feedback_parts.append(
-                    "최근 매도 신호 빈발 - 과매도 가능성 고려 필요"
-                )
+                feedback_parts.append("최근 매도 신호 빈발 - 과매도 가능성 고려 필요")
 
         # 신뢰도 vs 정확도 상관관계
         high_conf_outcomes = [o for o in outcomes if o.confidence >= 0.7]
         if high_conf_outcomes:
-            high_conf_correct = sum(1 for o in high_conf_outcomes if o.was_correct is True)
+            high_conf_correct = sum(
+                1 for o in high_conf_outcomes if o.was_correct is True
+            )
             high_conf_accuracy = (high_conf_correct / len(high_conf_outcomes)) * 100
             if high_conf_accuracy < 50:
                 feedback_parts.append(
@@ -424,8 +428,11 @@ class SignalPerformanceTracker:
 
         # 변동성 대응
         high_volatility_losses = [
-            o for o in outcomes
-            if o.was_correct is False and o.pnl_percent_24h and abs(o.pnl_percent_24h) > 5
+            o
+            for o in outcomes
+            if o.was_correct is False
+            and o.pnl_percent_24h
+            and abs(o.pnl_percent_24h) > 5
         ]
         if len(high_volatility_losses) > 3:
             suggestions.append(
@@ -483,8 +490,12 @@ class SignalPerformanceTracker:
         avg_confidence = sum(o.confidence for o in outcomes) / len(outcomes)
 
         # 평균 수익률
-        pnl_4h_list = [o.pnl_percent_4h for o in outcomes if o.pnl_percent_4h is not None]
-        pnl_24h_list = [o.pnl_percent_24h for o in outcomes if o.pnl_percent_24h is not None]
+        pnl_4h_list = [
+            o.pnl_percent_4h for o in outcomes if o.pnl_percent_4h is not None
+        ]
+        pnl_24h_list = [
+            o.pnl_percent_24h for o in outcomes if o.pnl_percent_24h is not None
+        ]
 
         avg_pnl_4h = sum(pnl_4h_list) / len(pnl_4h_list) if pnl_4h_list else 0.0
         avg_pnl_24h = sum(pnl_24h_list) / len(pnl_24h_list) if pnl_24h_list else 0.0
@@ -503,7 +514,9 @@ class SignalPerformanceTracker:
 
             dominant_type = max(types_count.items(), key=lambda x: x[1])
             if dominant_type[1] >= 3:
-                recent_patterns.append(f"최근 {dominant_type[0]} 신호 우세 ({dominant_type[1]}/5)")
+                recent_patterns.append(
+                    f"최근 {dominant_type[0]} 신호 우세 ({dominant_type[1]}/5)"
+                )
 
         return PerformanceSummary(
             total_signals=len(outcomes),

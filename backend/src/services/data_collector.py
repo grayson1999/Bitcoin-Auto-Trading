@@ -136,6 +136,7 @@ class DataCollector:
 
             # 시장 데이터 객체 생성
             market_data = MarketData(
+                symbol=self._market,
                 timestamp=datetime.fromtimestamp(
                     ticker.timestamp / MS_TO_SECONDS, tz=UTC
                 ),
@@ -227,6 +228,7 @@ class DataCollector:
         self,
         session: AsyncSession,
         limit: int = 1,
+        symbol: str | None = None,
     ) -> list[MarketData]:
         """
         최신 시장 데이터 조회
@@ -236,12 +238,17 @@ class DataCollector:
         Args:
             session: 데이터베이스 세션
             limit: 조회할 레코드 수
+            symbol: 마켓 심볼 (기본값: 현재 수집 마켓)
 
         Returns:
             list[MarketData]: 최신 시장 데이터 목록 (최신순)
         """
+        target_symbol = symbol or self._market
         result = await session.execute(
-            select(MarketData).order_by(MarketData.timestamp.desc()).limit(limit)
+            select(MarketData)
+            .where(MarketData.symbol == target_symbol)
+            .order_by(MarketData.timestamp.desc())
+            .limit(limit)
         )
         return list(result.scalars().all())
 
@@ -250,6 +257,7 @@ class DataCollector:
         session: AsyncSession,
         start_time: datetime,
         end_time: datetime | None = None,
+        symbol: str | None = None,
     ) -> list[MarketData]:
         """
         시간 범위 내 시장 데이터 조회
@@ -260,6 +268,7 @@ class DataCollector:
             session: 데이터베이스 세션
             start_time: 시작 시간
             end_time: 종료 시간 (기본값: 현재 시간)
+            symbol: 마켓 심볼 (기본값: 현재 수집 마켓)
 
         Returns:
             list[MarketData]: 시간 범위 내 시장 데이터 목록 (오래된 순)
@@ -267,8 +276,10 @@ class DataCollector:
         if end_time is None:
             end_time = datetime.now(UTC)
 
+        target_symbol = symbol or self._market
         result = await session.execute(
             select(MarketData)
+            .where(MarketData.symbol == target_symbol)
             .where(MarketData.timestamp >= start_time)
             .where(MarketData.timestamp <= end_time)
             .order_by(MarketData.timestamp.asc())
@@ -279,6 +290,7 @@ class DataCollector:
         self,
         session: AsyncSession,
         hours: int = 24,
+        symbol: str | None = None,
     ) -> dict[str, Any]:
         """
         시간별 요약 통계 조회
@@ -288,6 +300,7 @@ class DataCollector:
         Args:
             session: 데이터베이스 세션
             hours: 통계 기간 (시간)
+            symbol: 마켓 심볼 (기본값: 현재 수집 마켓)
 
         Returns:
             dict: 요약 통계
@@ -301,7 +314,7 @@ class DataCollector:
                 - last_timestamp: 종료 시간
         """
         start_time = datetime.now(UTC) - timedelta(hours=hours)
-        data = await self.get_data_range(session, start_time)
+        data = await self.get_data_range(session, start_time, symbol=symbol)
 
         # 데이터가 없는 경우
         if not data:

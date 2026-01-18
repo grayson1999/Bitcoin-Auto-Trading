@@ -246,8 +246,12 @@ class AIClient:
                 return self._parse_gemini_response(response)
 
             except TimeoutError:
-                last_error = TimeoutError(f"Gemini API 요청 타임아웃 ({self.timeout}초)")
-                logger.warning(f"Gemini API 타임아웃 (시도 {attempt + 1}/{MAX_RETRIES})")
+                last_error = TimeoutError(
+                    f"Gemini API 요청 타임아웃 ({self.timeout}초)"
+                )
+                logger.warning(
+                    f"Gemini API 타임아웃 (시도 {attempt + 1}/{MAX_RETRIES})"
+                )
                 await asyncio.sleep(RETRY_DELAY * (attempt + 1))
 
             except Exception as e:
@@ -267,7 +271,9 @@ class AIClient:
                         is_retryable=True,
                     ) from e
 
-                logger.warning(f"Gemini API 오류 (시도 {attempt + 1}/{MAX_RETRIES}): {e}")
+                logger.warning(
+                    f"Gemini API 오류 (시도 {attempt + 1}/{MAX_RETRIES}): {e}"
+                )
                 await asyncio.sleep(RETRY_DELAY * (attempt + 1))
 
         raise AIClientError(
@@ -324,8 +330,12 @@ class AIClient:
                 return self._parse_openai_response(response)
 
             except TimeoutError:
-                last_error = TimeoutError(f"OpenAI API 요청 타임아웃 ({self.timeout}초)")
-                logger.warning(f"OpenAI API 타임아웃 (시도 {attempt + 1}/{MAX_RETRIES})")
+                last_error = TimeoutError(
+                    f"OpenAI API 요청 타임아웃 ({self.timeout}초)"
+                )
+                logger.warning(
+                    f"OpenAI API 타임아웃 (시도 {attempt + 1}/{MAX_RETRIES})"
+                )
                 await asyncio.sleep(RETRY_DELAY * (attempt + 1))
 
             except Exception as e:
@@ -345,7 +355,9 @@ class AIClient:
                         is_retryable=True,
                     ) from e
 
-                logger.warning(f"OpenAI API 오류 (시도 {attempt + 1}/{MAX_RETRIES}): {e}")
+                logger.warning(
+                    f"OpenAI API 오류 (시도 {attempt + 1}/{MAX_RETRIES}): {e}"
+                )
                 await asyncio.sleep(RETRY_DELAY * (attempt + 1))
 
         raise AIClientError(
