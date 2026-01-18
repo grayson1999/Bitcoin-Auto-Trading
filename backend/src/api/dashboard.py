@@ -18,6 +18,7 @@ from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps import CurrentUser
 from src.api.schemas.dashboard import DashboardSummaryResponse
 from src.api.schemas.market import (
     CollectorStatsResponse,
@@ -29,7 +30,14 @@ from src.api.schemas.market import (
 from src.api.schemas.order import BalanceResponse, PositionResponse
 from src.api.schemas.signal import TradingSignalResponse
 from src.database import get_session
-from src.models import DailyStats, MarketData, Order, OrderStatus, Position, TradingSignal
+from src.models import (
+    DailyStats,
+    MarketData,
+    Order,
+    OrderStatus,
+    Position,
+    TradingSignal,
+)
 from src.services.data_collector import get_data_collector
 from src.services.order_executor import get_order_executor
 from src.services.risk_manager import get_risk_manager
@@ -63,6 +71,7 @@ router = APIRouter(prefix="/dashboard")
 )
 async def get_dashboard_summary(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> DashboardSummaryResponse:
     """
     대시보드 요약 정보 조회
@@ -220,7 +229,9 @@ async def get_dashboard_summary(
     summary="현재 시세 조회",
     description="Upbit API에서 실시간 XRP/KRW 시세를 조회합니다.",
 )
-async def get_current_market() -> CurrentMarketResponse:
+async def get_current_market(
+    current_user: CurrentUser,
+) -> CurrentMarketResponse:
     """
     현재 시세 조회
 
@@ -273,6 +284,7 @@ async def get_current_market() -> CurrentMarketResponse:
 )
 async def get_market_history(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
     hours: Annotated[
         int,
         Query(ge=MIN_HOURS, le=MAX_HOURS, description="조회할 시간 범위 (1-168시간)"),
@@ -340,6 +352,7 @@ async def get_market_history(
 )
 async def get_market_summary(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
     hours: Annotated[
         int,
         Query(ge=MIN_HOURS, le=MAX_HOURS, description="통계 기간 (1-168시간)"),
@@ -370,6 +383,7 @@ async def get_market_summary(
 )
 async def get_latest_market_data(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
     limit: Annotated[
         int,
         Query(ge=MIN_LIMIT, le=MAX_LIMIT_LATEST, description="레코드 수 (1-100)"),
@@ -398,7 +412,9 @@ async def get_latest_market_data(
     summary="데이터 수집기 상태 조회",
     description="시장 데이터 수집기의 현재 상태와 통계를 조회합니다.",
 )
-async def get_collector_stats() -> CollectorStatsResponse:
+async def get_collector_stats(
+    current_user: CurrentUser,
+) -> CollectorStatsResponse:
     """
     데이터 수집기 상태 조회
 

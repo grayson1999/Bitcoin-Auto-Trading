@@ -14,6 +14,7 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps import CurrentUser
 from src.api.schemas.config import SystemConfigResponse, SystemConfigUpdateRequest
 from src.database import get_session
 from src.models import DEFAULT_CONFIGS, SystemConfig
@@ -89,6 +90,7 @@ async def _set_config_value(
 )
 async def get_config(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> SystemConfigResponse:
     """
     시스템 설정 조회
@@ -169,6 +171,7 @@ async def get_config(
 async def update_config(
     request: SystemConfigUpdateRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> SystemConfigResponse:
     """
     시스템 설정 수정
@@ -234,4 +237,4 @@ async def update_config(
     await session.commit()
 
     # 업데이트된 설정 반환
-    return await get_config(session)
+    return await get_config(session, current_user)

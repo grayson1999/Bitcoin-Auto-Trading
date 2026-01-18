@@ -69,39 +69,39 @@
 
 ### 백엔드 API 보호 (US4)
 
-- [ ] T017 [P] [US4] backend/src/api/dashboard.py의 get_dashboard_summary 엔드포인트에 CurrentUser 의존성 추가
-- [ ] T018 [P] [US4] backend/src/api/dashboard.py의 get_current_market 엔드포인트에 CurrentUser 의존성 추가
-- [ ] T019 [P] [US4] backend/src/api/dashboard.py의 get_market_history 엔드포인트에 CurrentUser 의존성 추가
-- [ ] T020 [P] [US4] backend/src/api/dashboard.py의 get_market_summary 엔드포인트에 CurrentUser 의존성 추가
-- [ ] T021 [P] [US4] backend/src/api/dashboard.py의 get_latest_market_data 엔드포인트에 CurrentUser 의존성 추가
-- [ ] T022 [P] [US4] backend/src/api/dashboard.py의 get_collector_stats 엔드포인트에 CurrentUser 의존성 추가
-- [ ] T023 [P] [US4] backend/src/api/signals.py의 모든 엔드포인트(3개)에 CurrentUser 의존성 추가
-- [ ] T024 [P] [US4] backend/src/api/trading.py의 모든 엔드포인트(5개)에 CurrentUser 의존성 추가
-- [ ] T025 [P] [US4] backend/src/api/config.py의 모든 엔드포인트(2개)에 CurrentUser 의존성 추가
-- [ ] T026 [P] [US4] backend/src/api/risk.py의 모든 엔드포인트(4개)에 CurrentUser 의존성 추가
-- [ ] T027 [P] [US4] backend/src/api/backtest.py의 모든 엔드포인트(3개)에 CurrentUser 의존성 추가
+- [X] T017 [P] [US4] backend/src/api/dashboard.py의 get_dashboard_summary 엔드포인트에 CurrentUser 의존성 추가
+- [X] T018 [P] [US4] backend/src/api/dashboard.py의 get_current_market 엔드포인트에 CurrentUser 의존성 추가
+- [X] T019 [P] [US4] backend/src/api/dashboard.py의 get_market_history 엔드포인트에 CurrentUser 의존성 추가
+- [X] T020 [P] [US4] backend/src/api/dashboard.py의 get_market_summary 엔드포인트에 CurrentUser 의존성 추가
+- [X] T021 [P] [US4] backend/src/api/dashboard.py의 get_latest_market_data 엔드포인트에 CurrentUser 의존성 추가
+- [X] T022 [P] [US4] backend/src/api/dashboard.py의 get_collector_stats 엔드포인트에 CurrentUser 의존성 추가
+- [X] T023 [P] [US4] backend/src/api/signals.py의 모든 엔드포인트(3개)에 CurrentUser 의존성 추가
+- [X] T024 [P] [US4] backend/src/api/trading.py의 모든 엔드포인트(5개)에 CurrentUser 의존성 추가
+- [X] T025 [P] [US4] backend/src/api/config.py의 모든 엔드포인트(2개)에 CurrentUser 의존성 추가
+- [X] T026 [P] [US4] backend/src/api/risk.py의 모든 엔드포인트(4개)에 CurrentUser 의존성 추가
+- [X] T027 [P] [US4] backend/src/api/backtest.py의 모든 엔드포인트(3개)에 CurrentUser 의존성 추가
 
 ### 프론트엔드 로그인 UI (US1)
 
-- [ ] T028 [US1] frontend/src/pages/Login.tsx에 이메일/비밀번호 폼이 있는 Login.tsx 페이지 생성
-- [ ] T029 [US1] frontend/src/pages/Login.tsx에 폼 유효성 검사 구현 (이메일 형식, 비밀번호 8자 이상)
-- [ ] T030 [US1] frontend/src/pages/Login.tsx에 useAuth().login()을 호출하는 로그인 폼 제출 구현
-- [ ] T031 [US1] frontend/src/pages/Login.tsx에 401, 423, 429 응답에 대한 오류 메시지 표시 추가
-- [ ] T032 [US1] frontend/src/pages/Login.tsx에 Tailwind로 로그인 페이지 스타일링 (중앙 정렬 폼, 사이드바 없음)
+- [X] T028 [US1] frontend/src/pages/Login.tsx에 이메일/비밀번호 폼이 있는 Login.tsx 페이지 생성
+- [X] T029 [US1] frontend/src/pages/Login.tsx에 폼 유효성 검사 구현 (이메일 형식, 비밀번호 8자 이상)
+- [X] T030 [US1] frontend/src/pages/Login.tsx에 useAuth().login()을 호출하는 로그인 폼 제출 구현
+- [X] T031 [US1] frontend/src/pages/Login.tsx에 401, 423, 429 응답에 대한 오류 메시지 표시 추가
+- [X] T032 [US1] frontend/src/pages/Login.tsx에 Tailwind로 로그인 페이지 스타일링 (중앙 정렬 폼, 사이드바 없음)
 
 ### 프론트엔드 라우트 보호 (US1)
 
-- [ ] T033 [US1] frontend/src/components/ProtectedRoute.tsx에 isAuthenticated를 확인하는 ProtectedRoute 컴포넌트 생성
-- [ ] T034 [US1] frontend/src/components/ProtectedRoute.tsx에 미인증 시 /login으로 리다이렉트 구현
-- [ ] T035 [US1] frontend/src/components/ProtectedRoute.tsx에 인증 상태 확인 중 로딩 스피너 추가
-- [ ] T036 [US1] frontend/src/main.tsx에서 보호된 라우트를 ProtectedRoute로 래핑하도록 라우터 업데이트
-- [ ] T037 [US1] frontend/src/main.tsx의 라우터 설정에 /login 라우트 추가
-- [ ] T038 [US1] frontend/src/main.tsx에서 RouterProvider를 AuthProvider로 래핑
+- [X] T033 [US1] frontend/src/components/ProtectedRoute.tsx에 isAuthenticated를 확인하는 ProtectedRoute 컴포넌트 생성
+- [X] T034 [US1] frontend/src/components/ProtectedRoute.tsx에 미인증 시 /login으로 리다이렉트 구현
+- [X] T035 [US1] frontend/src/components/ProtectedRoute.tsx에 인증 상태 확인 중 로딩 스피너 추가
+- [X] T036 [US1] frontend/src/main.tsx에서 보호된 라우트를 ProtectedRoute로 래핑하도록 라우터 업데이트
+- [X] T037 [US1] frontend/src/main.tsx의 라우터 설정에 /login 라우트 추가
+- [X] T038 [US1] frontend/src/main.tsx에서 RouterProvider를 AuthProvider로 래핑
 
 ### 프론트엔드 API 클라이언트 통합 (US1)
 
-- [ ] T039 [US1] frontend/src/api/client.ts에 Authorization 헤더를 포함하는 요청 인터셉터 추가
-- [ ] T040 [US1] frontend/src/api/client.ts에 401을 처리하고 로그아웃을 트리거하는 응답 인터셉터 추가
+- [X] T039 [US1] frontend/src/api/client.ts에 Authorization 헤더를 포함하는 요청 인터셉터 추가
+- [X] T040 [US1] frontend/src/api/client.ts에 401을 처리하고 로그아웃을 트리거하는 응답 인터셉터 추가
 
 **체크포인트**: 이 시점에서 US1과 US4가 완전히 동작해야 함 - 로그인 작동 및 API 보호됨
 

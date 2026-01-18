@@ -14,6 +14,12 @@ const DEFAULT_API_URL = "http://localhost:8000";
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? DEFAULT_API_URL;
 const API_TIMEOUT_MS = 30000; // 요청 타임아웃 (30초)
 
+// === Auth 설정 상수 ===
+const AUTH_STORAGE_KEY = "auth";
+const DEFAULT_AUTH_API_URL = "http://localhost:9000";
+const AUTH_API_URL =
+  import.meta.env.VITE_AUTH_API_URL ?? DEFAULT_AUTH_API_URL;
+
 // === HTTP 상태 코드 상수 ===
 const HTTP_STATUS = {
   UNAUTHORIZED: 401,
@@ -31,6 +37,74 @@ const LOG_PREFIX = {
  */
 interface ErrorResponse {
   detail?: string;
+}
+
+/**
+ * 저장된 인증 정보 인터페이스
+ */
+interface StoredAuth {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
+/**
+ * 토큰 갱신 응답 인터페이스
+ */
+interface RefreshResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+/**
+ * localStorage에서 인증 정보 로드
+ */
+function getStoredAuth(): StoredAuth | null {
+  try {
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!stored) return null;
+    return JSON.parse(stored) as StoredAuth;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * localStorage에 인증 정보 저장
+ */
+function saveStoredAuth(auth: StoredAuth): void {
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
+}
+
+/**
+ * localStorage의 인증 정보 삭제 및 로그인 페이지로 리다이렉트
+ */
+function clearAuthAndRedirect(): void {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  // 현재 페이지가 로그인 페이지가 아닌 경우에만 리다이렉트
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+}
+
+// 토큰 갱신 중복 요청 방지를 위한 상태
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+/**
+ * 토큰 갱신 대기열에 추가
+ */
+function subscribeTokenRefresh(callback: (token: string) => void): void {
+  refreshSubscribers.push(callback);
+}
+
+/**
+ * 토큰 갱신 완료 후 대기 중인 요청들 처리
+ */
+function onRefreshed(token: string): void {
+  refreshSubscribers.forEach((callback) => callback(token));
+  refreshSubscribers = [];
 }
 
 /**
@@ -53,10 +127,17 @@ const apiClient: AxiosInstance = axios.create({
  * 요청 인터셉터
  *
  * 모든 요청 전에 실행됩니다.
- * 개발 모드에서 요청 로그를 출력합니다.
+ * - Authorization 헤더에 액세스 토큰 추가
+ * - 개발 모드에서 요청 로그 출력
  */
 apiClient.interceptors.request.use(
   (config) => {
+    // localStorage에서 인증 정보 로드하여 Authorization 헤더 추가
+    const auth = getStoredAuth();
+    if (auth?.accessToken) {
+      config.headers.Authorization = `Bearer ${auth.accessToken}`;
+    }
+
     // 개발 모드에서만 요청 로깅
     if (import.meta.env.DEV) {
       console.log(
@@ -75,24 +156,86 @@ apiClient.interceptors.request.use(
  *
  * 모든 응답에 대해 실행됩니다.
  * - 성공: 응답 그대로 반환
- * - 오류: 상태 코드별 오류 처리 및 로깅
+ * - 401 오류: 토큰 갱신 시도 후 재요청
+ * - 기타 오류: 상태 코드별 오류 처리 및 로깅
  */
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  (error: AxiosError<ErrorResponse>) => {
+  async (error: AxiosError<ErrorResponse>) => {
+    const originalRequest = error.config;
+
     if (error.response) {
-      // 서버 응답이 있는 경우
       const status = error.response.status;
       const message = error.response.data?.detail || "오류가 발생했습니다";
 
+      // 401 Unauthorized - 토큰 갱신 시도
+      if (status === HTTP_STATUS.UNAUTHORIZED && originalRequest) {
+        const auth = getStoredAuth();
+
+        // 리프레시 토큰이 없으면 로그인 페이지로
+        if (!auth?.refreshToken) {
+          clearAuthAndRedirect();
+          return Promise.reject(error);
+        }
+
+        // 이미 토큰 갱신 중이면 대기열에 추가
+        if (isRefreshing) {
+          return new Promise((resolve) => {
+            subscribeTokenRefresh((token: string) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(apiClient(originalRequest));
+            });
+          });
+        }
+
+        // 토큰 갱신 시작
+        isRefreshing = true;
+
+        try {
+          // Auth Server에 토큰 갱신 요청
+          const response = await axios.post<RefreshResponse>(
+            `${AUTH_API_URL}/api/v1/auth/refresh`,
+            { refresh_token: auth.refreshToken },
+            { headers: { "Content-Type": "application/json" } }
+          );
+
+          const newAccessToken = response.data.access_token;
+          const newExpiresAt = Date.now() + response.data.expires_in * 1000;
+
+          // localStorage 업데이트
+          saveStoredAuth({
+            ...auth,
+            accessToken: newAccessToken,
+            expiresAt: newExpiresAt,
+          });
+
+          if (import.meta.env.DEV) {
+            console.log("[API] 토큰 갱신 성공");
+          }
+
+          // 대기 중인 요청들 처리
+          onRefreshed(newAccessToken);
+          isRefreshing = false;
+
+          // 원래 요청 재시도
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return apiClient(originalRequest);
+        } catch (refreshError) {
+          // 토큰 갱신 실패 - 로그인 페이지로
+          isRefreshing = false;
+          refreshSubscribers = [];
+          console.error("[API] 토큰 갱신 실패, 로그아웃");
+          clearAuthAndRedirect();
+          return Promise.reject(refreshError);
+        }
+      }
+
       console.error(`${LOG_PREFIX.ERROR} ${status}: ${message}`);
 
-      // 특정 상태 코드에 대한 처리
-      if (status === HTTP_STATUS.UNAUTHORIZED) {
-        console.error("인증되지 않은 접근");
-      } else if (status === HTTP_STATUS.SERVICE_UNAVAILABLE) {
+      // 503 서비스 불가
+      if (status === HTTP_STATUS.SERVICE_UNAVAILABLE) {
         console.error("서비스 일시 중단");
       }
     } else if (error.request) {

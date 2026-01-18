@@ -14,9 +14,12 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 import "./index.css";
 import Backtest from "./pages/Backtest";
 import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
 import Orders from "./pages/Orders";
 import Settings from "./pages/Settings";
 import Signals from "./pages/Signals";
@@ -46,16 +49,26 @@ const queryClient = new QueryClient({
 /**
  * 애플리케이션 라우터 설정
  *
- * 중첩 라우팅 구조:
- * - / (루트): Dashboard 페이지
- * - /orders: 주문 내역 페이지
- * - /signals: AI 신호 페이지
- * - /settings: 설정 페이지
+ * 라우팅 구조:
+ * - /login: 로그인 페이지 (공개)
+ * - / (루트): Dashboard 페이지 (보호됨)
+ * - /orders: 주문 내역 페이지 (보호됨)
+ * - /signals: AI 신호 페이지 (보호됨)
+ * - /settings: 설정 페이지 (보호됨)
+ * - /backtest: 백테스트 페이지 (보호됨)
  */
 const router = createBrowserRouter([
   {
+    path: "/login",
+    element: <Login />,
+  },
+  {
     path: "/",
-    element: <App />, // 레이아웃 컴포넌트
+    element: (
+      <ProtectedRoute>
+        <App />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true, // 기본 라우트
@@ -84,11 +97,14 @@ const router = createBrowserRouter([
 // React 앱 마운트
 // StrictMode: 개발 중 잠재적 문제 감지
 // ErrorBoundary: 런타임 오류 포착 및 사용자 친화적 UI 표시
+// AuthProvider: 인증 상태 관리
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   </StrictMode>

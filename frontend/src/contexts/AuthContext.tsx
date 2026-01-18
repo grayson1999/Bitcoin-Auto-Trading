@@ -22,7 +22,7 @@ import {
 // === 상수 ===
 const AUTH_STORAGE_KEY = "auth";
 const TOKEN_REFRESH_INTERVAL_MS = 14 * 60 * 1000; // 14분 (토큰 만료 1분 전)
-const DEFAULT_AUTH_API_URL = "http://localhost:8001";
+const DEFAULT_AUTH_API_URL = "http://localhost:9000";
 const AUTH_API_URL =
   import.meta.env.VITE_AUTH_API_URL ?? DEFAULT_AUTH_API_URL;
 

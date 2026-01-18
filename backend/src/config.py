@@ -123,7 +123,7 @@ class Settings(BaseSettings):
 
     # === Auth Server 설정 ===
     auth_server_url: str = Field(
-        default="http://localhost:8001",
+        default="http://localhost:9000",
         description="Auth Server URL for token verification",
     )
 

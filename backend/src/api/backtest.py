@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps import CurrentUser
 from src.api.schemas.backtest import (
     BacktestRequest,
     BacktestResultDetailResponse,
@@ -50,6 +51,7 @@ router = APIRouter(prefix="/backtest")
 async def run_backtest(
     request: BacktestRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> BacktestRunResponse:
     """
     백테스트 실행
@@ -122,6 +124,7 @@ async def run_backtest(
 )
 async def get_backtest_results(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
     limit: Annotated[
         int,
         Query(ge=MIN_LIMIT, le=MAX_LIMIT, description="최대 조회 개수 (1-100)"),
@@ -170,6 +173,7 @@ async def get_backtest_results(
 async def get_backtest_result(
     result_id: int,
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> BacktestResultDetailResponse:
     """
     백테스트 결과 상세 조회

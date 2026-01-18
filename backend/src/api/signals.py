@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps import CurrentUser
 from src.api.schemas.signal import (
     GenerateSignalResponse,
     SignalFilterParams,
@@ -43,6 +44,7 @@ router = APIRouter(prefix="/signals")
 )
 async def get_signals(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
     limit: Annotated[
         int,
         Query(ge=MIN_LIMIT, le=MAX_LIMIT, description="최대 조회 개수 (1-100)"),
@@ -103,6 +105,7 @@ async def get_signals(
 )
 async def get_latest_signal(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> TradingSignalResponse:
     """
     최신 AI 신호 조회
@@ -143,6 +146,7 @@ async def get_latest_signal(
 )
 async def generate_signal(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> GenerateSignalResponse:
     """
     AI 신호 수동 생성

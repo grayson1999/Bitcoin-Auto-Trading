@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps import CurrentUser
 from src.api.schemas.risk import (
     HaltTradingRequest,
     HaltTradingResponse,
@@ -49,6 +50,7 @@ router = APIRouter(prefix="/risk")
 )
 async def get_risk_events(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
     limit: Annotated[
         int,
         Query(ge=MIN_LIMIT, le=MAX_LIMIT, description="최대 조회 개수 (1-100)"),
@@ -103,6 +105,7 @@ async def get_risk_events(
 )
 async def get_risk_status(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> RiskStatusResponse:
     """
     리스크 상태 조회
@@ -150,6 +153,7 @@ async def get_risk_status(
 async def halt_trading(
     session: Annotated[AsyncSession, Depends(get_session)],
     request: HaltTradingRequest,
+    current_user: CurrentUser,
 ) -> HaltTradingResponse:
     """
     거래 중단
@@ -212,6 +216,7 @@ async def halt_trading(
 )
 async def resume_trading(
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
 ) -> ResumeTradingResponse:
     """
     거래 재개
