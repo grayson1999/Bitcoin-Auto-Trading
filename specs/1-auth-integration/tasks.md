@@ -23,9 +23,9 @@
 
 **목적**: 프로젝트 초기화 및 환경 설정
 
-- [ ] T001 backend/src/config.py에 AUTH_SERVER_URL 환경 변수 추가
-- [ ] T002 [P] frontend/.env.example에 VITE_AUTH_API_URL 환경 변수 예시 추가
-- [ ] T003 [P] frontend/src/contexts/ 디렉토리 생성
+- [X] T001 backend/src/config.py에 AUTH_SERVER_URL 환경 변수 추가
+- [X] T002 [P] frontend/.env.example에 VITE_AUTH_API_URL 환경 변수 예시 추가
+- [X] T003 [P] frontend/src/contexts/ 디렉토리 생성
 
 ---
 
@@ -37,22 +37,22 @@
 
 ### 백엔드 인증 인프라
 
-- [ ] T004 backend/src/services/auth_client.py에 AuthError 예외 클래스 생성
-- [ ] T005 backend/src/services/auth_client.py에 AuthUser Pydantic 스키마 생성
-- [ ] T006 backend/src/services/auth_client.py에 verify_token 메서드를 포함한 AuthClient 클래스 구현
-- [ ] T007 backend/src/services/auth_client.py에 AuthClient 싱글톤 팩토리 함수 (get_auth_client) 추가
-- [ ] T008 backend/src/api/deps.py에 get_current_user 의존성 함수 생성
-- [ ] T009 backend/src/api/deps.py에 CurrentUser 타입 별칭 생성
-- [ ] T010 backend/src/main.py 라이프사이클에서 AuthClient 초기화 및 종료 처리
+- [X] T004 backend/src/services/auth_client.py에 AuthError 예외 클래스 생성
+- [X] T005 backend/src/services/auth_client.py에 AuthUser Pydantic 스키마 생성
+- [X] T006 backend/src/services/auth_client.py에 verify_token 메서드를 포함한 AuthClient 클래스 구현
+- [X] T007 backend/src/services/auth_client.py에 AuthClient 싱글톤 팩토리 함수 (get_auth_client) 추가
+- [X] T008 backend/src/api/deps.py에 get_current_user 의존성 함수 생성
+- [X] T009 backend/src/api/deps.py에 CurrentUser 타입 별칭 생성
+- [X] T010 backend/src/main.py 라이프사이클에서 AuthClient 초기화 및 종료 처리
 
 ### 프론트엔드 인증 인프라
 
-- [ ] T011 frontend/src/contexts/AuthContext.tsx에 user, tokens, isAuthenticated, isLoading 상태를 포함한 AuthContext 생성
-- [ ] T012 frontend/src/contexts/AuthContext.tsx에 localStorage 영속성을 갖춘 AuthProvider 컴포넌트 구현
-- [ ] T013 frontend/src/contexts/AuthContext.tsx에 Auth Server API를 호출하는 login 함수 구현
-- [ ] T014 frontend/src/contexts/AuthContext.tsx에 토큰을 삭제하는 logout 함수 구현
-- [ ] T015 frontend/src/contexts/AuthContext.tsx에 인증 컨텍스트에 접근하는 useAuth 훅 생성
-- [ ] T016 frontend/src/contexts/AuthContext.tsx에 14분 자동 토큰 갱신 타이머 구현
+- [X] T011 frontend/src/contexts/AuthContext.tsx에 user, tokens, isAuthenticated, isLoading 상태를 포함한 AuthContext 생성
+- [X] T012 frontend/src/contexts/AuthContext.tsx에 localStorage 영속성을 갖춘 AuthProvider 컴포넌트 구현
+- [X] T013 frontend/src/contexts/AuthContext.tsx에 Auth Server API를 호출하는 login 함수 구현
+- [X] T014 frontend/src/contexts/AuthContext.tsx에 토큰을 삭제하는 logout 함수 구현
+- [X] T015 frontend/src/contexts/AuthContext.tsx에 인증 컨텍스트에 접근하는 useAuth 훅 생성
+- [X] T016 frontend/src/contexts/AuthContext.tsx에 14분 자동 토큰 갱신 타이머 구현
 
 **체크포인트**: 기반 준비 완료 - 이제 사용자 스토리 구현 시작 가능
 

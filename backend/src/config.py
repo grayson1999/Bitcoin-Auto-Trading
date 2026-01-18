@@ -121,6 +121,12 @@ class Settings(BaseSettings):
         default="gpt-4o", description="AI Fallback 모델 (Gemini 실패 시)"
     )
 
+    # === Auth Server 설정 ===
+    auth_server_url: str = Field(
+        default="http://localhost:8001",
+        description="Auth Server URL for token verification",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

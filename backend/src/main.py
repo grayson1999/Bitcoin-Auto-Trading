@@ -21,6 +21,7 @@ from src.api import api_router
 from src.config import APP_VERSION, settings, setup_logging
 from src.database import close_db, init_db
 from src.scheduler import setup_scheduler, start_scheduler, stop_scheduler
+from src.services.auth_client import close_auth_client, get_auth_client
 
 # CORS 허용 오리진 목록
 # 프론트엔드 개발 서버 주소들을 허용
@@ -72,6 +73,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     start_scheduler()
     logger.info("스케줄러 시작됨")
 
+    # Auth Client 초기화 (싱글톤)
+    get_auth_client()
+    logger.info("Auth Client 초기화됨")
+
     yield  # 앱 실행 중
 
     # === 종료 단계 ===
@@ -85,6 +90,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
         get_slack_log_handler().close()
         logger.info("Slack 로그 핸들러 종료됨")
+
+    # Auth Client 종료
+    await close_auth_client()
+    logger.info("Auth Client 종료됨")
 
     await close_db()
     logger.info("데이터베이스 연결 해제됨")
