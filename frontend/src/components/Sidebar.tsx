@@ -117,14 +117,14 @@ export const Sidebar: FC = () => {
                     </nav>
 
                     {/* User Profile */}
-                    <div className="p-4 border-t border-dark-border/50 bg-black/20">
-                        <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group mb-2">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-inner ring-2 ring-black/50 group-hover:ring-white/20 transition-all">
+                    <div className="p-4 border-t border-dark-border/50">
+                        <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-gradient-to-br from-white/5 to-white/0 hover:from-white/10 hover:to-white/5 border border-white/5 hover:border-white/10 transition-all cursor-pointer group mb-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-inner ring-2 ring-black/50 group-hover:ring-white/20 transition-all">
                                 {getInitials(user?.name)}
                             </div>
                             <div className="flex flex-col flex-1 min-w-0">
                                 <span className="text-sm font-semibold text-white truncate">{user?.name ?? '사용자'}</span>
-                                <span className="text-xs text-emerald-400 font-medium truncate">{user?.email ?? ''}</span>
+                                <span className="text-xs text-dark-text-secondary group-hover:text-emerald-400 transition-colors font-medium truncate">{user?.email ?? ''}</span>
                             </div>
                             <Cog6ToothIcon className="w-5 h-5 text-dark-text-muted group-hover:text-white transition-colors" />
                         </div>
@@ -132,20 +132,11 @@ export const Sidebar: FC = () => {
                         {/* Logout Button */}
                         <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-dark-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group"
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-dark-text-secondary hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all duration-200 group"
                         >
-                            <ArrowRightStartOnRectangleIcon className="w-5 h-5 text-dark-text-muted group-hover:text-red-400 transition-colors" />
-                            로그아웃
+                            <ArrowRightStartOnRectangleIcon className="w-4 h-4 text-dark-text-muted group-hover:text-red-400 transition-colors" />
+                            <span>로그아웃</span>
                         </button>
-
-                        {/* Copyright Notice */}
-                        <div className="text-center pt-2 mt-2 border-t border-white/5">
-                            <p className="text-[10px] text-dark-text-muted leading-relaxed">
-                                Copyright © {new Date().getFullYear()}
-                                <br />
-                                <span className="font-medium text-dark-text-secondary">comgongStone - Grayson</span>
-                            </p>
-                        </div>
                     </div>
                 </div>
             </aside>

@@ -115,76 +115,91 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden bg-dark-bg">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-dark-bg">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-banana-500/10 blur-[100px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-500/10 blur-[100px] animate-pulse-slow delay-1000"></div>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         {/* 로고 및 제목 */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-banana-400 to-orange-500 flex items-center justify-center shadow-lg shadow-banana-500/20">
-            <span className="text-white font-bold text-3xl">A</span>
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-banana-400 to-orange-500 flex items-center justify-center shadow-lg shadow-banana-500/20 ring-4 ring-black/20 transform hover:scale-105 transition-all duration-300">
+            <span className="text-white font-bold text-4xl">A</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">AutoBitcoin</h1>
-          <p className="text-dark-text-secondary mt-2">
-            계정에 로그인하세요
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">AutoBitcoin</h1>
+          <p className="text-dark-text-secondary text-sm font-medium">
+            스마트한 비트코인 자동매매의 시작
           </p>
         </div>
 
         {/* 로그인 폼 */}
-        <div className="bg-dark-surface rounded-2xl border border-dark-border p-8">
+        <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-2xl shadow-black/50">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 에러 메시지 */}
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
-                {error}
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 flex items-start gap-3">
+                <div className="text-red-400 font-bold shrink-0">!</div>
+                <div className="text-red-400 text-sm font-medium leading-relaxed">{error}</div>
               </div>
             )}
 
-            {/* 이메일 입력 */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-dark-text-secondary mb-2"
-              >
-                이메일
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@example.com"
-                autoComplete="email"
-                required
-                disabled={isSubmitting}
-                className="w-full px-4 py-3 bg-dark-bg border border-dark-border rounded-xl text-white placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-banana-400/50 focus:border-banana-400 transition-all disabled:opacity-50"
-              />
-            </div>
+            <div className="space-y-5">
+              {/* 이메일 입력 */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-xs font-semibold text-dark-text-secondary uppercase tracking-wider mb-2 ml-1"
+                >
+                  이메일
+                </label>
+                <div className="relative group">
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="email@example.com"
+                    autoComplete="email"
+                    required
+                    disabled={isSubmitting}
+                    className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-xl text-white placeholder-white/20 focus:outline-none focus:bg-black/30 focus:border-banana-400/50 focus:ring-1 focus:ring-banana-400/50 transition-all duration-300 disabled:opacity-50"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent scale-x-50 group-hover:scale-x-100 transition-transform duration-500" />
+                </div>
+              </div>
 
-            {/* 비밀번호 입력 */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-dark-text-secondary mb-2"
-              >
-                비밀번호
-              </label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="********"
-                autoComplete="current-password"
-                required
-                disabled={isSubmitting}
-                className="w-full px-4 py-3 bg-dark-bg border border-dark-border rounded-xl text-white placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-banana-400/50 focus:border-banana-400 transition-all disabled:opacity-50"
-              />
+              {/* 비밀번호 입력 */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-semibold text-dark-text-secondary uppercase tracking-wider mb-2 ml-1"
+                >
+                  비밀번호
+                </label>
+                <div className="relative group">
+                  <input
+                    type="password"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                    disabled={isSubmitting}
+                    className="w-full px-5 py-4 bg-black/20 border border-white/5 rounded-xl text-white placeholder-white/20 focus:outline-none focus:bg-black/30 focus:border-banana-400/50 focus:ring-1 focus:ring-banana-400/50 transition-all duration-300 disabled:opacity-50"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent scale-x-50 group-hover:scale-x-100 transition-transform duration-500" />
+                </div>
+              </div>
             </div>
 
             {/* 로그인 버튼 */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-4 bg-gradient-to-r from-banana-400 to-orange-500 hover:from-banana-500 hover:to-orange-600 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-banana-500/20 hover:shadow-banana-500/30"
+              className="w-full py-4 px-6 bg-gradient-to-r from-banana-400 to-orange-500 hover:from-banana-500 hover:to-orange-600 text-white font-bold text-lg rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-banana-500/25 hover:shadow-banana-500/40"
             >
               {isSubmitting ? (
                 <div className="flex items-center justify-center gap-2">
@@ -199,9 +214,11 @@ export default function Login() {
         </div>
 
         {/* 푸터 */}
-        <p className="text-center text-dark-text-muted text-xs mt-6">
-          Copyright © {new Date().getFullYear()} comgongStone - Grayson
-        </p>
+        <div className="text-center mt-8">
+          <p className="text-[10px] text-white/20 font-medium tracking-wide">
+            © {new Date().getFullYear()} AutoBitcoin. All rights reserved.
+          </p>
+        </div>
       </div>
     </div>
   );
