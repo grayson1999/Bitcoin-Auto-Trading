@@ -1,0 +1,380 @@
+openapi: 3.0.3
+info:
+  title: Bitcoin-Auto-Trading Auth Integration API
+  description: |
+    Auth Server 연동을 위한 API 계약.
+    기존 API 엔드포인트에 인증이 추가됩니다.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Backend Server
+  - url: http://localhost:8001/api/v1
+    description: Auth Server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Auth Server에서 발급받은 Access Token.
+        15분 유효, 만료 전 refresh 필요.
+
+  schemas:
+    AuthUser:
+      type: object
+      description: 인증된 사용자 정보
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        name:
+          type: string
+          example: "사용자"
+        role:
+          type: string
+          enum: [admin, user]
+          example: "user"
+      required:
+        - id
+        - email
+        - name
+        - role
+
+    LoginRequest:
+      type: object
+      description: 로그인 요청 (Auth Server로 전송)
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "password123"
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      description: 로그인 응답 (Auth Server에서 수신)
+      properties:
+        access_token:
+          type: string
+          description: JWT Access Token (15분 유효)
+        refresh_token:
+          type: string
+          description: Refresh Token (7일 유효)
+        token_type:
+          type: string
+          example: "bearer"
+        expires_in:
+          type: integer
+          description: Access Token 만료 시간(초)
+          example: 900
+        user:
+          $ref: '#/components/schemas/AuthUser'
+      required:
+        - access_token
+        - refresh_token
+        - token_type
+        - expires_in
+        - user
+
+    RefreshRequest:
+      type: object
+      description: 토큰 갱신 요청
+      properties:
+        refresh_token:
+          type: string
+      required:
+        - refresh_token
+
+    RefreshResponse:
+      type: object
+      description: 토큰 갱신 응답
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: "bearer"
+        expires_in:
+          type: integer
+          example: 900
+      required:
+        - access_token
+        - token_type
+        - expires_in
+
+    VerifyResponse:
+      type: object
+      description: 토큰 검증 응답 (Backend가 Auth Server 호출)
+      properties:
+        is_valid:
+          type: boolean
+        user:
+          $ref: '#/components/schemas/AuthUser'
+      required:
+        - is_valid
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "인증 정보가 유효하지 않습니다"
+      required:
+        - detail
+
+  responses:
+    Unauthorized:
+      description: 인증 실패
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing_token:
+              summary: 토큰 없음
+              value:
+                detail: "Authorization 헤더가 필요합니다"
+            invalid_token:
+              summary: 무효한 토큰
+              value:
+                detail: "토큰이 유효하지 않습니다"
+            expired_token:
+              summary: 만료된 토큰
+              value:
+                detail: "토큰이 만료되었습니다"
+
+    AuthServerUnavailable:
+      description: Auth Server 연결 실패
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "인증 서버에 연결할 수 없습니다"
+
+    AccountLocked:
+      description: 계정 잠김 (5회 연속 로그인 실패)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "계정이 일시적으로 잠겼습니다. 15분 후 다시 시도해주세요"
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ============================================================
+  # Auth Server 엔드포인트 (Frontend가 직접 호출)
+  # ============================================================
+
+  /auth/login:
+    post:
+      tags:
+        - Auth Server
+      summary: 로그인
+      description: |
+        이메일과 비밀번호로 로그인합니다.
+        성공 시 Access Token과 Refresh Token을 반환합니다.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '423':
+          $ref: '#/components/responses/AccountLocked'
+        '429':
+          description: 요청 제한 초과
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth Server
+      summary: 토큰 갱신
+      description: |
+        Refresh Token으로 새 Access Token을 발급받습니다.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: 갱신 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          description: Refresh Token 무효 또는 만료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "리프레시 토큰이 만료되었습니다"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth Server
+      summary: 로그아웃
+      description: |
+        현재 세션을 종료하고 Refresh Token을 폐기합니다.
+      responses:
+        '200':
+          description: 로그아웃 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "로그아웃되었습니다"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/verify:
+    get:
+      tags:
+        - Auth Server
+      summary: 토큰 검증
+      description: |
+        Backend에서 호출하여 Access Token의 유효성을 검증합니다.
+        유효한 경우 사용자 정보를 반환합니다.
+      responses:
+        '200':
+          description: 토큰 유효
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              example:
+                is_valid: true
+                user:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  email: "user@example.com"
+                  name: "사용자"
+                  role: "user"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============================================================
+  # Bitcoin-Auto-Trading 보호된 엔드포인트 (예시)
+  # ============================================================
+
+  /dashboard/summary:
+    get:
+      tags:
+        - Dashboard (Protected)
+      summary: 대시보드 요약 정보
+      description: |
+        현재 가격, 포지션, 잔고, 일일 손익 등을 조회합니다.
+        **인증 필수**
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                description: DashboardSummaryResponse (기존 스키마)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/AuthServerUnavailable'
+
+  /signals:
+    get:
+      tags:
+        - Signals (Protected)
+      summary: AI 신호 내역 조회
+      description: |
+        생성된 AI 매매 신호 목록을 조회합니다.
+        **인증 필수**
+      responses:
+        '200':
+          description: 성공
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/AuthServerUnavailable'
+
+  /trading/orders:
+    get:
+      tags:
+        - Trading (Protected)
+      summary: 주문 내역 조회
+      description: |
+        주문 목록을 조회합니다.
+        **인증 필수**
+      responses:
+        '200':
+          description: 성공
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/AuthServerUnavailable'
+
+  /health:
+    get:
+      tags:
+        - Health (Public)
+      summary: 헬스체크
+      description: |
+        서버 상태를 확인합니다.
+        **인증 불필요** (공개 엔드포인트)
+      security: []
+      responses:
+        '200':
+          description: 정상
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "0.1.0"
