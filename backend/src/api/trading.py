@@ -8,6 +8,7 @@
 - 잔고 조회 (GET /trading/balance)
 """
 
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -27,10 +28,6 @@ from src.database import get_session
 from src.models import OrderStatus, Position
 from src.services.order_executor import get_order_executor
 from src.services.upbit_client import UpbitError, get_upbit_client
-
-# 화폐 코드 상수
-CURRENCY_KRW = "KRW"
-CURRENCY_XRP = "XRP"
 
 # === 상수 ===
 DEFAULT_MARKET = "KRW-XRP"
@@ -190,8 +187,6 @@ async def get_position(
 
     if position is None:
         # 빈 포지션 반환
-        from datetime import UTC, datetime
-
         return PositionResponse(
             symbol=DEFAULT_MARKET,
             quantity=Decimal("0"),
@@ -270,3 +265,86 @@ async def get_balance(
         xrp_avg_buy_price=balance_info.xrp_avg_price,
         total_krw=balance_info.total_krw,
     )
+
+
+# ==========================================================================
+# POST /trading/orders/sync - 대기 주문 동기화
+# ==========================================================================
+
+
+@router.post(
+    "/orders/sync",
+    summary="대기 주문 상태 동기화",
+    description="PENDING 상태의 주문을 Upbit API로 확인하여 상태를 동기화합니다.",
+)
+async def sync_pending_orders(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict:
+    """
+    대기 주문 상태 동기화
+
+    PENDING 상태의 모든 주문을 Upbit API로 조회하여
+    실제 체결/취소 상태로 업데이트합니다.
+
+    Returns:
+        dict: 동기화 결과 (synced_count, updated_orders)
+    """
+    from src.models import Order
+
+    upbit_client = get_upbit_client()
+
+    # PENDING 상태 주문 조회
+    stmt = select(Order).where(Order.status == OrderStatus.PENDING.value)
+    result = await session.execute(stmt)
+    pending_orders = list(result.scalars().all())
+
+    if not pending_orders:
+        return {"synced_count": 0, "updated_orders": [], "message": "대기 중인 주문 없음"}
+
+    updated_orders = []
+    for order in pending_orders:
+        if not order.upbit_uuid:
+            continue
+
+        try:
+            upbit_response = await upbit_client.get_order(order.upbit_uuid)
+
+            if upbit_response.state == "done":
+                # 체결 완료
+                order.mark_executed(
+                    executed_price=upbit_response.price or Decimal("0"),
+                    executed_amount=upbit_response.executed_volume,
+                    fee=upbit_response.executed_volume * Decimal("0.0005"),
+                )
+                updated_orders.append({
+                    "order_id": order.id,
+                    "old_status": "PENDING",
+                    "new_status": "EXECUTED",
+                    "executed_price": float(order.executed_price),
+                    "executed_amount": float(order.executed_amount),
+                })
+                logger.info(
+                    f"[주문 동기화] order_id={order.id} PENDING → EXECUTED, "
+                    f"price={order.executed_price}, amount={order.executed_amount}"
+                )
+
+            elif upbit_response.state == "cancel":
+                order.mark_cancelled()
+                updated_orders.append({
+                    "order_id": order.id,
+                    "old_status": "PENDING",
+                    "new_status": "CANCELLED",
+                })
+                logger.info(f"[주문 동기화] order_id={order.id} PENDING → CANCELLED")
+
+        except UpbitError as e:
+            logger.warning(f"주문 {order.id} 상태 조회 실패: {e.message}")
+            continue
+
+    await session.commit()
+
+    return {
+        "synced_count": len(updated_orders),
+        "updated_orders": updated_orders,
+        "message": f"{len(updated_orders)}건의 주문 상태가 동기화되었습니다",
+    }

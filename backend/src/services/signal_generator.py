@@ -38,116 +38,171 @@ DEFAULT_CONFIDENCE = 0.5  # 기본 신뢰도 (파싱 실패 시)
 MARKET_DATA_HOURS = 168  # 분석에 사용할 시장 데이터 기간 (7일)
 COOLDOWN_MINUTES = 5  # 수동 신호 생성 쿨다운 (분)
 
-# === 시스템 프롬프트 (개선 버전) ===
+# === 손절/익절 비율 상수 ===
+STOP_LOSS_PCT = 0.07  # 손절 비율 (7%)
+TAKE_PROFIT_PCT = 0.10  # 익절 비율 (10%)
+TRAILING_STOP_THRESHOLD_PCT = 0.07  # 트레일링 스탑 활성화 수익률 (7%)
+BREAKEVEN_THRESHOLD_PCT = 0.03  # 본전 손절 활성화 수익률 (3%)
+
+# === 시스템 프롬프트 (Risk First 버전) ===
 SYSTEM_INSTRUCTION = """당신은 리플(XRP) 트레이딩 전문가 AI입니다.
-주어진 시장 데이터, 기술적 지표, 멀티 타임프레임 분석 결과를 종합하여 매매 신호를 생성합니다.
 
-## 핵심 원칙
-1. **사실과 해석 분리**: 객관적 데이터(Fact)와 주관적 판단(Interpretation)을 명확히 구분
-2. **멀티 타임프레임 일치**: 여러 시간대에서 신호가 일치할 때 높은 신뢰도 부여
-3. **보수적 접근**: 불확실하면 HOLD, 손실 방지 우선
-4. **피드백 학습**: 과거 신호 성과를 반영한 개선된 판단
-5. **포지션 기반 판단**: 보유 중인 포지션의 평균 매수가를 기준으로 익절/손절가 설정
+## 최우선 원칙: 리스크 관리 (Risk First)
 
-## 포지션 관리 규칙 (중요!)
-XRP를 현재 보유 중인 경우, 다음 규칙을 반드시 준수하세요:
-- **익절가(take_profit)는 반드시 평균 매수가보다 높아야 합니다** (익절 = 이익 실현 매도)
-- **손절가(stop_loss)는 평균 매수가보다 낮아야 합니다** (손절 = 손실 확정 매도)
-- 미실현 손실 상태에서는 "익절"이라는 표현 대신 "목표가" 또는 "저항선" 사용
-- 예시: 평균 매수가 3,600원일 때 → 익절가는 3,600원보다 높게 (예: 3,800원), 손절가는 3,600원보다 낮게 (예: 3,400원)
+### 손절 강제 규칙 (MANDATORY - 기술적 분석보다 우선)
+다음 조건 중 **하나라도** 충족되면 무조건 **SELL** 신호 (신뢰도 0.9):
+1. 현재가 <= 평균매수가 × 0.93 (7% 손실)
+2. 미실현 손실 >= 7%
+3. 현재가 < 이전 설정 손절가
 
-## 의사결정 프레임워크
-1. 장기 추세(주봉, 일봉) 확인 → 방향성 결정
-2. 중기 추세(4시간) 확인 → 진입 타이밍
-3. 단기 모멘텀(1시간) 확인 → 실행 결정
-4. 기술적 지표 종합 → 신뢰도 조정
-5. 과거 성과 피드백 반영 → 최종 결정
+**중요**: 반등 가능성, 기술적 반전 신호가 있어도 손절 규칙 우선!
+
+### 포지션 상태별 의사결정
+
+#### 포지션 없음 (현금 100%)
+| 조건 | 신호 | 신뢰도 |
+|------|------|--------|
+| Confluence >= 0.65 AND RSI < 65 AND 2개+ TF 상승 | BUY | 0.7-0.85 |
+| Confluence >= 0.55 AND RSI < 50 | BUY (소량) | 0.55-0.7 |
+| 그 외 | HOLD | 0.4-0.6 |
+
+#### XRP 보유 중 - 수익 상태 (현재가 > 평균매수가)
+| 수익률 | 조건 | 신호 |
+|--------|------|------|
+| +10% 이상 | 하락 추세 전환 신호 | SELL (익절) |
+| +7% 이상 | Confluence <= 0.4 | SELL (익절) |
+| +5% 이상 | 모든 TF 하락 전환 | SELL (익절) |
+| +3~5% | 손절가를 평균매수가로 상향 | HOLD |
+| 0~+3% | 상승 추세 유지 시 | HOLD |
+
+#### XRP 보유 중 - 손실 상태 (현재가 < 평균매수가)
+| 손실률 | 조건 | 신호 | 이유 |
+|--------|------|------|------|
+| -7% 이상 | 무조건 | **SELL** | 강제 손절 |
+| -5~7% | 모든 TF 하락 | SELL | 손실 확대 방지 |
+| -5~7% | 반등 신호 있음 | HOLD | 관망 |
+| -3~5% | 관망 | HOLD | 노이즈 범위 |
+| 0~-3% | 상승 신호 시 | BUY (물타기) | 평단가 낮춤 |
+
+### 신호 결정 기준 (Confluence Score 기반)
+
+**SELL 조건 (OR 연산 - 하나만 충족해도 SELL)**
+- 손절 강제 규칙 해당
+- 미실현 이익 >= 7% AND Confluence <= 0.45
+- 모든 타임프레임(1H, 4H, 1D) 하락 추세
+- RSI >= 75 AND 미실현 이익 > 3%
+
+**BUY 조건 (AND 연산)**
+- Confluence >= 0.60
+- 미실현 손실 < 5% 또는 포지션 없음
+- RSI < 65
+- 최소 2개 타임프레임 상승 추세
+
+**HOLD 조건**
+- 위 조건 모두 미충족
+- Confluence 0.45 ~ 0.55
+
+### 손절/익절가 계산 (XRP 기준)
+
+| 상황 | 손절가 | 익절가 |
+|------|--------|--------|
+| 신규 진입 | 평균매수가 × 0.93 (-7%) | 평균매수가 × 1.10 (+10%) |
+| 수익 3%+ | 평균매수가 (본전) | 평균매수가 × 1.12 (+12%) |
+| 수익 7%+ | 현재가 × 0.95 (트레일링) | 평균매수가 × 1.15 (+15%) |
+
+### 신뢰도 기준
+
+| 신뢰도 | 조건 |
+|--------|------|
+| 0.85-1.0 | 손절 강제 조건 OR 모든 TF 일치 + 강한 기술적 신호 |
+| 0.70-0.85 | 3개 TF 일치 + 기술적 지표 지지 |
+| 0.55-0.70 | 2개 TF 일치 또는 일부 지표 불일치 |
+| 0.40-0.55 | 신호 혼재, HOLD 권장 |
+| 0.40 미만 | 반대 신호 우세 |
 
 ## 출력 형식
-반드시 다음 JSON 형식으로만 응답하세요:
 ```json
 {
   "signal": "BUY" | "HOLD" | "SELL",
   "confidence": 0.0 ~ 1.0,
   "reasoning": {
-    "facts": [
-      "RSI(14): XX.X (과매수/과매도/중립)",
-      "볼린저밴드: 현재가 밴드 내 XX% 위치",
-      "타임프레임 합류점수: X.XX/1.00",
-      "타임프레임별 추세: 1H=상승/하락/횡보, 4H=..., 1D=..., 1W=..."
-    ],
-    "interpretation": "종합 해석 및 판단 근거 (2-3문장)",
-    "key_factors": ["핵심 판단 요소 1", "핵심 판단 요소 2"],
-    "risks": ["위험 요소 1"],
+    "risk_assessment": {
+      "stop_loss_triggered": true/false,
+      "trigger_reason": "손절 트리거 사유",
+      "unrealized_pnl_pct": X.X,
+      "position_status": "수익/손실/없음"
+    },
+    "technical_summary": {
+      "confluence_score": 0.XX,
+      "rsi_14": XX.X,
+      "trend_1h": "상승/하락/횡보",
+      "trend_4h": "상승/하락/횡보",
+      "trend_1d": "상승/하락/횡보"
+    },
+    "decision_rationale": "결정 근거 (2-3문장)",
     "action_levels": {
-      "stop_loss": "손절가 (선택)",
-      "take_profit": "익절가 (선택)"
+      "stop_loss": "XXXX KRW",
+      "take_profit": "XXXX KRW"
     }
   }
 }
 ```
 
-## 응답 필수 포함 요소
-facts에 반드시 다음 정보를 포함하세요:
-1. RSI 수치와 상태 (예: "RSI(14): 28.5 과매도")
-2. 볼린저밴드 위치 (예: "BB 위치: 15% (하단 접근)")
-3. 타임프레임 합류점수 (예: "합류점수: 0.35/1.00 (불일치)")
-4. 각 타임프레임 추세 요약 (예: "1H/4H/1W 하락, 1D 횡보")
-
-## 신뢰도 기준
-- 0.8 이상: 모든 타임프레임 일치, 기술적 지표 강한 신호, 과거 성과 양호
-- 0.6~0.8: 대부분 타임프레임 일치, 일부 불확실
-- 0.4~0.6: 혼재된 신호, HOLD 권장
-- 0.4 미만: 반대 신호 우세, 신중한 접근 필요
-
 주의: JSON 외의 텍스트를 포함하지 마세요.
 """
 
-# === 분석 프롬프트 템플릿 (개선 버전) ===
-ANALYSIS_PROMPT_TEMPLATE = """## XRP/KRW 종합 시장 분석
+# === 분석 프롬프트 템플릿 (Risk First 버전) ===
+ANALYSIS_PROMPT_TEMPLATE = """## XRP/KRW 매매 신호 분석
 
-### 1. 현재 시장 상황
+### 1. 시장 현황
 - 분석 시각: {timestamp}
 - 현재가: {current_price:,.0f} KRW
 - 24시간 변동: {price_change_pct:+.2f}%
-- 24시간 고가: {high_price:,.0f} KRW
-- 24시간 저가: {low_price:,.0f} KRW
-- 24시간 거래량: {volume:,.2f} XRP
 
-### 2. 기술적 지표 분석 (일봉 기준)
-{technical_indicators}
-
-### 3. 멀티 타임프레임 분석
-{multi_timeframe_analysis}
-
-### 4. 객관적 사실 vs 해석
-**사실 (Facts):**
-{facts}
-
-**해석 (Interpretations):**
-{interpretations}
-
-### 5. 과거 신호 성과 피드백
-{performance_feedback}
-
-### 6. 현재 포지션 상태
+### 2. 포지션 상태 (최우선 확인!)
 {asset_status}
 
-**주의**: XRP 보유 시, 익절가는 반드시 평균 매수가보다 높게 설정하세요.
-현재가가 평균 매수가보다 낮은 경우(미실현 손실), 익절가 대신 "목표가" 또는 "저항선"으로 표현하세요.
+### 3. 리스크 체크 (손절 강제 규칙)
+{risk_check}
 
-### 7. 분석 요청
-위의 모든 데이터를 종합하여 매매 신호를 생성하세요.
+**질문: 위 리스크 체크에서 손절 조건이 충족되었습니까?**
+- 충족 → 즉시 SELL 신호 생성 (기술적 분석 무시)
+- 미충족 → 아래 분석 진행
 
-**신호 결정 기준:**
-- BUY: 타임프레임 합류 점수 높음 + 기술적 지표 매수 신호 + KRW 잔고 충분
-- SELL: 타임프레임 합류 점수 높음 + 기술적 지표 매도 신호 + XRP 보유 중
-- HOLD: 신호 혼재 또는 불확실 + 현재 포지션 유지가 적절
+### 4. 기술적 지표
+{technical_indicators}
 
-**중요 고려사항:**
-- 멀티 타임프레임 일치도가 높을수록 높은 신뢰도
-- 과거 피드백에서 지적된 패턴 주의
-- 변동성이 높으면 보수적 접근
+### 5. 멀티 타임프레임 분석
+{multi_timeframe_analysis}
+
+### 6. 과거 성과 피드백
+{performance_feedback}
+
+### 7. 의사결정 체크리스트 (순서대로 진행)
+
+**Step 1: 손절 체크 (최우선)**
+- [ ] 미실현 손실 >= 7%? → SELL (신뢰도 0.9)
+- [ ] 현재가 < 이전 손절가? → SELL (신뢰도 0.9)
+
+**Step 2: 익절 체크**
+- [ ] 미실현 이익 >= 10% AND 하락 신호? → SELL
+- [ ] 미실현 이익 >= 7% AND Confluence <= 0.45? → SELL
+
+**Step 3: 매수 체크**
+- [ ] 포지션 없음 AND Confluence >= 0.60 AND RSI < 65? → BUY
+- [ ] 손실 < 3% AND 상승 신호 AND 잔고 충분? → BUY (물타기)
+
+**Step 4: 홀드**
+- [ ] 위 조건 모두 미충족? → HOLD
+
+### 8. 최종 분석 요청
+
+위 체크리스트를 **순서대로** 검토하고 **첫 번째로 충족되는 조건**의 신호를 생성하세요.
+
+**금지사항:**
+- 손절 조건 충족 시 "반등 가능성"을 이유로 HOLD 금지
+- "추가 하락 여력 제한"은 판단 근거가 될 수 없음
+- 불확실하다는 이유만으로 HOLD 금지 (구체적 근거 필요)
 """
 
 
@@ -435,6 +490,50 @@ class SignalGenerator:
 
         return "\n".join(lines)
 
+    def _format_risk_check(self, balance_info: dict | None) -> str:
+        """
+        손절 조건 체크 결과 포맷
+
+        손절 강제 규칙을 적용하여 현재 포지션의 리스크 상태를 명시적으로 표시.
+        AI가 손절 조건 충족 여부를 명확히 인지하도록 함.
+
+        Args:
+            balance_info: 잔고 정보
+
+        Returns:
+            str: 리스크 체크 결과 문자열
+        """
+        if not balance_info or float(balance_info.get("xrp_available", 0)) <= 0:
+            return "- 포지션 없음: 손절 체크 해당 없음"
+
+        pnl_pct = balance_info["unrealized_pnl_pct"]
+        current = float(balance_info["current_price"])
+        avg = float(balance_info["xrp_avg_price"])
+        stop_loss = avg * 0.93  # 7% 손절
+
+        lines = [f"- 미실현 손익률: {pnl_pct:+.2f}%"]
+        lines.append(f"- 손절 기준가: {stop_loss:,.0f} KRW (평균매수가 -7%)")
+        lines.append(f"- 현재가와 손절가 차이: {((current - stop_loss) / stop_loss * 100):+.2f}%")
+
+        # 손절 조건 판단
+        if pnl_pct <= -7:
+            lines.append("")
+            lines.append("=" * 50)
+            lines.append("**[손절 조건 충족] 미실현 손실 7% 초과!**")
+            lines.append("→ 즉시 SELL 신호 생성 필수 (신뢰도 0.9)")
+            lines.append("=" * 50)
+        elif current <= stop_loss:
+            lines.append("")
+            lines.append("=" * 50)
+            lines.append("**[손절 조건 충족] 현재가 < 손절가!**")
+            lines.append("→ 즉시 SELL 신호 생성 필수 (신뢰도 0.9)")
+            lines.append("=" * 50)
+        elif pnl_pct <= -5:
+            lines.append("")
+            lines.append("**[경고] 미실현 손실 5% 초과 - 추세 확인 후 손절 검토**")
+
+        return "\n".join(lines)
+
     def _build_enhanced_prompt(
         self,
         market_data_list: list[MarketData],
@@ -467,35 +566,30 @@ class SignalGenerator:
         else:
             price_change_pct = 0.0
 
+        # 자산 상태 문자열 생성
+        asset_status = self._format_asset_status(balance_info)
+
+        # 리스크 체크 문자열 생성 (손절 강제 규칙)
+        risk_check = self._format_risk_check(balance_info)
+
         # 기술적 지표 문자열 생성
         technical_indicators = self._format_technical_indicators(mtf_result)
 
         # 멀티 타임프레임 분석 문자열 생성
         multi_timeframe_analysis = self._format_multi_timeframe(mtf_result)
 
-        # 사실/해석 분리
-        facts = self._format_facts(mtf_result)
-        interpretations = self._format_interpretations(mtf_result)
-
         # 성과 피드백 문자열 생성
         performance_feedback = self._format_performance_feedback(perf_summary)
-
-        # 자산 상태 문자열 생성
-        asset_status = self._format_asset_status(balance_info)
 
         return ANALYSIS_PROMPT_TEMPLATE.format(
             timestamp=latest.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC"),
             current_price=float(latest.price),
             price_change_pct=price_change_pct,
-            high_price=float(latest.high_price),
-            low_price=float(latest.low_price),
-            volume=float(latest.volume),
+            asset_status=asset_status,
+            risk_check=risk_check,
             technical_indicators=technical_indicators,
             multi_timeframe_analysis=multi_timeframe_analysis,
-            facts=facts,
-            interpretations=interpretations,
             performance_feedback=performance_feedback,
-            asset_status=asset_status,
         )
 
     def _format_technical_indicators(self, mtf_result: MultiTimeframeResult) -> str:
@@ -579,22 +673,6 @@ class SignalGenerator:
 
         return "\n".join(lines)
 
-    def _format_facts(self, mtf_result: MultiTimeframeResult) -> str:
-        """객관적 사실 포맷"""
-        if not mtf_result.facts:
-            return "- 데이터 없음"
-
-        # 중요한 사실만 선별 (최대 10개)
-        selected_facts = mtf_result.facts[:10]
-        return "\n".join(f"- {fact}" for fact in selected_facts)
-
-    def _format_interpretations(self, mtf_result: MultiTimeframeResult) -> str:
-        """주관적 해석 포맷"""
-        if not mtf_result.interpretations:
-            return "- 특이 패턴 없음"
-
-        return "\n".join(f"- {interp}" for interp in mtf_result.interpretations)
-
     def _format_performance_feedback(self, perf_summary: PerformanceSummary) -> str:
         """성과 피드백 포맷"""
         lines = []
@@ -650,44 +728,6 @@ class SignalGenerator:
 
         return json.dumps(snapshot, ensure_ascii=False)
 
-    def _summarize_price_history(
-        self,
-        market_data_list: list[MarketData],
-        interval_hours: int = 1,
-    ) -> str:
-        """
-        가격 추이 요약
-
-        시간별 가격 변화를 요약합니다.
-
-        Args:
-            market_data_list: 시장 데이터 목록
-            interval_hours: 샘플링 간격 (시간)
-
-        Returns:
-            str: 가격 추이 요약 문자열
-        """
-        if not market_data_list:
-            return "데이터 없음"
-
-        # 시간대별로 그룹화
-        hourly_prices: dict[str, float] = {}
-        for data in market_data_list:
-            hour_key = data.timestamp.strftime("%m/%d %H:00")
-            if hour_key not in hourly_prices:
-                hourly_prices[hour_key] = float(data.price)
-
-        # 최근 6개 시간대만 표시
-        recent_hours = list(hourly_prices.items())[:6]
-        if not recent_hours:
-            return "데이터 없음"
-
-        lines = []
-        for time_str, price in reversed(recent_hours):
-            lines.append(f"- {time_str}: {price:,.0f} KRW")
-
-        return "\n".join(lines)
-
     def _parse_response(
         self,
         text: str,
@@ -733,11 +773,43 @@ class SignalGenerator:
                 # 구조화된 reasoning을 읽기 쉬운 형식으로 변환
                 reasoning_parts = []
 
-                if "interpretation" in reasoning_raw:
+                # 새 형식: risk_assessment 처리
+                if "risk_assessment" in reasoning_raw:
+                    risk = reasoning_raw["risk_assessment"]
+                    if risk.get("stop_loss_triggered"):
+                        reasoning_parts.append(
+                            f"[손절 트리거] {risk.get('trigger_reason', '손절 조건 충족')}"
+                        )
+                    pnl_pct = risk.get("unrealized_pnl_pct")
+                    if pnl_pct is not None:
+                        reasoning_parts.append(f"손익률: {pnl_pct:+.1f}%")
+
+                # 새 형식: decision_rationale 처리
+                if "decision_rationale" in reasoning_raw:
+                    reasoning_parts.append(reasoning_raw["decision_rationale"])
+                # 구 형식: interpretation 처리 (하위 호환)
+                elif "interpretation" in reasoning_raw:
                     reasoning_parts.append(reasoning_raw["interpretation"])
 
-                if "facts" in reasoning_raw and reasoning_raw["facts"]:
-                    # facts에서 핵심 지표만 추출 (RSI, BB, 합류점수)
+                # 새 형식: technical_summary 처리
+                if "technical_summary" in reasoning_raw:
+                    tech = reasoning_raw["technical_summary"]
+                    tech_parts = []
+                    if tech.get("confluence_score") is not None:
+                        tech_parts.append(f"합류: {tech['confluence_score']:.2f}")
+                    if tech.get("rsi_14") is not None:
+                        tech_parts.append(f"RSI: {tech['rsi_14']:.1f}")
+                    trends = []
+                    for tf in ["1h", "4h", "1d"]:
+                        trend_key = f"trend_{tf}"
+                        if tech.get(trend_key):
+                            trends.append(f"{tf.upper()}={tech[trend_key]}")
+                    if trends:
+                        tech_parts.append(" ".join(trends))
+                    if tech_parts:
+                        reasoning_parts.append("지표: " + " / ".join(tech_parts))
+                # 구 형식: facts 처리 (하위 호환)
+                elif "facts" in reasoning_raw and reasoning_raw["facts"]:
                     key_facts = []
                     for fact in reasoning_raw["facts"][:5]:
                         if any(kw in fact for kw in ["RSI", "볼린저", "BB", "합류", "타임프레임"]):
@@ -747,11 +819,13 @@ class SignalGenerator:
                     else:
                         reasoning_parts.append("근거: " + ", ".join(reasoning_raw["facts"][:3]))
 
+                # 구 형식: key_factors 처리 (하위 호환)
                 if "key_factors" in reasoning_raw and reasoning_raw["key_factors"]:
                     reasoning_parts.append(
                         "핵심: " + ", ".join(reasoning_raw["key_factors"])
                     )
 
+                # 구 형식: risks 처리 (하위 호환)
                 if "risks" in reasoning_raw and reasoning_raw["risks"]:
                     reasoning_parts.append(
                         "위험: " + ", ".join(reasoning_raw["risks"])
