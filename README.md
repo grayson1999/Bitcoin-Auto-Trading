@@ -9,6 +9,7 @@
 - **Database**: PostgreSQL
 - **AI**: Google Gemini 2.5 Flash
 - **거래소**: Upbit
+- **인증**: Auth Server (별도 서비스, localhost:9000)
 
 ## 서버 관리
 
@@ -112,9 +113,14 @@ npm run build
 
 ## API 엔드포인트
 
+### 공개 엔드포인트
 | 경로 | 설명 |
 |------|------|
 | `GET /api/v1/health` | 서버 상태 확인 |
+
+### 인증 필요 엔드포인트
+| 경로 | 설명 |
+|------|------|
 | `GET /api/v1/dashboard/summary` | 대시보드 요약 |
 | `GET /api/v1/signals` | AI 신호 목록 |
 | `POST /api/v1/signals/generate` | AI 신호 수동 생성 |
@@ -122,6 +128,8 @@ npm run build
 | `GET /api/v1/risk/status` | 리스크 상태 |
 | `POST /api/v1/backtest/run` | 백테스트 실행 |
 | `GET /api/v1/backtest/results` | 백테스트 결과 목록 |
+
+> **참고**: 인증 필요 엔드포인트는 `Authorization: Bearer <token>` 헤더가 필요합니다.
 
 ## 디렉토리 구조
 
@@ -143,6 +151,7 @@ Bitcoin-Auto-Trading/
 │   ├── src/
 │   │   ├── pages/            # 페이지 컴포넌트
 │   │   ├── components/       # 재사용 컴포넌트
+│   │   ├── contexts/         # React Context (Auth 등)
 │   │   ├── hooks/            # React 훅
 │   │   └── api/              # API 클라이언트
 │   └── dist/                 # 빌드 결과물
@@ -151,14 +160,24 @@ Bitcoin-Auto-Trading/
 
 ## 환경 변수
 
-Backend `.env` 파일 위치: `/home/ubuntu/Bitcoin-Auto-Trading/backend/.env`
+### Backend `.env`
+파일 위치: `/home/ubuntu/Bitcoin-Auto-Trading/backend/.env`
 
 ```bash
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/bitcoin
+AUTH_SERVER_URL=http://localhost:9000
 UPBIT_ACCESS_KEY=your-access-key
 UPBIT_SECRET_KEY=your-secret-key
 GEMINI_API_KEY=your-gemini-api-key
 SLACK_WEBHOOK_URL=https://hooks.slack.com/...
+```
+
+### Frontend `.env`
+파일 위치: `/home/ubuntu/Bitcoin-Auto-Trading/frontend/.env`
+
+```bash
+VITE_API_URL=http://localhost:8000
+VITE_AUTH_API_URL=http://localhost:9000
 ```
 
 ## 문제 해결
@@ -197,3 +216,22 @@ npm run build
 
 # Nginx 캐시 무효화 (브라우저에서 Ctrl+Shift+R)
 ```
+
+### 인증 오류 (401 Unauthorized)
+
+```bash
+# Auth Server 상태 확인
+curl http://localhost:9000/api/v1/health
+
+# Auth Server가 실행 중이지 않다면 시작
+cd /home/ubuntu/auth-server
+make dev
+# 또는
+uvicorn src.main:app --host 0.0.0.0 --port 9000 --reload
+```
+
+### 로그인 실패
+
+1. **잘못된 자격증명**: 이메일/비밀번호 확인
+2. **계정 잠김 (5회 실패)**: 15분 대기 후 재시도
+3. **Auth Server 연결 불가**: Auth Server 실행 상태 확인
