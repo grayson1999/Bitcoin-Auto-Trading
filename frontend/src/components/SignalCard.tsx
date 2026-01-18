@@ -7,9 +7,9 @@
  * - AI 분석 근거
  */
 
-import type { ComponentType, FC, SVGProps } from "react";
+import { useState, type ComponentType, type FC, type SVGProps } from "react";
 import type { TradingSignal } from "../hooks/useApi";
-import { ArrowTrendingUpIcon, HandRaisedIcon, ArrowTrendingDownIcon, CpuChipIcon } from "@heroicons/react/24/outline";
+import { ArrowTrendingUpIcon, HandRaisedIcon, ArrowTrendingDownIcon, CpuChipIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 
 // === 타입 정의 ===
 /** Heroicons 아이콘 컴포넌트 타입 */
@@ -77,6 +77,7 @@ const SignalCard: FC<SignalCardProps> = ({ signal, compact = false }) => {
   const style = SIGNAL_STYLES[signal.signal_type] || SIGNAL_STYLES.HOLD;
   const confidencePercent = getConfidencePercent(signal.confidence);
   const Icon = style.icon;
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className={CARD_CLASSES}>
@@ -123,10 +124,33 @@ const SignalCard: FC<SignalCardProps> = ({ signal, compact = false }) => {
       {/* AI 분석 근거 (컴팩트 모드가 아닐 때) */}
       {!compact && (
         <div className="mt-5 relative z-10">
-          <h4 className="text-sm font-semibold text-dark-text-secondary mb-2">Analysis Reasoning</h4>
-          <p className="text-sm leading-relaxed text-white bg-white/5 rounded-lg border border-white/10 p-3">
-            {signal.reasoning}
-          </p>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center justify-between w-full text-left group/btn"
+          >
+            <h4 className="text-sm font-semibold text-dark-text-secondary group-hover/btn:text-white transition-colors">
+              AI Analysis Reasoning
+            </h4>
+            {isExpanded ? (
+              <ChevronUpIcon className="w-4 h-4 text-dark-text-muted group-hover/btn:text-white transition-colors" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4 text-dark-text-muted group-hover/btn:text-white transition-colors" />
+            )}
+          </button>
+
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
+              }`}
+          >
+            <p className="text-sm leading-relaxed text-white bg-white/5 rounded-lg border border-white/10 p-3">
+              {signal.reasoning}
+            </p>
+          </div>
+          {!isExpanded && (
+            <p className="text-xs text-dark-text-muted mt-1 truncate">
+              {signal.reasoning}
+            </p>
+          )}
         </div>
       )}
 

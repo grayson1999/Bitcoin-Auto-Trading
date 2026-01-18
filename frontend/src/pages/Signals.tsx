@@ -9,6 +9,7 @@
 
 import { useState, type FC } from "react";
 import { useSignals, useGenerateSignal } from "../hooks/useApi";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import SignalCard from "../components/SignalCard";
 
 // === 상수 ===
@@ -24,8 +25,17 @@ const SIGNAL_TYPES = [
  */
 const Signals: FC = () => {
   const [signalType, setSignalType] = useState("all");
-  const { data, isLoading, error } = useSignals(50, signalType);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8; // 페이지당 8개 (그리드 뷰 고려)
+
+  const { data, isLoading, error } = useSignals(itemsPerPage, currentPage, signalType);
   const generateMutation = useGenerateSignal();
+
+  // 필터 변경 시 페이지 초기화
+  const handleTypeChange = (value: string) => {
+    setSignalType(value);
+    setCurrentPage(1);
+  };
 
   // 신호 수동 생성
   const handleGenerate = () => {
@@ -49,7 +59,7 @@ const Signals: FC = () => {
           {/* 필터 */}
           <select
             value={signalType}
-            onChange={(e) => setSignalType(e.target.value)}
+            onChange={(e) => handleTypeChange(e.target.value)}
             className="rounded-xl border border-dark-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-dark-surface text-white shadow-lg"
           >
             {SIGNAL_TYPES.map((option) => (
@@ -119,6 +129,37 @@ const Signals: FC = () => {
                   <SignalCard key={signal.id} signal={signal} />
                 ))}
               </div>
+
+              {/* 페이지네이션 */}
+              {data.total > itemsPerPage && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeftIcon className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex items-center gap-1 font-medium text-sm text-dark-text-secondary">
+                    <span className="text-white">{currentPage}</span>
+                    <span>/</span>
+                    <span>{Math.ceil(data.total / itemsPerPage)}</span>
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) =>
+                        Math.min(p + 1, Math.ceil(data.total / itemsPerPage))
+                      )
+                    }
+                    disabled={currentPage >= Math.ceil(data.total / itemsPerPage)}
+                    className="p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRightIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

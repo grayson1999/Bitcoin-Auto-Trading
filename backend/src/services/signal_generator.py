@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from loguru import logger
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import MarketData, TradingSignal
@@ -949,6 +949,7 @@ class SignalGenerator:
     async def get_signals(
         self,
         limit: int = 50,
+        offset: int = 0,
         signal_type: str | None = None,
     ) -> list[TradingSignal]:
         """
@@ -966,10 +967,28 @@ class SignalGenerator:
         if signal_type and signal_type != "all":
             stmt = stmt.where(TradingSignal.signal_type == signal_type.upper())
 
-        stmt = stmt.limit(limit)
+        stmt = stmt.offset(offset).limit(limit)
 
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_signals_count(self, signal_type: str | None = None) -> int:
+        """
+        신호 총 개수 조회
+
+        Args:
+            signal_type: 필터링할 신호 타입 (선택)
+
+        Returns:
+            int: 총 신호 개수
+        """
+        stmt = select(func.count()).select_from(TradingSignal)
+
+        if signal_type and signal_type != "all":
+            stmt = stmt.where(TradingSignal.signal_type == signal_type.upper())
+
+        result = await self.db.execute(stmt)
+        return result.scalar() or 0
 
 
 # === 싱글톤 팩토리 ===

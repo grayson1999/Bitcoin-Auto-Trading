@@ -277,15 +277,16 @@ export function useMarketHistory(
  * @param signalType 신호 타입 필터
  * @returns UseQueryResult<SignalListResponse>
  */
-export function useSignals(limit = 50, signalType?: string) {
+export function useSignals(limit = 50, page = 1, signalType?: string) {
   const params = new URLSearchParams();
   params.append("limit", String(limit));
+  params.append("page", String(page));
   if (signalType && signalType !== "all") {
     params.append("signal_type", signalType);
   }
 
   return useQuery<SignalListResponse>({
-    queryKey: [QUERY_KEYS.SIGNALS, limit, signalType],
+    queryKey: [QUERY_KEYS.SIGNALS, limit, page, signalType],
     queryFn: () => api.get<SignalListResponse>(`/signals?${params.toString()}`),
     staleTime: 30000, // 30초
   });

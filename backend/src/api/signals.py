@@ -47,6 +47,10 @@ async def get_signals(
         int,
         Query(ge=MIN_LIMIT, le=MAX_LIMIT, description="최대 조회 개수 (1-100)"),
     ] = DEFAULT_LIMIT,
+    page: Annotated[
+        int,
+        Query(ge=1, description="페이지 번호 (기본: 1)"),
+    ] = 1,
     signal_type: Annotated[
         SignalFilterParams,
         Query(description="신호 타입 필터 (all/BUY/HOLD/SELL)"),
@@ -61,6 +65,7 @@ async def get_signals(
     Args:
         session: 데이터베이스 세션
         limit: 최대 조회 개수 (기본: 50)
+        page: 페이지 번호 (기본: 1)
         signal_type: 신호 타입 필터 (기본: all)
 
     Returns:
@@ -68,16 +73,22 @@ async def get_signals(
     """
     generator = get_signal_generator(session)
 
+    offset = (page - 1) * limit
+    signal_type_val = (
+        signal_type.value if signal_type != SignalFilterParams.ALL else None
+    )
+
     signals = await generator.get_signals(
         limit=limit,
-        signal_type=signal_type.value
-        if signal_type != SignalFilterParams.ALL
-        else None,
+        offset=offset,
+        signal_type=signal_type_val,
     )
+
+    total_count = await generator.get_signals_count(signal_type=signal_type_val)
 
     return TradingSignalListResponse(
         items=[TradingSignalResponse.model_validate(s) for s in signals],
-        total=len(signals),
+        total=total_count,
     )
 
 
