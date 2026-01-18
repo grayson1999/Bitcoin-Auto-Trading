@@ -47,6 +47,14 @@ SYSTEM_INSTRUCTION = """당신은 리플(XRP) 트레이딩 전문가 AI입니다
 2. **멀티 타임프레임 일치**: 여러 시간대에서 신호가 일치할 때 높은 신뢰도 부여
 3. **보수적 접근**: 불확실하면 HOLD, 손실 방지 우선
 4. **피드백 학습**: 과거 신호 성과를 반영한 개선된 판단
+5. **포지션 기반 판단**: 보유 중인 포지션의 평균 매수가를 기준으로 익절/손절가 설정
+
+## 포지션 관리 규칙 (중요!)
+XRP를 현재 보유 중인 경우, 다음 규칙을 반드시 준수하세요:
+- **익절가(take_profit)는 반드시 평균 매수가보다 높아야 합니다** (익절 = 이익 실현 매도)
+- **손절가(stop_loss)는 평균 매수가보다 낮아야 합니다** (손절 = 손실 확정 매도)
+- 미실현 손실 상태에서는 "익절"이라는 표현 대신 "목표가" 또는 "저항선" 사용
+- 예시: 평균 매수가 3,600원일 때 → 익절가는 3,600원보다 높게 (예: 3,800원), 손절가는 3,600원보다 낮게 (예: 3,400원)
 
 ## 의사결정 프레임워크
 1. 장기 추세(주봉, 일봉) 확인 → 방향성 결정
@@ -124,6 +132,9 @@ ANALYSIS_PROMPT_TEMPLATE = """## XRP/KRW 종합 시장 분석
 
 ### 6. 현재 포지션 상태
 {asset_status}
+
+**주의**: XRP 보유 시, 익절가는 반드시 평균 매수가보다 높게 설정하세요.
+현재가가 평균 매수가보다 낮은 경우(미실현 손실), 익절가 대신 "목표가" 또는 "저항선"으로 표현하세요.
 
 ### 7. 분석 요청
 위의 모든 데이터를 종합하여 매매 신호를 생성하세요.
@@ -256,8 +267,11 @@ class SignalGenerator:
             logger.error(f"AI 신호 생성 실패: {e}")
             raise SignalGeneratorError(f"AI API 오류: {e}") from e
 
-        # 7. 응답 파싱
-        signal_type, confidence, reasoning = self._parse_response(response.text)
+        # 7. 응답 파싱 (포지션 정보 전달하여 익절/손절가 검증)
+        signal_type, confidence, reasoning = self._parse_response(
+            response.text,
+            balance_info=balance_info,
+        )
 
         # 8. 기술적 지표 스냅샷 생성
         technical_snapshot = self._create_technical_snapshot(mtf_result)
@@ -674,15 +688,21 @@ class SignalGenerator:
 
         return "\n".join(lines)
 
-    def _parse_response(self, text: str) -> tuple[str, float, str]:
+    def _parse_response(
+        self,
+        text: str,
+        balance_info: dict | None = None,
+    ) -> tuple[str, float, str]:
         """
         AI 응답 파싱 (개선 버전)
 
         JSON 형식의 응답에서 신호, 신뢰도, 근거를 추출합니다.
         구조화된 reasoning 형식을 처리합니다.
+        포지션 정보가 있으면 익절/손절가 유효성도 검증합니다.
 
         Args:
             text: AI 응답 텍스트
+            balance_info: 잔고 정보 (익절/손절가 검증용)
 
         Returns:
             tuple[str, float, str]: (signal_type, confidence, reasoning)
@@ -740,11 +760,13 @@ class SignalGenerator:
                 # action_levels 처리 (손절/익절가)
                 if "action_levels" in reasoning_raw:
                     levels = reasoning_raw["action_levels"]
+                    # 포지션 기반 익절/손절가 검증
+                    validated_levels = self._validate_action_levels(levels, balance_info)
                     level_parts = []
-                    if levels.get("stop_loss"):
-                        level_parts.append(f"손절: {levels['stop_loss']}")
-                    if levels.get("take_profit"):
-                        level_parts.append(f"익절: {levels['take_profit']}")
+                    if validated_levels.get("stop_loss"):
+                        level_parts.append(f"손절: {validated_levels['stop_loss']}")
+                    if validated_levels.get("take_profit"):
+                        level_parts.append(f"익절: {validated_levels['take_profit']}")
                     if level_parts:
                         reasoning_parts.append(" / ".join(level_parts))
 
@@ -763,6 +785,81 @@ class SignalGenerator:
                 DEFAULT_CONFIDENCE,
                 f"파싱 실패로 기본 HOLD 신호 생성. 원본: {text[:100]}",
             )
+
+    def _parse_price(self, price_str: str | None) -> float | None:
+        """
+        가격 문자열 파싱
+
+        "3,200", "3200원", "3,200 KRW" 등의 형식을 float로 변환.
+
+        Args:
+            price_str: 가격 문자열
+
+        Returns:
+            float | None: 파싱된 가격 또는 None
+        """
+        if not price_str:
+            return None
+
+        try:
+            # 숫자와 소수점만 추출
+            cleaned = re.sub(r"[^\d.]", "", str(price_str))
+            if cleaned:
+                return float(cleaned)
+            return None
+        except (ValueError, TypeError):
+            return None
+
+    def _validate_action_levels(
+        self,
+        levels: dict,
+        balance_info: dict | None,
+    ) -> dict:
+        """
+        익절/손절가가 포지션 평균 매수가 기준으로 유효한지 검증
+
+        - 익절(이익 실현): 매도가 > 평균 매수가 (수익 상태에서 매도)
+        - 손절(손실 확정): 매도가 < 평균 매수가 (손실을 감수하고 매도)
+
+        잘못된 가격은 제거하고 경고 로그 남김.
+
+        Args:
+            levels: {"take_profit": ..., "stop_loss": ...}
+            balance_info: 잔고 정보 딕셔너리
+
+        Returns:
+            dict: 검증된 action_levels
+        """
+        if not balance_info or float(balance_info.get("xrp_available", 0)) <= 0:
+            return levels  # 포지션 없으면 검증 스킵
+
+        avg_price = float(balance_info["xrp_avg_price"])
+        if avg_price <= 0:
+            return levels  # 평균 매수가 없으면 스킵
+
+        validated = dict(levels)
+
+        # 익절가 검증: 평균 매수가보다 낮으면 익절이 아님 (제거)
+        if levels.get("take_profit"):
+            tp = self._parse_price(levels["take_profit"])
+            if tp and tp <= avg_price:
+                logger.warning(
+                    f"익절가({tp:,.0f}원)가 평균매수가({avg_price:,.0f}원)보다 낮음 - "
+                    f"이 가격에 매도하면 손실이므로 익절가에서 제거"
+                )
+                validated["take_profit"] = None
+
+        # 손절가 검증: 평균 매수가보다 높으면 손절이 아님 (제거)
+        if levels.get("stop_loss"):
+            sl = self._parse_price(levels["stop_loss"])
+            if sl and sl >= avg_price:
+                logger.warning(
+                    f"손절가({sl:,.0f}원)가 평균매수가({avg_price:,.0f}원)보다 높음 - "
+                    f"이 가격에 매도하면 이익이므로 손절가에서 제거"
+                )
+                validated["stop_loss"] = None
+
+        return validated
 
     async def get_latest_signal(self) -> TradingSignal | None:
         """
