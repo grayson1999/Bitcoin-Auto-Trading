@@ -20,6 +20,8 @@ from src.api.schemas.signal import (
     TradingSignalResponse,
 )
 from src.database import get_session
+from src.models import SignalType
+from src.scheduler.jobs import execute_trading_from_signal_job
 from src.services.signal_generator import (
     SignalGeneratorError,
     get_signal_generator,
@@ -156,6 +158,11 @@ async def generate_signal(
         logger.info(
             f"수동 신호 생성 완료: {signal.signal_type} (신뢰도: {signal.confidence})"
         )
+
+        # BUY/SELL 신호면 자동 매매 실행
+        if signal.signal_type in (SignalType.BUY.value, SignalType.SELL.value):
+            logger.info(f"자동 매매 트리거: signal_id={signal.id}")
+            await execute_trading_from_signal_job(signal.id)
 
         return GenerateSignalResponse(
             signal=TradingSignalResponse.model_validate(signal),

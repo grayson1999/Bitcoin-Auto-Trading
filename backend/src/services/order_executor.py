@@ -42,6 +42,8 @@ MAX_ORDER_RETRIES = 3  # 주문 재시도 횟수
 RETRY_DELAY_SECONDS = 1.0  # 재시도 대기 시간
 MIN_ORDER_AMOUNT_KRW = Decimal("5000")  # 최소 주문 금액 (원)
 UPBIT_FEE_RATE = Decimal("0.0005")  # Upbit 수수료율 (0.05%)
+ORDER_POLL_INTERVAL = 0.5  # 주문 체결 확인 간격 (초)
+ORDER_POLL_MAX_ATTEMPTS = 10  # 주문 체결 확인 최대 시도 횟수
 
 
 class OrderExecutorError(Exception):
@@ -396,6 +398,10 @@ class OrderExecutor:
                 # 주문 상태 확인 및 체결 정보 업데이트
                 await self._update_order_status(order, upbit_response)
 
+                # 시장가 주문이 대기 상태면 폴링하여 체결 확인
+                if not order.is_executed and upbit_response.uuid:
+                    await self._poll_order_completion(order, upbit_response.uuid)
+
                 # T068: 포지션 업데이트 (순서 중요: 통계 먼저, 그 다음 포지션)
                 if order.is_executed:
                     # 실현 손익은 포지션 변경 전에 계산해야 함
@@ -685,6 +691,58 @@ class OrderExecutor:
             # 대기 상태 - 체결 완료 대기
             order.status = OrderStatus.PENDING.value
             logger.info(f"[주문 대기] order_id={order.id}, state=wait")
+
+    async def _poll_order_completion(self, order: Order, uuid: str) -> None:
+        """
+        주문 체결 상태 폴링
+
+        시장가 주문이 대기 상태일 때 체결될 때까지 폴링합니다.
+
+        Args:
+            order: 주문 객체
+            uuid: Upbit 주문 UUID
+        """
+        for attempt in range(ORDER_POLL_MAX_ATTEMPTS):
+            await asyncio.sleep(ORDER_POLL_INTERVAL)
+
+            try:
+                upbit_response = await self._upbit_client.get_order(uuid)
+
+                logger.debug(
+                    f"[주문 상태 확인] attempt={attempt + 1}, "
+                    f"uuid={uuid}, state={upbit_response.state}"
+                )
+
+                if upbit_response.state == "done":
+                    # 체결 완료
+                    order.mark_executed(
+                        executed_price=upbit_response.price or Decimal("0"),
+                        executed_amount=upbit_response.executed_volume,
+                        fee=upbit_response.executed_volume * UPBIT_FEE_RATE,
+                    )
+                    logger.info(
+                        f"[주문 체결 확인] order_id={order.id}, "
+                        f"executed_price={order.executed_price}, "
+                        f"executed_amount={order.executed_amount}"
+                    )
+                    return
+
+                elif upbit_response.state == "cancel":
+                    order.mark_cancelled()
+                    logger.warning(f"[주문 취소됨] order_id={order.id}")
+                    return
+
+                # state == "wait" 계속 폴링
+
+            except UpbitError as e:
+                logger.warning(f"주문 상태 조회 실패: {e.message}")
+                continue
+
+        # 최대 시도 횟수 초과
+        logger.warning(
+            f"주문 체결 확인 타임아웃: order_id={order.id}, uuid={uuid}, "
+            f"attempts={ORDER_POLL_MAX_ATTEMPTS}"
+        )
 
     async def _send_order_notification(self, order: Order) -> None:
         """주문 체결 알림 전송"""
