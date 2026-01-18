@@ -157,9 +157,9 @@
 
 ### 동적 사용자 표시
 
-- [ ] T051 [US5] frontend/src/components/Sidebar.tsx에서 하드코딩된 사용자를 useAuth().user로 교체
-- [ ] T052 [US5] frontend/src/components/Sidebar.tsx의 프로필 섹션에 user.name과 user.email 표시
-- [ ] T053 [US5] frontend/src/components/Sidebar.tsx에서 user.name으로부터 아바타 이니셜 생성
+- [X] T051 [US5] frontend/src/components/Sidebar.tsx에서 하드코딩된 사용자를 useAuth().user로 교체
+- [X] T052 [US5] frontend/src/components/Sidebar.tsx의 프로필 섹션에 user.name과 user.email 표시
+- [X] T053 [US5] frontend/src/components/Sidebar.tsx에서 user.name으로부터 아바타 이니셜 생성
 
 **체크포인트**: 모든 사용자 스토리가 독립적으로 동작해야 함
 

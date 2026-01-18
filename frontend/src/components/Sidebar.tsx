@@ -8,7 +8,7 @@ import {
     Bars3Icon,
     XMarkIcon,
     BeakerIcon,
-    ArrowRightOnRectangleIcon,
+    ArrowRightStartOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,10 +20,25 @@ const navItems = [
     { path: '/settings', label: '설정', icon: Cog6ToothIcon },
 ];
 
+/**
+ * 사용자 이름에서 아바타 이니셜을 생성
+ * - 이름이 공백으로 구분된 경우: 각 단어의 첫 글자 (최대 2글자)
+ * - 단일 단어인 경우: 첫 글자
+ * - 이름이 없는 경우: "?"
+ */
+function getInitials(name: string | undefined | null): string {
+    if (!name?.trim()) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) {
+        return parts[0].charAt(0).toUpperCase();
+    }
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
 export const Sidebar: FC = () => {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
 
     const handleLogout = async () => {
         setIsOpen(false);
@@ -105,11 +120,11 @@ export const Sidebar: FC = () => {
                     <div className="p-4 border-t border-dark-border/50 bg-black/20">
                         <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group mb-2">
                             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-inner ring-2 ring-black/50 group-hover:ring-white/20 transition-all">
-                                C
+                                {getInitials(user?.name)}
                             </div>
                             <div className="flex flex-col flex-1 min-w-0">
-                                <span className="text-sm font-semibold text-white truncate">comgongStone</span>
-                                <span className="text-xs text-emerald-400 font-medium truncate">Grayson</span>
+                                <span className="text-sm font-semibold text-white truncate">{user?.name ?? '사용자'}</span>
+                                <span className="text-xs text-emerald-400 font-medium truncate">{user?.email ?? ''}</span>
                             </div>
                             <Cog6ToothIcon className="w-5 h-5 text-dark-text-muted group-hover:text-white transition-colors" />
                         </div>
@@ -119,7 +134,7 @@ export const Sidebar: FC = () => {
                             onClick={handleLogout}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-dark-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 group"
                         >
-                            <ArrowRightOnRectangleIcon className="w-5 h-5 text-dark-text-muted group-hover:text-red-400 transition-colors" />
+                            <ArrowRightStartOnRectangleIcon className="w-5 h-5 text-dark-text-muted group-hover:text-red-400 transition-colors" />
                             로그아웃
                         </button>
 
