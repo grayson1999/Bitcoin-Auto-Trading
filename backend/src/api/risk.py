@@ -139,6 +139,10 @@ async def get_risk_status(
         signal_take_profit_pct=settings.signal_take_profit_pct * 100,
         signal_trailing_stop_pct=settings.signal_trailing_stop_pct * 100,
         signal_breakeven_pct=settings.signal_breakeven_pct * 100,
+        # 하이브리드 전략 설정값
+        volatility_k_value=settings.volatility_k_value,
+        hybrid_mode_enabled=settings.hybrid_mode_enabled,
+        breakout_min_strength=settings.breakout_min_strength,
     )
 
 

@@ -91,6 +91,9 @@ class RiskStatusResponse(BaseModel):
         signal_take_profit_pct: AI 신호 익절 비율 (%)
         signal_trailing_stop_pct: AI 신호 트레일링 스탑 비율 (%)
         signal_breakeven_pct: AI 신호 본전 청산 비율 (%)
+        volatility_k_value: 변동성 돌파 K 계수 (0.1-1.0)
+        hybrid_mode_enabled: 하이브리드 모드 활성화 여부
+        breakout_min_strength: 최소 돌파 강도 (%)
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -112,6 +115,10 @@ class RiskStatusResponse(BaseModel):
         description="AI 신호 트레일링 스탑 비율 (%)"
     )
     signal_breakeven_pct: float = Field(description="AI 신호 본전 청산 비율 (%)")
+    # 하이브리드 전략 설정값
+    volatility_k_value: float = Field(description="변동성 돌파 K 계수 (0.1-1.0)")
+    hybrid_mode_enabled: bool = Field(description="하이브리드 모드 활성화 여부")
+    breakout_min_strength: float = Field(description="최소 돌파 강도 (%)")
 
 
 class HaltTradingRequest(BaseModel):

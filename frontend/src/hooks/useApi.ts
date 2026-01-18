@@ -133,6 +133,10 @@ export interface RiskStatus {
   signal_take_profit_pct: number;
   signal_trailing_stop_pct: number;
   signal_breakeven_pct: number;
+  // 하이브리드 전략 설정값
+  volatility_k_value: number;
+  hybrid_mode_enabled: boolean;
+  breakout_min_strength: number;
 }
 
 /** 백테스트 결과 */
