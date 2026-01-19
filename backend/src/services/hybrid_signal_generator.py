@@ -30,6 +30,9 @@ from src.services.volatility_breakout import (
     get_volatility_breakout_strategy,
 )
 
+# === 상수 ===
+MIN_CONFIDENCE_BUY = 0.5  # BUY 신호 최소 신뢰도
+
 
 @dataclass
 class HybridSignalResult:
@@ -154,7 +157,12 @@ class HybridSignalGenerator:
             original_signal = ai_signal.signal_type
             ai_signal.signal_type = final_signal
             ai_signal.reasoning = f"{ai_signal.reasoning} | [Hybrid] {reasoning}"
-            await self.db.commit()
+            try:
+                await self.db.commit()
+            except Exception as e:
+                await self.db.rollback()
+                logger.error(f"하이브리드 신호 커밋 실패: {e}")
+                raise
 
             logger.info(
                 f"하이브리드 신호 변경: {original_signal} -> {final_signal} | "
@@ -208,6 +216,13 @@ class HybridSignalGenerator:
 
         # BUY는 AI + 돌파 조건 모두 충족 필요
         if ai_type == SignalType.BUY.value:
+            # 신뢰도 검증 (낮은 신뢰도는 BUY 무시)
+            if ai_signal.confidence < MIN_CONFIDENCE_BUY:
+                return (
+                    SignalType.HOLD.value,
+                    f"AI BUY 신뢰도 부족 ({ai_signal.confidence:.2f} < {MIN_CONFIDENCE_BUY})",
+                )
+
             strength = breakout_result.breakout_strength
             min_str = self.min_breakout_strength
             cur_price = breakout_result.current_price

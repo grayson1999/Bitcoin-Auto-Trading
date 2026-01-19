@@ -228,6 +228,7 @@ async def generate_trading_signal_job() -> None:
             await session.commit()
 
         except SignalGeneratorError as e:
+            await session.rollback()
             logger.warning(f"하이브리드 신호 생성 실패: {e}")
 
         except Exception as e:

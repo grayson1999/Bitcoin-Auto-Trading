@@ -586,7 +586,7 @@ class SignalGenerator:
 
         try:
             data = json.loads(json_str)
-            signal = data.get("signal", "HOLD").upper()
+            signal = data.get("signal", "HOLD").upper().strip()
             confidence = float(data.get("confidence", DEFAULT_CONFIDENCE))
             reasoning_raw = data.get("reasoning", "분석 근거 없음")
 
