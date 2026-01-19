@@ -301,9 +301,10 @@ class MultiTimeframeAnalyzer:
         analyses: dict[str, TimeframeAnalysis],
     ) -> tuple[float, str]:
         """
-        타임프레임 합류 점수 계산
+        타임프레임 합류 점수 계산 (개선 버전)
 
         모든 타임프레임의 추세가 일치할수록 높은 점수를 부여합니다.
+        sideways도 "일관된 방향성"으로 간주하여 점수에 반영합니다.
 
         Args:
             analyses: 타임프레임별 분석 결과
@@ -314,8 +315,9 @@ class MultiTimeframeAnalyzer:
         if not analyses:
             return 0.5, "neutral"
 
-        bullish_count = 0
-        bearish_count = 0
+        bullish_count = 0.0
+        bearish_count = 0.0
+        sideways_count = 0.0  # 횡보 추세 카운트 추가
         total_strength = 0.0
 
         # 타임프레임 가중치 (장기가 더 중요)
@@ -329,12 +331,14 @@ class MultiTimeframeAnalyzer:
                 bullish_count += weight
             elif analysis.trend == "bearish":
                 bearish_count += weight
+            else:  # sideways
+                sideways_count += weight  # 횡보도 카운트에 포함
 
         total_weight = sum(weights.get(tf, 1.0) for tf in analyses.keys())
 
-        # 합류 점수 (일치도)
+        # 합류 점수 (일치도) - sideways도 "일관된 방향성"으로 간주
         if total_weight > 0:
-            dominant = max(bullish_count, bearish_count)
+            dominant = max(bullish_count, bearish_count, sideways_count)
             confluence = dominant / total_weight
         else:
             confluence = 0.5
@@ -351,6 +355,9 @@ class MultiTimeframeAnalyzer:
             overall_bias = "strong_sell"
         elif net_bias < -1.5:
             overall_bias = "sell"
+        elif sideways_count >= total_weight * 0.7:
+            # 70% 이상 sideways면 횡보장으로 판단
+            overall_bias = "sideways"
         else:
             overall_bias = "neutral"
 

@@ -23,7 +23,6 @@ import Login from "./pages/Login";
 import Orders from "./pages/Orders";
 import Settings from "./pages/Settings";
 import Signals from "./pages/Signals";
-
 // === React Query 설정 상수 ===
 const QUERY_STALE_TIME_MS = 5000; // 데이터 신선도 유지 시간 (5초)
 const QUERY_RETRY_COUNT = 2; // 요청 실패 시 재시도 횟수

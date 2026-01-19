@@ -670,6 +670,12 @@ class OrderExecutor:
         """Upbit 응답으로 주문 상태 업데이트"""
         # 체결 상태 확인
         if upbit_response.state == "done":
+            # 시장가 매수는 첫 응답에 executed_volume이 없을 수 있음 → 폴링 필요
+            if upbit_response.executed_volume is None:
+                order.status = OrderStatus.PENDING.value
+                logger.info(f"[주문 체결 대기] order_id={order.id}, 체결 정보 폴링 필요")
+                return
+
             order.mark_executed(
                 executed_price=upbit_response.price or Decimal("0"),
                 executed_amount=upbit_response.executed_volume,
@@ -715,6 +721,11 @@ class OrderExecutor:
                 )
 
                 if upbit_response.state == "done":
+                    # 체결 정보가 없으면 계속 폴링
+                    if upbit_response.executed_volume is None:
+                        logger.debug(f"[주문 상태] done이지만 체결 정보 없음, 계속 폴링")
+                        continue
+
                     # 체결 완료
                     order.mark_executed(
                         executed_price=upbit_response.price or Decimal("0"),

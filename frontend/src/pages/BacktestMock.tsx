@@ -1,27 +1,140 @@
-/**
- * 백테스트 페이지 컴포넌트 (T093, T094)
- *
- * 과거 데이터로 AI 전략을 시뮬레이션하여 성과를 분석합니다.
- * - 백테스트 실행 폼
- * - 진행 표시기
- * - 결과 목록 및 상세 보기
- */
 
 import { useState, type FC } from "react";
-import {
-  useBacktestResults,
-  useBacktestResult,
-  useRunBacktest,
-  type BacktestResult,
-  type TradeRecord,
-} from "../hooks/useApi";
+
+// === Mock Data Types ===
+interface BacktestResult {
+  id: number;
+  name: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+  start_date: string;
+  end_date: string;
+  initial_capital: string;
+  final_capital: string | null;
+  total_return_pct: string | null;
+  max_drawdown_pct: string | null;
+  win_rate_pct: string | null;
+  total_trades: number | null;
+  profit_factor: string | null;
+  sharpe_ratio: string | null;
+  winning_trades: number | null;
+  losing_trades: number | null;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+  trade_history?: any[];
+}
+
+const MOCK_RESULTS: BacktestResult[] = [
+  {
+    id: 1,
+    name: "Golden Channel Strategy (Optimized)",
+    status: "COMPLETED",
+    start_date: "2023-01-01T00:00:00Z",
+    end_date: "2023-06-30T23:59:59Z",
+    initial_capital: "10000000",
+    final_capital: "12543000",
+    total_return_pct: "25.43",
+    max_drawdown_pct: "5.21",
+    win_rate_pct: "65.4",
+    total_trades: 42,
+    profit_factor: "2.1",
+    sharpe_ratio: "1.8",
+    winning_trades: 27,
+    losing_trades: 15,
+    error_message: null,
+    created_at: "2023-07-01T10:00:00Z",
+    completed_at: "2023-07-01T10:05:00Z",
+    trade_history: [],
+  },
+  {
+    id: 2,
+    name: "RSI Reversal Short-term",
+    status: "COMPLETED",
+    start_date: "2023-06-01T00:00:00Z",
+    end_date: "2023-06-30T23:59:59Z",
+    initial_capital: "5000000",
+    final_capital: "4850000",
+    total_return_pct: "-3.00",
+    max_drawdown_pct: "8.50",
+    win_rate_pct: "40.0",
+    total_trades: 15,
+    profit_factor: "0.85",
+    sharpe_ratio: "-0.5",
+    winning_trades: 6,
+    losing_trades: 9,
+    error_message: null,
+    created_at: "2023-07-01T11:00:00Z",
+    completed_at: "2023-07-01T11:02:00Z",
+    trade_history: [],
+  },
+  {
+    id: 3,
+    name: "Trend Follow V2",
+    status: "RUNNING",
+    start_date: "2023-01-01T00:00:00Z",
+    end_date: "2023-12-31T23:59:59Z",
+    initial_capital: "20000000",
+    final_capital: null,
+    total_return_pct: null,
+    max_drawdown_pct: null,
+    win_rate_pct: null,
+    total_trades: null,
+    profit_factor: null,
+    sharpe_ratio: null,
+    winning_trades: null,
+    losing_trades: null,
+    error_message: null,
+    created_at: "2023-07-01T12:00:00Z",
+    completed_at: null,
+    trade_history: [],
+  },
+  {
+    id: 4,
+    name: "High Volatility Breakout",
+    status: "FAILED",
+    start_date: "2023-05-01T00:00:00Z",
+    end_date: "2023-05-31T23:59:59Z",
+    initial_capital: "1000000",
+    final_capital: null,
+    total_return_pct: null,
+    max_drawdown_pct: null,
+    win_rate_pct: null,
+    total_trades: null,
+    profit_factor: null,
+    sharpe_ratio: null,
+    winning_trades: null,
+    losing_trades: null,
+    error_message: "Insufficient data for the requested period.",
+    created_at: "2023-07-01T13:00:00Z",
+    completed_at: "2023-07-01T13:00:05Z",
+    trade_history: [],
+  },
+  {
+    id: 5,
+    name: "A very very long name Strategy used to test layout issues when the name is extremely long and wraps multiple lines",
+    status: "COMPLETED",
+    start_date: "2023-01-01T00:00:00Z",
+    end_date: "2023-06-30T23:59:59Z",
+    initial_capital: "10000000",
+    final_capital: "12543000",
+    total_return_pct: "12345.67",
+    max_drawdown_pct: "5.21",
+    win_rate_pct: "65.4",
+    total_trades: 9999,
+    profit_factor: "2.1",
+    sharpe_ratio: "1.8",
+    winning_trades: 27,
+    losing_trades: 15,
+    error_message: null,
+    created_at: "2023-07-01T10:00:00Z",
+    completed_at: "2023-07-01T10:05:00Z",
+    trade_history: [],
+  },
+];
 
 // === 상수 ===
-const DEFAULT_INITIAL_CAPITAL = 1000000; // 기본 초기 자본금 (100만원)
+const DEFAULT_INITIAL_CAPITAL = 1000000;
 
-/**
- * 금액 포맷
- */
 function formatKRW(amount: string | number): string {
   const num = typeof amount === "string" ? Number(amount) : amount;
   return new Intl.NumberFormat("ko-KR", {
@@ -31,18 +144,12 @@ function formatKRW(amount: string | number): string {
   }).format(num);
 }
 
-/**
- * 퍼센트 포맷
- */
 function formatPercent(value: string | number | null, decimals = 2): string {
   if (value === null) return "-";
   const num = typeof value === "string" ? Number(value) : value;
   return `${num >= 0 ? "+" : ""}${num.toFixed(decimals)}%`;
 }
 
-/**
- * 날짜 포맷
- */
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("ko-KR", {
     year: "numeric",
@@ -51,9 +158,6 @@ function formatDate(dateStr: string): string {
   });
 }
 
-/**
- * 날짜/시간 포맷
- */
 function formatDateTime(dateStr: string): string {
   return new Date(dateStr).toLocaleString("ko-KR", {
     year: "numeric",
@@ -64,9 +168,6 @@ function formatDateTime(dateStr: string): string {
   });
 }
 
-/**
- * 상태 배지 컴포넌트
- */
 const StatusBadge: FC<{ status: BacktestResult["status"] }> = ({ status }) => {
   const statusConfig = {
     PENDING: { color: "bg-yellow-500/10 text-yellow-400 ring-yellow-500/20", text: "대기중" },
@@ -87,9 +188,6 @@ const StatusBadge: FC<{ status: BacktestResult["status"] }> = ({ status }) => {
   );
 };
 
-/**
- * 백테스트 결과 카드 컴포넌트
- */
 const ResultCard: FC<{
   result: BacktestResult;
   onSelect: () => void;
@@ -103,43 +201,39 @@ const ResultCard: FC<{
           : "bg-white/5 border border-white/10 hover:bg-white/10"
         }`}
     >
-      <div className="flex items-start justify-between mb-3 gap-2">
-        <div className="min-w-0 flex-1">
-          <h4 className="font-medium text-white truncate text-sm sm:text-base" title={result.name}>
-            {result.name}
-          </h4>
-          <p className="text-xs text-dark-text-muted mt-1 truncate">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h4 className="font-medium text-white">{result.name}</h4>
+          <p className="text-xs text-dark-text-muted mt-1">
             {formatDate(result.start_date)} ~ {formatDate(result.end_date)}
           </p>
         </div>
-        <div className="flex-shrink-0">
-          <StatusBadge status={result.status} />
-        </div>
+        <StatusBadge status={result.status} />
       </div>
 
       {result.status === "COMPLETED" && (
-        <div className="grid grid-cols-2 gap-x-2 gap-y-3 mt-3">
+        <div className="grid grid-cols-2 gap-3 mt-3">
           <div>
-            <p className="text-[10px] text-dark-text-muted">수익률</p>
+            <p className="text-xs text-dark-text-muted">수익률</p>
             <p className={`text-sm font-bold courier ${Number(result.total_return_pct) >= 0 ? "text-emerald-400" : "text-rose-400"
               }`}>
               {formatPercent(result.total_return_pct)}
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-dark-text-muted">MDD</p>
+            <p className="text-xs text-dark-text-muted">MDD</p>
             <p className="text-sm font-bold courier text-rose-400">
               -{Number(result.max_drawdown_pct || 0).toFixed(2)}%
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-dark-text-muted">승률</p>
+            <p className="text-xs text-dark-text-muted">승률</p>
             <p className="text-sm font-bold courier text-white">
               {Number(result.win_rate_pct || 0).toFixed(1)}%
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-dark-text-muted">거래</p>
+            <p className="text-xs text-dark-text-muted">거래 횟수</p>
             <p className="text-sm font-bold courier text-white">
               {result.total_trades || 0}회
             </p>
@@ -156,9 +250,6 @@ const ResultCard: FC<{
   );
 };
 
-/**
- * 백테스트 실행 폼 컴포넌트
- */
 const BacktestForm: FC<{
   onSubmit: (data: { name: string; start_date: string; end_date: string; initial_capital: number }) => void;
   isLoading: boolean;
@@ -260,16 +351,13 @@ const BacktestForm: FC<{
   );
 };
 
-/**
- * 백테스트 결과 상세 컴포넌트
- */
 const ResultDetail: FC<{ resultId: number }> = ({ resultId }) => {
-  const { data: result, isLoading } = useBacktestResult(resultId);
+  const result = MOCK_RESULTS.find(r => r.id === resultId);
 
-  if (isLoading || !result) {
+  if (!result) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+        <p>결과를 찾을 수 없습니다.</p>
       </div>
     );
   }
@@ -347,68 +435,9 @@ const ResultDetail: FC<{ resultId: number }> = ({ resultId }) => {
             </div>
           </div>
 
-          {/* 거래 내역 */}
-          {result.trade_history && result.trade_history.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-dark-text-secondary mb-3">
-                거래 내역 ({result.trade_history.length}건)
-              </h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-dark-text-muted border-b border-white/10">
-                      <th className="pb-2 font-medium">시간</th>
-                      <th className="pb-2 font-medium">타입</th>
-                      <th className="pb-2 font-medium text-right">가격</th>
-                      <th className="pb-2 font-medium text-right">수량</th>
-                      <th className="pb-2 font-medium text-right">손익</th>
-                      <th className="pb-2 font-medium text-right">잔고</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.trade_history.slice(0, 20).map((trade: TradeRecord, index: number) => (
-                      <tr key={index} className="border-b border-white/5">
-                        <td className="py-2 text-dark-text-secondary">
-                          {formatDateTime(trade.timestamp)}
-                        </td>
-                        <td className="py-2">
-                          <span className={`font-medium ${trade.signal_type === "BUY" ? "text-emerald-400" : "text-rose-400"
-                            }`}>
-                            {trade.signal_type === "BUY" ? "매수" : "매도"}
-                          </span>
-                        </td>
-                        <td className="py-2 text-right text-white courier">
-                          {formatKRW(trade.price)}
-                        </td>
-                        <td className="py-2 text-right text-white courier">
-                          {trade.quantity.toFixed(4)}
-                        </td>
-                        <td className={`py-2 text-right courier ${trade.pnl >= 0 ? "text-emerald-400" : "text-rose-400"
-                          }`}>
-                          {trade.signal_type === "SELL" ? (
-                            <>
-                              {formatKRW(trade.pnl)}
-                              <span className="text-xs ml-1">
-                                ({formatPercent(trade.pnl_pct)})
-                              </span>
-                            </>
-                          ) : "-"}
-                        </td>
-                        <td className="py-2 text-right text-white courier">
-                          {formatKRW(trade.balance_after)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {result.trade_history.length > 20 && (
-                  <p className="text-center text-dark-text-muted text-xs mt-2">
-                    ... 외 {result.trade_history.length - 20}건 더 있음
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+          <div className="text-center py-8 text-dark-text-muted">
+            (거래 내역 생략)
+          </div>
         </>
       )}
 
@@ -430,54 +459,18 @@ const ResultDetail: FC<{ resultId: number }> = ({ resultId }) => {
   );
 };
 
-/**
- * Backtest 페이지 컴포넌트
- */
-const Backtest: FC = () => {
+const BacktestMock: FC = () => {
   const [selectedResultId, setSelectedResultId] = useState<number | null>(null);
-  const { data: results, isLoading, error } = useBacktestResults(20);
-  const runBacktest = useRunBacktest();
 
-  const handleRunBacktest = async (data: {
-    name: string;
-    start_date: string;
-    end_date: string;
-    initial_capital: number;
-  }) => {
-    try {
-      const response = await runBacktest.mutateAsync(data);
-      setSelectedResultId(response.result.id);
-    } catch (err) {
-      console.error("백테스트 실행 실패:", err);
-    }
+  const handleRunBacktest = async (data: any) => {
+    alert("This is a mock version. Backtest would start: " + JSON.stringify(data));
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-          <p className="mt-3 text-gray-500">데이터 로딩 중...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-lg bg-red-50 p-6 text-center">
-        <p className="text-red-600">
-          데이터를 불러올 수 없습니다. 백엔드 서버를 확인하세요.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
       {/* 페이지 헤더 */}
       <div>
-        <h2 className="text-2xl font-bold text-white text-glow">백테스트</h2>
+        <h2 className="text-2xl font-bold text-white text-glow">백테스트 (MOCK)</h2>
         <p className="text-dark-text-secondary mt-1">
           과거 데이터로 AI 전략을 시뮬레이션하여 성과를 분석합니다.
         </p>
@@ -487,69 +480,43 @@ const Backtest: FC = () => {
         {/* 왼쪽: 실행 폼 + 결과 목록 */}
         <div className="space-y-6">
           {/* 백테스트 실행 폼 */}
-          <div className="rounded-2xl glass-panel p-6">
+          <div className="rounded-2xl glass-panel p-6 bg-gray-900 border border-gray-800">
             <h3 className="text-lg font-bold text-white mb-4">새 백테스트</h3>
             <BacktestForm
               onSubmit={handleRunBacktest}
-              isLoading={runBacktest.isPending}
+              isLoading={false}
             />
-            {runBacktest.error && (
-              <p className="mt-3 text-sm text-rose-400">
-                오류: {runBacktest.error.message}
-              </p>
-            )}
           </div>
 
           {/* 결과 목록 */}
-          <div className="rounded-2xl glass-panel p-6">
+          <div className="rounded-2xl glass-panel p-6 bg-gray-900 border border-gray-800">
             <h3 className="text-lg font-bold text-white mb-4">
               이전 결과
-              {results && results.total > 0 && (
-                <span className="ml-2 text-sm font-normal text-dark-text-muted">
-                  ({results.total}건)
-                </span>
-              )}
+              <span className="ml-2 text-sm font-normal text-dark-text-muted">
+                ({MOCK_RESULTS.length}건)
+              </span>
             </h3>
-            {results && results.items.length > 0 ? (
-              <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                {results.items.map((result) => (
-                  <ResultCard
-                    key={result.id}
-                    result={result}
-                    onSelect={() => setSelectedResultId(result.id)}
-                    isSelected={selectedResultId === result.id}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-center py-8 text-dark-text-muted">
-                아직 백테스트 결과가 없습니다
-              </p>
-            )}
+            <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
+              {MOCK_RESULTS.map((result) => (
+                <ResultCard
+                  key={result.id}
+                  result={result as any}
+                  onSelect={() => setSelectedResultId(result.id)}
+                  isSelected={selectedResultId === result.id}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
         {/* 오른쪽: 결과 상세 */}
         <div className="lg:col-span-2">
-          <div className="rounded-2xl glass-panel p-6 min-h-[400px]">
+          <div className="rounded-2xl glass-panel p-6 min-h-[400px] bg-gray-900 border border-gray-800">
             {selectedResultId ? (
               <ResultDetail resultId={selectedResultId} />
             ) : (
               <div className="flex items-center justify-center h-64 text-dark-text-muted">
                 <div className="text-center">
-                  <svg
-                    className="mx-auto h-12 w-12 text-dark-text-muted mb-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
                   <p>백테스트를 실행하거나 결과를 선택하세요</p>
                 </div>
               </div>
@@ -561,4 +528,4 @@ const Backtest: FC = () => {
   );
 };
 
-export default Backtest;
+export default BacktestMock;

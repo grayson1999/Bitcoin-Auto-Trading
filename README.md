@@ -13,6 +13,22 @@
 
 ## 서버 관리
 
+### 전체 서비스 관리 (Backend + Auth Server)
+
+```bash
+# 두 서비스 함께 재시작 (권장)
+sudo systemctl restart trading-stack.target
+
+# 두 서비스 함께 시작
+sudo systemctl start trading-stack.target
+
+# 두 서비스 함께 중지
+sudo systemctl stop trading-stack.target
+
+# 두 서비스 상태 확인
+sudo systemctl status auth-server bitcoin-trading-backend
+```
+
 ### Backend 서비스 관리
 
 ```bash
@@ -224,10 +240,10 @@ npm run build
 curl http://localhost:9000/api/v1/health
 
 # Auth Server가 실행 중이지 않다면 시작
-cd /home/ubuntu/auth-server
-make dev
-# 또는
-uvicorn src.main:app --host 0.0.0.0 --port 9000 --reload
+sudo systemctl start auth-server
+
+# 또는 두 서비스 함께 재시작
+sudo systemctl restart trading-stack.target
 ```
 
 ### 로그인 실패

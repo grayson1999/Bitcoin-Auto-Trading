@@ -51,8 +51,8 @@ PROMPT_CONFIGS: dict[CoinType, PromptConfig] = {
         take_profit_pct=0.025,  # 2.5%
         trailing_stop_pct=0.02,  # 2%
         breakeven_pct=0.01,  # 1%
-        min_confidence_buy=0.65,
-        min_confluence_buy=0.60,
+        min_confidence_buy=0.60,  # 0.65 -> 0.60 (소폭 완화)
+        min_confluence_buy=0.45,  # 0.60 -> 0.45 (횡보장 대응)
         rsi_overbought=70,
         rsi_oversold=30,
         volatility_tolerance="low",
@@ -103,8 +103,28 @@ MAJOR_COIN_SYSTEM_INSTRUCTION = """당신은 {currency} 트레이딩 전문가 A
 ### 메이저 코인 특성 반영
 - **낮은 변동성** 대응: 타이트한 손익 구간 운용
 - **기술적 지표 중시**: RSI, MACD, 볼린저밴드 신호 우선
-- **보수적 진입**: Confluence >= {min_confluence} 필수
+- **유연한 진입**: 추세 추종 + 과매도 반등 + 횡보장 저점 전략 병행
 - **추세 추종**: 단기 노이즈보다 중장기 추세 우선
+
+### 과매도 반등 전략 (Oversold Bounce)
+
+**조건 (모두 충족 시 BUY, 신뢰도 0.60-0.75)**:
+1. RSI(14) <= 35 (과매도 접근)
+2. 볼린저밴드 위치(BB%) <= 25% (하단 접근)
+3. MACD 히스토그램 상승 반전 OR 하락 속도 둔화
+4. 포지션 없음 또는 소량 보유
+
+**주의**: 분할 매수 권장 (한 번에 전량 매수 금지)
+
+### 횡보장 저점 매수 (Range Bottom)
+
+**조건 (모두 충족 시 BUY 소량, 신뢰도 0.55-0.65)**:
+1. 모든 타임프레임이 sideways 추세
+2. RSI(14) < 40
+3. 볼린저밴드 위치 < 30%
+4. Confluence >= 0.35
+
+**주의**: 최대 50% 자본만 사용, 추가 하락 대비
 
 ### 포지션 상태별 의사결정
 
@@ -112,7 +132,9 @@ MAJOR_COIN_SYSTEM_INSTRUCTION = """당신은 {currency} 트레이딩 전문가 A
 | 조건 | 신호 | 신뢰도 |
 |------|------|--------|
 | Confluence >= {min_confluence} AND RSI < {rsi_overbought} AND 2개+ TF 상승 | BUY | 0.7-0.85 |
-| Confluence >= 0.55 AND RSI < 50 | BUY (소량) | 0.55-0.7 |
+| [과매도 반등] RSI <= 35 AND BB% <= 25% AND MACD 하락 둔화 | BUY | 0.60-0.75 |
+| [횡보장 저점] 모든 TF sideways AND RSI < 40 AND BB% < 30% | BUY (소량) | 0.55-0.65 |
+| Confluence >= 0.50 AND RSI < 50 | BUY (소량) | 0.55-0.7 |
 | 그 외 | HOLD | 0.4-0.6 |
 
 #### {currency} 보유 중 - 수익 상태 (현재가 > 평균매수가)
@@ -139,15 +161,23 @@ MAJOR_COIN_SYSTEM_INSTRUCTION = """당신은 {currency} 트레이딩 전문가 A
 - 모든 타임프레임(1H, 4H, 1D) 하락 추세
 - RSI >= {rsi_overbought} AND 미실현 이익 > {breakeven_display}%
 
-**BUY 조건 (AND 연산)**
-- Confluence >= {min_confluence}
+**BUY 조건 (OR 연산 - 하나 이상 충족 시)**
+
+1. **추세 추종**: Confluence >= {min_confluence} AND RSI < {rsi_overbought_minus_5} AND 2개+ TF 상승
+2. **과매도 반등**: RSI <= 35 AND BB% <= 25% AND MACD 히스토그램 상승 반전 또는 하락 둔화
+3. **횡보장 저점**: 모든 TF sideways AND RSI < 40 AND BB% < 30% AND Confluence >= 0.35
+
+**공통 조건**:
 - 미실현 손실 < {warning_threshold}% 또는 포지션 없음
-- RSI < {rsi_overbought_minus_5}
-- 최소 2개 타임프레임 상승 추세
+- KRW 가용 잔고 × 포지션 비율 >= 5,000원 (최소 주문 금액)
+- **잔고 부족 시 BUY 대신 HOLD 출력** (reasoning에 "잔고 부족" 명시)
 
 **HOLD 조건**
-- 위 조건 모두 미충족
-- Confluence 0.45 ~ 0.55
+- SELL/BUY 조건 모두 미충족
+- Confluence 0.35 ~ 0.50
+- RSI 40 ~ 60 (중립 구간)
+
+**주의**: 과매도(RSI < 35) 상태에서는 HOLD 보다 소량 BUY 우선 고려
 
 ### 손절/익절가 계산 ({currency} 기준)
 
@@ -430,12 +460,15 @@ ANALYSIS_PROMPT_TEMPLATE = """## {currency}/KRW 매매 신호 분석
 - [ ] 미실현 이익 >= {take_profit_display}% AND 하락 신호? -> SELL
 - [ ] 미실현 이익 >= {trailing_stop_display}% AND Confluence <= 0.45? -> SELL
 
-**Step 3: 매수 체크**
-- [ ] 포지션 없음 AND Confluence >= {min_confluence} AND RSI < {rsi_overbought}? -> BUY
+**Step 3: 매수 체크 (순서대로 확인)**
+- [ ] [추세 추종] Confluence >= {min_confluence} AND RSI < {rsi_overbought} AND 2개+ TF 상승? -> BUY
+- [ ] [과매도 반등] RSI <= 35 AND BB% <= 25% AND MACD 반전 조짐? -> BUY (신뢰도 0.60-0.75)
+- [ ] [횡보장 저점] 모든 TF sideways AND RSI < 40 AND BB% < 30%? -> BUY (소량, 신뢰도 0.55-0.65)
 - [ ] 손실 < {noise_threshold}% AND 상승 신호 AND 잔고 충분? -> BUY (물타기)
 
 **Step 4: 홀드**
 - [ ] 위 조건 모두 미충족? -> HOLD
+- [ ] 단, RSI < 35 과매도 시 HOLD 대신 소량 BUY 고려
 
 ### 8. 최종 분석 요청
 

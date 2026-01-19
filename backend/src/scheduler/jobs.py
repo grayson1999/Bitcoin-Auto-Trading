@@ -20,7 +20,11 @@ from src.database import async_session_factory
 from src.models import SignalType
 from src.services.data_collector import get_data_collector
 from src.services.hybrid_signal_generator import get_hybrid_signal_generator
-from src.services.order_executor import OrderExecutorError, get_order_executor
+from src.services.order_executor import (
+    OrderBlockedReason,
+    OrderExecutorError,
+    get_order_executor,
+)
 from src.services.risk_manager import RiskCheckResult, get_risk_manager
 from src.services.signal_generator import SignalGeneratorError
 from src.services.signal_performance_tracker import SignalPerformanceTracker
@@ -155,6 +159,12 @@ async def generate_trading_signal_job() -> None:
     """
     async with async_session_factory() as session:
         try:
+            # 신호 생성 전 Upbit 잔고와 포지션 동기화
+            executor = await get_order_executor(session)
+            await executor.sync_position_from_upbit()
+            await session.commit()
+            logger.debug("신호 생성 전 포지션 동기화 완료")
+
             generator = get_hybrid_signal_generator(session)
 
             # 스케줄러에서 호출 시 쿨다운 무시 (force=True)
@@ -242,6 +252,15 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
                     f"자동 매매 실패: {order_result.message}, "
                     f"reason={order_result.blocked_reason}"
                 )
+
+                # 잔고 부족으로 주문 실패 시 신호를 HOLD로 변환
+                if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
+                    signal.signal_type = SignalType.HOLD.value
+                    signal.analysis_summary = (
+                        signal.analysis_summary or ""
+                    ) + " [잔고 부족으로 HOLD 처리]"
+                    await session.commit()
+                    logger.info(f"잔고 부족 - 신호 {signal_id}를 HOLD로 변환")
 
         except OrderExecutorError as e:
             logger.error(f"자동 매매 오류: {e.message}")

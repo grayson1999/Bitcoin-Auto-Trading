@@ -149,10 +149,10 @@ class UpbitOrderResponse(BaseModel):
     price: Decimal | None
     state: str
     market: str
-    volume: Decimal
-    remaining_volume: Decimal
-    executed_volume: Decimal
-    trades_count: int
+    volume: Decimal | None = None  # 시장가 매수는 volume 없음
+    remaining_volume: Decimal | None = None
+    executed_volume: Decimal | None = None
+    trades_count: int = 0
 
 
 class UpbitError(Exception):
@@ -364,10 +364,10 @@ class UpbitClient:
             price=_to_decimal(response.get("price")),
             state=response["state"],
             market=response["market"],
-            volume=_to_decimal(response["volume"]),
-            remaining_volume=_to_decimal(response["remaining_volume"]),
-            executed_volume=_to_decimal(response["executed_volume"]),
-            trades_count=response["trades_count"],
+            volume=_to_decimal(response.get("volume")),
+            remaining_volume=_to_decimal(response.get("remaining_volume")),
+            executed_volume=_to_decimal(response.get("executed_volume")),
+            trades_count=response.get("trades_count", 0),
         )
 
     # ==================== 공개 API ====================

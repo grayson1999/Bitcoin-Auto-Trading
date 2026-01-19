@@ -37,7 +37,7 @@ class Settings(BaseSettings):
         upbit_secret_key: Upbit API 비밀 키
         gemini_api_key: Google Gemini AI API 키
         slack_webhook_url: Slack 알림 웹훅 URL (선택사항)
-        position_size_pct: 주문당 자본 비율 (1-5%)
+        position_size_pct: 주문당 자본 비율 (1-100%)
         stop_loss_pct: 손절매 임계값 (3-10%)
         daily_loss_limit_pct: 일일 손실 한도 (3-10%)
         signal_interval_hours: AI 신호 생성 주기 (1-4시간)
@@ -79,8 +79,8 @@ class Settings(BaseSettings):
     position_size_pct: float = Field(
         default=2.0,
         ge=1.0,
-        le=5.0,
-        description="주문당 자본 비율 (1-5%)",
+        le=100.0,
+        description="주문당 자본 비율 (1-100%)",
     )
     stop_loss_pct: float = Field(
         default=5.0,
