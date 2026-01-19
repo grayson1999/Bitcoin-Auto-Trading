@@ -39,7 +39,6 @@ if TYPE_CHECKING:
     from src.services.notifier import Notifier
 
 # === 상수 ===
-# settings.trading_ticker은 settings.trading_ticker에서 동적으로 로드됨
 MAX_ORDER_RETRIES = 3  # 주문 재시도 횟수
 RETRY_DELAY_SECONDS = 1.0  # 재시도 대기 시간
 MIN_ORDER_AMOUNT_KRW = Decimal("5000")  # 최소 주문 금액 (원)
@@ -217,8 +216,6 @@ class OrderExecutor:
         logger.info("매수 주문 처리 시작")
 
         # 동적 포지션 사이징: AI 신뢰도에 따라 min~max 범위에서 계산
-        from src.config import settings
-
         min_pct = Decimal(str(settings.position_size_min_pct))
         max_pct = Decimal(str(settings.position_size_max_pct))
 
@@ -733,6 +730,33 @@ class OrderExecutor:
 
         return order
 
+    def _calculate_executed_price(self, order: Order, upbit_response) -> Decimal:
+        """
+        체결가 계산 헬퍼
+
+        시장가 매수는 avg_price 또는 executed_funds/executed_volume 사용,
+        그 외에는 price 사용.
+
+        Args:
+            order: 주문 객체
+            upbit_response: Upbit 주문 응답
+
+        Returns:
+            Decimal: 계산된 체결가
+        """
+        # 시장가 매수: avg_price 또는 executed_funds/executed_volume 사용
+        if order.is_buy and order.order_type == OrderType.MARKET.value:
+            if upbit_response.avg_price:
+                return upbit_response.avg_price
+            elif upbit_response.executed_funds and upbit_response.executed_volume:
+                return upbit_response.executed_funds / upbit_response.executed_volume
+            # fallback: price 필드 (정확하지 않을 수 있음)
+            logger.warning(
+                f"[체결가 계산] 시장가 매수이나 avg_price/executed_funds 없음, "
+                f"price 사용: order_id={order.id}"
+            )
+        return upbit_response.price or Decimal("0")
+
     async def _update_order_status(self, order: Order, upbit_response) -> None:
         """Upbit 응답으로 주문 상태 업데이트"""
         # 체결 상태 확인
@@ -743,7 +767,7 @@ class OrderExecutor:
                 logger.info(f"[주문 체결 대기] order_id={order.id}, 체결 정보 폴링 필요")
                 return
 
-            executed_price = upbit_response.price or Decimal("0")
+            executed_price = self._calculate_executed_price(order, upbit_response)
             executed_volume = upbit_response.executed_volume
             # 수수료 = 체결금액 * 수수료율 (KRW 기준)
             total_value = executed_volume * executed_price
@@ -799,8 +823,8 @@ class OrderExecutor:
                         logger.debug("[주문 상태] done이지만 체결 정보 없음, 계속 폴링")
                         continue
 
-                    # 체결 완료
-                    executed_price = upbit_response.price or Decimal("0")
+                    # 체결 완료 - _calculate_executed_price 사용
+                    executed_price = self._calculate_executed_price(order, upbit_response)
                     executed_volume = upbit_response.executed_volume
                     # 수수료 = 체결금액 * 수수료율 (KRW 기준)
                     total_value = executed_volume * executed_price
@@ -1007,9 +1031,19 @@ class OrderExecutor:
                 upbit_order = await self._upbit_client.get_order(order.upbit_uuid)
 
                 if upbit_order.state == "done":
-                    # 체결 완료
-                    executed_price = upbit_order.price or Decimal("0")
+                    # 체결 완료 - _calculate_executed_price 사용
                     executed_volume = upbit_order.executed_volume or Decimal("0")
+
+                    # 부분 취소 감지: 체결 수량 0이면 실질적 취소
+                    if executed_volume == Decimal("0"):
+                        order.mark_cancelled()
+                        logger.warning(
+                            f"PENDING 주문 부분 취소 감지 (체결 없이 done): order_id={order.id}"
+                        )
+                        synced_count += 1
+                        continue
+
+                    executed_price = self._calculate_executed_price(order, upbit_order)
                     total_value = executed_volume * executed_price
                     fee = total_value * UPBIT_FEE_RATE
 
@@ -1025,6 +1059,7 @@ class OrderExecutor:
 
                     logger.info(
                         f"PENDING 주문 체결 확인: order_id={order.id}, "
+                        f"executed_price={executed_price}, "
                         f"executed_amount={executed_volume}"
                     )
                     synced_count += 1

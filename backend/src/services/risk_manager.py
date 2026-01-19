@@ -134,22 +134,23 @@ class RiskManager:
         Returns:
             PositionCheckResult: 검증 결과
         """
-        position_size_pct = await self._get_config_value(
-            "position_size_pct", settings.position_size_pct
+        # 동적 포지션 사이징의 최대값을 리스크 한도로 사용
+        position_size_max_pct = await self._get_config_value(
+            "position_size_max_pct", settings.position_size_max_pct
         )
-        max_amount = total_balance * Decimal(str(position_size_pct)) / Decimal("100")
+        max_amount = total_balance * Decimal(str(position_size_max_pct)) / Decimal("100")
 
         if requested_amount > max_amount:
             message = (
                 f"포지션 크기 초과: 요청 {requested_amount:,.0f}원 > "
-                f"최대 {max_amount:,.0f}원 ({position_size_pct}%)"
+                f"최대 {max_amount:,.0f}원 ({position_size_max_pct}%)"
             )
             logger.warning(message)
 
             # 리스크 이벤트 기록
             await self._create_risk_event(
                 event_type=RiskEventType.POSITION_LIMIT,
-                trigger_value=Decimal(str(position_size_pct)),
+                trigger_value=Decimal(str(position_size_max_pct)),
                 action_taken=f"주문 거부: {requested_amount:,.0f}원 초과",
             )
 

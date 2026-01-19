@@ -156,14 +156,19 @@ async def generate_trading_signal_job() -> None:
         2. AI 신호 생성 + 변동성 돌파 계산
         3. 하이브리드 로직 적용
         4. 결과 DB 저장
-        5. 최종 신호가 BUY/SELL이면 자동 매매 실행
+        5. 최종 신호가 BUY/SELL이면 동일 세션 내에서 자동 매매 실행
+
+    Note:
+        세션 일관성을 위해 신호 생성과 주문 실행을 동일 세션에서 처리합니다.
+        이전 버전에서는 별도 세션으로 execute_trading_from_signal_job을 호출했으나,
+        레이스 컨디션 방지를 위해 동일 세션 내에서 직접 실행합니다.
     """
     async with async_session_factory() as session:
         try:
             # 신호 생성 전 Upbit 잔고와 포지션 동기화
             executor = await get_order_executor(session)
             await executor.sync_position_from_upbit()
-            await session.commit()
+            await session.flush()  # commit 대신 flush (트랜잭션 유지)
             logger.debug("신호 생성 전 포지션 동기화 완료")
 
             generator = get_hybrid_signal_generator(session)
@@ -186,9 +191,41 @@ async def generate_trading_signal_job() -> None:
                     f"(신뢰도: {conf}, 모델: {model})"
                 )
 
-            # T067: 최종 신호가 BUY 또는 SELL이면 자동 매매 실행
+            # T067: 최종 신호가 BUY 또는 SELL이면 동일 세션 내에서 자동 매매 실행
+            # (레이스 컨디션 방지를 위해 별도 세션이 아닌 동일 세션에서 처리)
             if result.final_signal in (SignalType.BUY.value, SignalType.SELL.value):
-                await execute_trading_from_signal_job(result.ai_signal.id)
+                signal = result.ai_signal
+                logger.info(
+                    f"자동 매매 실행 시작: signal_id={signal.id}, "
+                    f"type={signal.signal_type}, confidence={signal.confidence}"
+                )
+
+                order_result = await executor.execute_from_signal(signal)
+
+                if order_result.success:
+                    if order_result.order:
+                        logger.info(
+                            f"자동 매매 완료: order_id={order_result.order.id}, "
+                            f"status={order_result.order.status}, "
+                            f"message={order_result.message}"
+                        )
+                    else:
+                        logger.info(f"자동 매매 결과: {order_result.message}")
+                else:
+                    logger.warning(
+                        f"자동 매매 실패: {order_result.message}, "
+                        f"reason={order_result.blocked_reason}"
+                    )
+
+                    # 잔고 부족으로 주문 실패 시 신호에 실패 사유 기록 (HOLD 변환 대신)
+                    if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
+                        signal.analysis_summary = (
+                            signal.analysis_summary or ""
+                        ) + f" [주문 실패: {order_result.blocked_reason.value}]"
+                        logger.info(f"잔고 부족 - 신호 {signal.id}에 실패 사유 기록")
+
+            # 최종 커밋 (신호 생성 + 주문 실행 결과 모두 포함)
+            await session.commit()
 
         except SignalGeneratorError as e:
             logger.warning(f"하이브리드 신호 생성 실패: {e}")

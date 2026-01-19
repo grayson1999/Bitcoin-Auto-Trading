@@ -110,6 +110,16 @@ async def get_config(
         SystemConfigResponse: 현재 시스템 설정
     """
     # 각 설정값 조회
+    position_size_min_pct = float(
+        await _get_config_value(
+            session, "position_size_min_pct", DEFAULT_CONFIGS["position_size_min_pct"]
+        )
+    )
+    position_size_max_pct = float(
+        await _get_config_value(
+            session, "position_size_max_pct", DEFAULT_CONFIGS["position_size_max_pct"]
+        )
+    )
     position_size_pct = float(
         await _get_config_value(
             session, "position_size_pct", DEFAULT_CONFIGS["position_size_pct"]
@@ -149,6 +159,8 @@ async def get_config(
     trading_enabled = trading_enabled_raw.lower() == "true"
 
     return SystemConfigResponse(
+        position_size_min_pct=position_size_min_pct,
+        position_size_max_pct=position_size_max_pct,
         position_size_pct=position_size_pct,
         stop_loss_pct=stop_loss_pct,
         daily_loss_limit_pct=daily_loss_limit_pct,
@@ -202,6 +214,18 @@ async def update_config(
         )
 
     # 각 필드 업데이트
+    if request.position_size_min_pct is not None:
+        await _set_config_value(
+            session, "position_size_min_pct", str(request.position_size_min_pct)
+        )
+        logger.info(f"설정 변경: position_size_min_pct = {request.position_size_min_pct}")
+
+    if request.position_size_max_pct is not None:
+        await _set_config_value(
+            session, "position_size_max_pct", str(request.position_size_max_pct)
+        )
+        logger.info(f"설정 변경: position_size_max_pct = {request.position_size_max_pct}")
+
     if request.position_size_pct is not None:
         await _set_config_value(
             session, "position_size_pct", str(request.position_size_pct)

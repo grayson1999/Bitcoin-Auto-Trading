@@ -140,6 +140,8 @@ class UpbitOrderResponse(BaseModel):
         volume: 주문 수량
         remaining_volume: 미체결 수량
         executed_volume: 체결 수량
+        avg_price: 평균 체결 가격 (시장가 주문 시 실제 체결 단가)
+        executed_funds: 체결 금액 (시장가 매수 시 사용된 KRW)
         trades_count: 체결 건수
     """
 
@@ -152,6 +154,8 @@ class UpbitOrderResponse(BaseModel):
     volume: Decimal | None = None  # 시장가 매수는 volume 없음
     remaining_volume: Decimal | None = None
     executed_volume: Decimal | None = None
+    avg_price: Decimal | None = None  # 평균 체결 가격
+    executed_funds: Decimal | None = None  # 체결 금액 (KRW)
     trades_count: int = 0
 
 
@@ -367,6 +371,8 @@ class UpbitClient:
             volume=_to_decimal(response.get("volume")),
             remaining_volume=_to_decimal(response.get("remaining_volume")),
             executed_volume=_to_decimal(response.get("executed_volume")),
+            avg_price=_to_decimal(response.get("avg_price")),
+            executed_funds=_to_decimal(response.get("executed_funds")),
             trades_count=response.get("trades_count", 0),
         )
 
