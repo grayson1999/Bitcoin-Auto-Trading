@@ -12,7 +12,7 @@
 Upbit 거래소 API를 통해 자동으로 거래를 실행하는 시스템입니다.
 
 ### 주요 기능
-- **실시간 시세 수집**: Upbit API에서 1초 간격으로 비트코인 시세 수집
+- **실시간 시세 수집**: Upbit API에서 주기적으로 시세 수집 (`DATA_COLLECTION_INTERVAL_SECONDS`)
 - **AI 매매 신호**: Gemini 2.5 Pro 모델을 통한 매수/매도/홀드 신호 생성 (Fallback: GPT-4.1-mini)
 - **자동 거래 실행**: 신호에 따른 자동 주문 실행 (개발 예정)
 - **위험 관리**: 손절매, 일일 손실 한도 등 리스크 관리
@@ -172,7 +172,7 @@ make db-migrate      # Alembic 마이그레이션 적용
 │                        Bitcoin-Auto-Trading                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  ┌──────────┐    1초 간격    ┌───────────────┐                  │
+│  ┌──────────┐   주기적 수집  ┌───────────────┐                  │
 │  │ Upbit    │ ────────────▶ │ DataCollector │                  │
 │  │ API      │    시세 수집   │ (서비스)       │                  │
 │  └──────────┘               └───────┬───────┘                  │
@@ -193,7 +193,7 @@ make db-migrate      # Alembic 마이그레이션 적용
 ```
 
 ### 상세 흐름
-1. **시세 수집**: APScheduler가 1초마다 `DataCollector.collect()` 실행
+1. **시세 수집**: APScheduler가 주기적으로 `DataCollector.collect()` 실행
 2. **Upbit API 호출**: `UpbitClient.get_ticker("KRW-BTC")`로 현재가 조회
 3. **DB 저장**: `MarketData` 모델로 PostgreSQL에 저장
 4. **API 제공**: Dashboard API가 저장된 데이터 조회/집계
@@ -250,14 +250,20 @@ VITE_API_URL=http://localhost:8000
 
 | 파라미터 | 기본값 | 설명 |
 |----------|--------|------|
-| `POSITION_SIZE_PCT` | 2% | 주문당 자본 비율 |
+| `POSITION_SIZE_MIN_PCT` | 1% | 최소 포지션 크기 (신뢰도 0.5) |
+| `POSITION_SIZE_MAX_PCT` | 3% | 최대 포지션 크기 (신뢰도 0.9+) |
 | `STOP_LOSS_PCT` | 5% | 개별 손절 비율 |
 | `DAILY_LOSS_LIMIT_PCT` | 5% | 일일 손실 한도 |
 | `SIGNAL_INTERVAL_HOURS` | 1 | AI 신호 생성 주기 |
 | `AI_MODEL` | gemini-2.5-pro | Primary AI 모델 |
 | `AI_FALLBACK_MODEL` | gpt-4.1-mini | Fallback AI 모델 (Gemini 실패 시) |
-| `DATA_COLLECT_INTERVAL` | 1초 | 시세 수집 간격 |
-| `DATA_RETENTION_DAYS` | 7일 | 시세 데이터 보관 기간 |
+| `DATA_COLLECTION_INTERVAL_SECONDS` | 10초 | 시세 수집 간격 |
+| `DATA_RETENTION_DAYS` | 365일 | 시세 데이터 보관 기간 |
+
+### 신뢰도 기반 포지션 사이징
+AI 신호의 신뢰도에 따라 `POSITION_SIZE_MIN_PCT` ~ `POSITION_SIZE_MAX_PCT` 범위에서 포지션 크기가 자동 조절됩니다:
+- **신뢰도 0.5**: MIN_PCT (소량 매수)
+- **신뢰도 0.9+**: MAX_PCT (강한 확신)
 
 ---
 
@@ -305,7 +311,7 @@ VITE_API_URL=http://localhost:8000
 | `services/signal_generator.py` | AI 신호 생성기 - 프롬프트 생성, 응답 파싱, DB 저장 |
 | `api/dashboard.py` | 대시보드 엔드포인트 - 현재가, 히스토리, 요약 통계 |
 | `api/signals.py` | AI 신호 엔드포인트 - 신호 조회, 수동 생성 |
-| `scheduler/jobs.py` | APScheduler 작업 - 시세 수집 (1초), AI 신호 (1시간), 데이터 정리 (24시간) |
+| `scheduler/jobs.py` | APScheduler 작업 - 시세 수집, AI 신호 (`SIGNAL_INTERVAL_HOURS`), 데이터 정리 |
 
 ### 프론트엔드
 

@@ -177,22 +177,22 @@ class Settings(BaseSettings):
         description="본전 손절 활성화 수익률 (0.01 = 1%)",
     )
 
-    # === 변동성 돌파 전략 설정 ===
+    # === 변동성 돌파 전략 설정 (참고용, AI에 정보 제공) ===
     volatility_k_value: float = Field(
         default=0.6,
         ge=0.1,
         le=1.0,
-        description="변동성 돌파 K 계수 (0.1-1.0)",
+        description="변동성 돌파 K 계수 (0.1-1.0) - AI 참고용",
     )
     hybrid_mode_enabled: bool = Field(
-        default=True,
-        description="하이브리드 모드 활성화 (AI + 변동성 돌파)",
+        default=False,
+        description="[Deprecated] 하이브리드 모드 비활성화 - AI가 직접 판단",
     )
     breakout_min_strength: float = Field(
         default=0.1,
         ge=0.0,
         le=1.0,
-        description="최소 돌파 강도 (%) - 미달 시 HOLD",
+        description="[Deprecated] 최소 돌파 강도 - AI가 직접 판단",
     )
 
 

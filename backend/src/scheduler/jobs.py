@@ -2,10 +2,10 @@
 APScheduler 작업 정의 모듈
 
 이 모듈은 백그라운드에서 실행되는 예약 작업을 정의합니다.
-- 시장 데이터 수집 (1초 간격)
-- AI 신호 생성 (1시간 간격)
+- 시장 데이터 수집 (DATA_COLLECTION_INTERVAL_SECONDS)
+- AI 신호 생성 (SIGNAL_INTERVAL_HOURS)
 - 자동 매매 실행 (신호 생성 후)
-- 오래된 데이터 정리 (24시간 간격)
+- 오래된 데이터 정리 (DATA_CLEANUP_INTERVAL_HOURS)
 """
 
 from datetime import UTC, datetime
@@ -19,14 +19,13 @@ from src.config import settings
 from src.database import async_session_factory
 from src.models import SignalType
 from src.services.data_collector import get_data_collector
-from src.services.hybrid_signal_generator import get_hybrid_signal_generator
 from src.services.order_executor import (
     OrderBlockedReason,
     OrderExecutorError,
     get_order_executor,
 )
 from src.services.risk_manager import RiskCheckResult, get_risk_manager
-from src.services.signal_generator import SignalGeneratorError
+from src.services.signal_generator import SignalGeneratorError, get_signal_generator
 from src.services.signal_performance_tracker import SignalPerformanceTracker
 
 # 스케줄러 인스턴스 (비동기)
@@ -45,7 +44,7 @@ async def collect_market_data_job() -> None:
     """
     시장 데이터 수집 작업
 
-    1초마다 실행되어 Upbit에서 실시간 시세를 수집합니다.
+    DATA_COLLECTION_INTERVAL_SECONDS 간격으로 Upbit에서 시세를 수집합니다.
     네트워크 오류 시 자동 재시도를 수행합니다.
 
     처리 흐름:
@@ -141,27 +140,27 @@ async def check_volatility_job() -> None:
 
 async def generate_trading_signal_job() -> None:
     """
-    하이브리드 매매 신호 생성 작업 (AI + 변동성 돌파)
+    AI 매매 신호 생성 작업
 
-    설정된 주기(기본 1시간)마다 실행되어 AI 신호와 변동성 돌파
-    전략을 결합한 하이브리드 신호를 생성합니다.
+    설정된 주기(기본 1시간)마다 실행되어 AI 신호를 생성합니다.
+    AI가 모든 기술적 지표와 시장 상황을 종합 분석하여 판단합니다.
 
-    하이브리드 규칙:
-        - BUY: AI BUY AND 변동성 돌파 조건 충족
-        - SELL: AI SELL (리스크 관리 우선)
-        - HOLD: 그 외 모든 경우
+    AI 신호 규칙:
+        - BUY: AI가 매수 적합으로 판단 (신뢰도 기반 포지션 사이징)
+        - SELL: AI가 매도 적합으로 판단 (손절/익절 포함)
+        - HOLD: 관망 권장
 
     처리 흐름:
-        1. HybridSignalGenerator 인스턴스 생성
-        2. AI 신호 생성 + 변동성 돌파 계산
-        3. 하이브리드 로직 적용
-        4. 결과 DB 저장
-        5. 최종 신호가 BUY/SELL이면 동일 세션 내에서 자동 매매 실행
+        1. SignalGenerator 인스턴스 생성
+        2. AI 신호 생성 (기술적 지표, 멀티타임프레임 분석 포함)
+        3. 결과 DB 저장
+        4. 신호가 BUY/SELL이면 신뢰도 기반 포지션 사이징으로 자동 매매 실행
 
     Note:
-        세션 일관성을 위해 신호 생성과 주문 실행을 동일 세션에서 처리합니다.
-        이전 버전에서는 별도 세션으로 execute_trading_from_signal_job을 호출했으나,
-        레이스 컨디션 방지를 위해 동일 세션 내에서 직접 실행합니다.
+        신뢰도 기반 포지션 사이징:
+        - 신뢰도 0.5: 자본의 1% (최소)
+        - 신뢰도 0.9+: 자본의 3% (최대)
+        AI의 "소량 매수" 판단은 낮은 신뢰도로 반영됩니다.
     """
     async with async_session_factory() as session:
         try:
@@ -171,30 +170,18 @@ async def generate_trading_signal_job() -> None:
             await session.flush()  # commit 대신 flush (트랜잭션 유지)
             logger.debug("신호 생성 전 포지션 동기화 완료")
 
-            generator = get_hybrid_signal_generator(session)
+            generator = get_signal_generator(session)
 
             # 스케줄러에서 호출 시 쿨다운 무시 (force=True)
-            result = await generator.generate_hybrid_signal(force=True)
+            signal = await generator.generate_signal(force=True)
 
-            # 하이브리드 모드 적용 여부에 따른 로그
-            if result.hybrid_mode_applied:
-                logger.info(
-                    f"하이브리드 신호 생성 완료: AI={result.ai_signal.signal_type} -> "
-                    f"최종={result.final_signal} | {result.hybrid_reasoning} | "
-                    f"모델={result.ai_signal.model_name}"
-                )
-            else:
-                conf = result.ai_signal.confidence
-                model = result.ai_signal.model_name
-                logger.info(
-                    f"AI 신호 생성 완료: {result.final_signal} "
-                    f"(신뢰도: {conf}, 모델: {model})"
-                )
+            logger.info(
+                f"AI 신호 생성 완료: {signal.signal_type} "
+                f"(신뢰도: {signal.confidence:.2f}, 모델: {signal.model_name})"
+            )
 
-            # T067: 최종 신호가 BUY 또는 SELL이면 동일 세션 내에서 자동 매매 실행
-            # (레이스 컨디션 방지를 위해 별도 세션이 아닌 동일 세션에서 처리)
-            if result.final_signal in (SignalType.BUY.value, SignalType.SELL.value):
-                signal = result.ai_signal
+            # 신호가 BUY 또는 SELL이면 신뢰도 기반 포지션 사이징으로 자동 매매 실행
+            if signal.signal_type in (SignalType.BUY.value, SignalType.SELL.value):
                 logger.info(
                     f"자동 매매 실행 시작: signal_id={signal.id}, "
                     f"type={signal.signal_type}, confidence={signal.confidence}"
@@ -217,7 +204,7 @@ async def generate_trading_signal_job() -> None:
                         f"reason={order_result.blocked_reason}"
                     )
 
-                    # 잔고 부족으로 주문 실패 시 신호에 실패 사유 기록 (HOLD 변환 대신)
+                    # 잔고 부족으로 주문 실패 시 신호에 실패 사유 기록
                     if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
                         signal.analysis_summary = (
                             signal.analysis_summary or ""
@@ -229,11 +216,11 @@ async def generate_trading_signal_job() -> None:
 
         except SignalGeneratorError as e:
             await session.rollback()
-            logger.warning(f"하이브리드 신호 생성 실패: {e}")
+            logger.warning(f"AI 신호 생성 실패: {e}")
 
         except Exception as e:
             await session.rollback()
-            logger.exception(f"하이브리드 신호 생성 작업 오류: {e}")
+            logger.exception(f"AI 신호 생성 작업 오류: {e}")
 
 
 async def execute_trading_from_signal_job(signal_id: int) -> None:
@@ -379,17 +366,16 @@ def setup_scheduler() -> AsyncIOScheduler:
     등록되는 작업:
         - collect_market_data: 1초마다 시세 수집
         - check_volatility: 30초마다 변동성 체크 및 자동 거래 중단
-        - generate_trading_signal: 설정된 주기(기본 1시간)마다 하이브리드 신호 생성
-          → AI + 변동성 돌파 조건 모두 충족 시 BUY
-          → 최종 신호가 BUY/SELL이면 자동으로 execute_trading_from_signal_job 호출
+        - generate_trading_signal: 설정된 주기(기본 1시간)마다 AI 신호 생성
+          → AI가 모든 기술적 지표 종합 분석하여 판단
+          → 신뢰도 기반 포지션 사이징 (0.5=1%, 0.9+=3%)
         - cleanup_old_data: 24시간마다 오래된 데이터 삭제
 
-    하이브리드 자동 매매 흐름:
-        1. generate_trading_signal_job에서 AI 신호 생성 + 변동성 돌파 계산
-        2. AI BUY AND 돌파 조건 충족 → 최종 BUY
-        3. AI SELL → 최종 SELL (리스크 관리 우선)
-        4. 최종 신호가 BUY/SELL인 경우 execute_trading_from_signal_job 호출
-        5. 리스크 체크 → 잔고 확인 → 주문 실행 → 포지션 업데이트
+    AI 자동 매매 흐름:
+        1. generate_trading_signal_job에서 AI 신호 생성
+        2. AI가 BUY/SELL/HOLD 결정 + 신뢰도 출력
+        3. BUY/SELL 신호 시 신뢰도 기반 포지션 크기로 자동 매매
+        4. 리스크 체크 → 잔고 확인 → 주문 실행 → 포지션 업데이트
 
     변동성 모니터링:
         1. 30초마다 최근 5분간의 가격 변동률 계산
