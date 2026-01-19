@@ -9,7 +9,7 @@
 
 import { useState, type ComponentType, type FC, type SVGProps } from "react";
 import type { TradingSignal } from "../hooks/useApi";
-import { ArrowTrendingUpIcon, HandRaisedIcon, ArrowTrendingDownIcon, CpuChipIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
+import { ArrowTrendingUpIcon, HandRaisedIcon, ArrowTrendingDownIcon, CpuChipIcon, ChevronDownIcon, ChevronUpIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from "@heroicons/react/24/outline";
 
 // === 타입 정의 ===
 /** Heroicons 아이콘 컴포넌트 타입 */
@@ -71,6 +71,40 @@ function getConfidencePercent(confidence: string): number {
 }
 
 /**
+ * 가격 포맷
+ */
+function formatPrice(price: string | null | undefined): string {
+  if (!price) return "-";
+  return Number(price).toLocaleString("ko-KR", { maximumFractionDigits: 0 }) + "원";
+}
+
+/**
+ * Bias 라벨 매핑
+ */
+function getBiasLabel(bias: string): { label: string; color: string } {
+  const map: Record<string, { label: string; color: string }> = {
+    strong_buy: { label: "강력 매수", color: "text-emerald-400" },
+    buy: { label: "매수", color: "text-green-400" },
+    neutral: { label: "중립", color: "text-gray-400" },
+    sell: { label: "매도", color: "text-orange-400" },
+    strong_sell: { label: "강력 매도", color: "text-rose-400" },
+  };
+  return map[bias] || { label: bias, color: "text-gray-400" };
+}
+
+/**
+ * 추세 라벨 매핑
+ */
+function getTrendLabel(trend: string): { label: string; color: string } {
+  const map: Record<string, { label: string; color: string }> = {
+    bullish: { label: "상승", color: "text-emerald-400" },
+    bearish: { label: "하락", color: "text-rose-400" },
+    sideways: { label: "횡보", color: "text-amber-400" },
+  };
+  return map[trend] || { label: trend, color: "text-gray-400" };
+}
+
+/**
  * SignalCard 컴포넌트
  */
 const SignalCard: FC<SignalCardProps> = ({ signal, compact = false }) => {
@@ -120,6 +154,80 @@ const SignalCard: FC<SignalCardProps> = ({ signal, compact = false }) => {
           />
         </div>
       </div>
+
+      {/* 기술적 스냅샷 */}
+      {signal.technical_snapshot && (
+        <div className="mt-4 grid grid-cols-2 gap-2 relative z-10">
+          {/* Confluence Score */}
+          <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+            <span className="text-xs text-dark-text-muted">Confluence</span>
+            <p className="text-sm font-bold text-banana-400">
+              {(signal.technical_snapshot.confluence_score * 100).toFixed(0)}%
+            </p>
+          </div>
+          {/* Overall Bias */}
+          <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+            <span className="text-xs text-dark-text-muted">Bias</span>
+            <p className={`text-sm font-bold ${getBiasLabel(signal.technical_snapshot.overall_bias).color}`}>
+              {getBiasLabel(signal.technical_snapshot.overall_bias).label}
+            </p>
+          </div>
+          {/* Timeframe Trends */}
+          {signal.technical_snapshot.timeframes && (
+            <>
+              {Object.entries(signal.technical_snapshot.timeframes).map(([tf, data]) => (
+                <div key={tf} className="bg-white/5 rounded-lg p-2 border border-white/5">
+                  <span className="text-xs text-dark-text-muted">{tf.toUpperCase()}</span>
+                  <div className="flex items-center gap-1">
+                    <span className={`text-xs font-medium ${getTrendLabel(data.trend).color}`}>
+                      {getTrendLabel(data.trend).label}
+                    </span>
+                    <span className="text-xs text-dark-text-muted">
+                      ({(data.strength * 100).toFixed(0)}%)
+                    </span>
+                  </div>
+                  {data.indicators && (
+                    <span className="text-xs text-dark-text-muted">
+                      RSI {data.indicators.rsi_14?.toFixed(0) ?? '-'}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 성과 추적 */}
+      {signal.price_at_signal && (
+        <div className="mt-4 bg-white/5 rounded-lg p-3 border border-white/5 relative z-10">
+          <div className="flex items-center gap-2 mb-2">
+            <ClockIcon className="w-4 h-4 text-dark-text-muted" />
+            <span className="text-xs font-medium text-dark-text-secondary">성과 추적</span>
+            {signal.outcome_evaluated && (
+              signal.outcome_correct ? (
+                <CheckCircleIcon className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <XCircleIcon className="w-4 h-4 text-rose-400" />
+              )
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div>
+              <span className="text-dark-text-muted">신호 시</span>
+              <p className="text-white font-medium">{formatPrice(signal.price_at_signal)}</p>
+            </div>
+            <div>
+              <span className="text-dark-text-muted">4H 후</span>
+              <p className="text-white font-medium">{formatPrice(signal.price_after_4h)}</p>
+            </div>
+            <div>
+              <span className="text-dark-text-muted">24H 후</span>
+              <p className="text-white font-medium">{formatPrice(signal.price_after_24h)}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI 분석 근거 (컴팩트 모드가 아닐 때) */}
       {!compact && (

@@ -35,6 +35,31 @@ export interface Position {
   updated_at: string;
 }
 
+/** 타임프레임별 분석 */
+export interface TimeframeAnalysis {
+  trend: "bullish" | "bearish" | "sideways";
+  strength: number;
+  indicators: {
+    rsi_14: number;
+    macd_signal: string;
+    bb_percent: number;
+    ema_alignment: string;
+    volatility_level: string;
+  };
+}
+
+/** 기술적 스냅샷 */
+export interface TechnicalSnapshot {
+  timestamp: string;
+  confluence_score: number;
+  overall_bias: string;
+  timeframes: {
+    "1h"?: TimeframeAnalysis;
+    "4h"?: TimeframeAnalysis;
+    "1d"?: TimeframeAnalysis;
+  };
+}
+
 /** AI 신호 */
 export interface TradingSignal {
   id: number;
@@ -45,6 +70,14 @@ export interface TradingSignal {
   model_name: string;
   input_tokens: number;
   output_tokens: number;
+  // 성과 추적 필드
+  price_at_signal?: string | null;
+  price_after_4h?: string | null;
+  price_after_24h?: string | null;
+  outcome_evaluated?: boolean;
+  outcome_correct?: boolean | null;
+  // 기술적 스냅샷
+  technical_snapshot?: TechnicalSnapshot | null;
 }
 
 /** 대시보드 요약 */
