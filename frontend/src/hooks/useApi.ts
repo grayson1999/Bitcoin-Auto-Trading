@@ -130,7 +130,9 @@ export interface SignalListResponse {
 
 /** 시스템 설정 */
 export interface SystemConfig {
-  position_size_pct: number;
+  position_size_min_pct: number;
+  position_size_max_pct: number;
+  position_size_pct: number; // deprecated
   stop_loss_pct: number;
   daily_loss_limit_pct: number;
   signal_interval_hours: number;
@@ -141,7 +143,9 @@ export interface SystemConfig {
 
 /** 설정 수정 요청 */
 export interface SystemConfigUpdate {
-  position_size_pct?: number;
+  position_size_min_pct?: number;
+  position_size_max_pct?: number;
+  position_size_pct?: number; // deprecated
   stop_loss_pct?: number;
   daily_loss_limit_pct?: number;
   signal_interval_hours?: number;

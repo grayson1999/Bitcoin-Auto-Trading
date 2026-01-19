@@ -35,7 +35,8 @@ const Settings: FC = () => {
   useEffect(() => {
     if (config) {
       setFormData({
-        position_size_pct: config.position_size_pct,
+        position_size_min_pct: config.position_size_min_pct,
+        position_size_max_pct: config.position_size_max_pct,
         stop_loss_pct: config.stop_loss_pct,
         daily_loss_limit_pct: config.daily_loss_limit_pct,
         signal_interval_hours: config.signal_interval_hours,
@@ -49,7 +50,8 @@ const Settings: FC = () => {
   useEffect(() => {
     if (config) {
       const changed =
-        formData.position_size_pct !== config.position_size_pct ||
+        formData.position_size_min_pct !== config.position_size_min_pct ||
+        formData.position_size_max_pct !== config.position_size_max_pct ||
         formData.stop_loss_pct !== config.stop_loss_pct ||
         formData.daily_loss_limit_pct !== config.daily_loss_limit_pct ||
         formData.signal_interval_hours !== config.signal_interval_hours ||
@@ -69,8 +71,11 @@ const Settings: FC = () => {
     if (!hasChanges) return;
 
     const updates: SystemConfigUpdate = {};
-    if (formData.position_size_pct !== config?.position_size_pct) {
-      updates.position_size_pct = formData.position_size_pct;
+    if (formData.position_size_min_pct !== config?.position_size_min_pct) {
+      updates.position_size_min_pct = formData.position_size_min_pct;
+    }
+    if (formData.position_size_max_pct !== config?.position_size_max_pct) {
+      updates.position_size_max_pct = formData.position_size_max_pct;
     }
     if (formData.stop_loss_pct !== config?.stop_loss_pct) {
       updates.stop_loss_pct = formData.stop_loss_pct;
@@ -95,7 +100,8 @@ const Settings: FC = () => {
   const handleReset = () => {
     if (config) {
       setFormData({
-        position_size_pct: config.position_size_pct,
+        position_size_min_pct: config.position_size_min_pct,
+        position_size_max_pct: config.position_size_max_pct,
         stop_loss_pct: config.stop_loss_pct,
         daily_loss_limit_pct: config.daily_loss_limit_pct,
         signal_interval_hours: config.signal_interval_hours,
@@ -154,33 +160,52 @@ const Settings: FC = () => {
             리스크 관리
           </h3>
           <div className="space-y-4">
-            {/* 포지션 크기 */}
+            {/* 동적 포지션 사이징 */}
             <div>
-              <label className="block text-sm font-medium text-dark-text-secondary flex items-center gap-1">
-                포지션 크기 (%)
+              <label className="block text-sm font-medium text-dark-text-secondary flex items-center gap-1 mb-2">
+                동적 포지션 사이징 (%)
                 <span className="relative group">
                   <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-[10px] text-dark-text-muted border border-dark-text-muted rounded-full cursor-help hover:text-white hover:border-white transition-colors">
                     ?
                   </span>
-                  <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs font-normal text-white bg-gray-900 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-10">
-                    1회 주문 시 사용할 총 자산의 비율
+                  <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs font-normal text-white bg-gray-900 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                    AI 신뢰도에 따라 자동 조절됩니다. 신뢰도 0.5 → 최소값, 신뢰도 0.9+ → 최대값
                     <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></span>
                   </span>
                 </span>
               </label>
-              <input
-                type="number"
-                min={1}
-                max={5}
-                step={0.1}
-                value={formData.position_size_pct ?? 2}
-                onChange={(e) =>
-                  handleChange("position_size_pct", Number(e.target.value))
-                }
-                className="mt-1 block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-dark-text-muted mb-1">최소 (신뢰도 낮음)</label>
+                  <input
+                    type="number"
+                    min={0.5}
+                    max={5}
+                    step={0.1}
+                    value={formData.position_size_min_pct ?? 1}
+                    onChange={(e) =>
+                      handleChange("position_size_min_pct", Number(e.target.value))
+                    }
+                    className="block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-dark-text-muted mb-1">최대 (신뢰도 높음)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    step={0.1}
+                    value={formData.position_size_max_pct ?? 3}
+                    onChange={(e) =>
+                      handleChange("position_size_max_pct", Number(e.target.value))
+                    }
+                    className="block w-full rounded-xl border border-dark-border px-3 py-2 text-white bg-dark-bg focus:border-banana-500 focus:outline-none focus:ring-1 focus:ring-banana-500 transition-all"
+                  />
+                </div>
+              </div>
               <p className="mt-1 text-xs text-dark-text-muted">
-                주문당 자본의 비율 (1~5%)
+                최소: 0.5~5% | 최대: 1~10%
               </p>
             </div>
 

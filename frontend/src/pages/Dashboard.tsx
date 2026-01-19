@@ -15,6 +15,7 @@ import {
   useRiskStatus,
   useHaltTrading,
   useResumeTrading,
+  useConfig,
 } from "../hooks/useApi";
 import PriceChart from "../components/PriceChart";
 import SignalCard from "../components/SignalCard";
@@ -55,6 +56,7 @@ const Dashboard: FC = () => {
   // 24시간 동안 60분 간격 (시간당 1개) - 하루 전체 보기
   const { data: marketHistory } = useMarketHistory(24, 100, REFRESH_INTERVAL_MS, 60);
   const { data: riskStatus } = useRiskStatus();
+  const { data: config } = useConfig();
 
   const haltMutation = useHaltTrading();
   const resumeMutation = useResumeTrading();
@@ -261,6 +263,112 @@ const Dashboard: FC = () => {
           )}
         </div>
       </div>
+
+      {/* 현재 설정 요약 */}
+      {config && (
+        <div className="rounded-2xl glass-panel p-4 sm:p-6">
+          <h3 className="mb-4 text-lg font-bold text-white flex items-center gap-2">
+            현재 설정
+            <span className="text-xs font-normal text-dark-text-muted">
+              (설정 페이지에서 수정 가능)
+            </span>
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 포지션 사이징 */}
+            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+              <h4 className="text-sm font-semibold text-banana-400 mb-3 flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                포지션 사이징
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-dark-text-muted">동적 범위</span>
+                  <span className="text-white font-medium courier">
+                    {config.position_size_min_pct}% ~ {config.position_size_max_pct}%
+                  </span>
+                </div>
+                <p className="text-xs text-dark-text-muted mt-1">
+                  AI 신뢰도에 따라 자동 조절
+                </p>
+              </div>
+            </div>
+
+            {/* 리스크 관리 */}
+            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+              <h4 className="text-sm font-semibold text-rose-400 mb-3 flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                리스크 관리
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-dark-text-muted">손절</span>
+                  <span className="text-white font-medium courier">{config.stop_loss_pct}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-dark-text-muted">일일 한도</span>
+                  <span className="text-white font-medium courier">{config.daily_loss_limit_pct}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-dark-text-muted">변동성</span>
+                  <span className="text-white font-medium courier">{config.volatility_threshold_pct}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* AI 설정 */}
+            <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+              <h4 className="text-sm font-semibold text-purple-400 mb-3 flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                AI 설정
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-dark-text-muted">모델</span>
+                  <span className="text-white font-medium text-xs">{config.ai_model}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-dark-text-muted">신호 주기</span>
+                  <span className="text-white font-medium courier">{config.signal_interval_hours}시간</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 하이브리드 전략 */}
+            {riskStatus && (
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                <h4 className="text-sm font-semibold text-cyan-400 mb-3 flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  하이브리드 전략
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-dark-text-muted">K값</span>
+                    <span className="text-white font-medium courier">{riskStatus.volatility_k_value}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-dark-text-muted">하이브리드</span>
+                    <span className={`font-medium ${riskStatus.hybrid_mode_enabled ? "text-emerald-400" : "text-dark-text-muted"}`}>
+                      {riskStatus.hybrid_mode_enabled ? "활성" : "비활성"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-dark-text-muted">돌파 강도</span>
+                    <span className="text-white font-medium courier">{riskStatus.breakout_min_strength}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 마지막 업데이트 시간 */}
       <div className="text-right text-xs text-gray-400">
