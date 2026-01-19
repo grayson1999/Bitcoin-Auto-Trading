@@ -10,8 +10,9 @@
 """
 
 import asyncio
+import uuid
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -43,8 +44,8 @@ MAX_ORDER_RETRIES = 3  # 주문 재시도 횟수
 RETRY_DELAY_SECONDS = 1.0  # 재시도 대기 시간
 MIN_ORDER_AMOUNT_KRW = Decimal("5000")  # 최소 주문 금액 (원)
 UPBIT_FEE_RATE = Decimal("0.0005")  # Upbit 수수료율 (0.05%)
-ORDER_POLL_INTERVAL = 0.5  # 주문 체결 확인 간격 (초)
-ORDER_POLL_MAX_ATTEMPTS = 10  # 주문 체결 확인 최대 시도 횟수
+ORDER_POLL_INTERVAL = 1.0  # 주문 체결 확인 간격 (초)
+ORDER_POLL_MAX_ATTEMPTS = 30  # 주문 체결 확인 최대 시도 횟수 (총 30초)
 
 
 class OrderExecutorError(Exception):
@@ -215,11 +216,27 @@ class OrderExecutor:
         """매수 주문 실행"""
         logger.info("매수 주문 처리 시작")
 
-        # 포지션 크기 계산 (총 자산의 N%)
+        # 동적 포지션 사이징: AI 신뢰도에 따라 min~max 범위에서 계산
         from src.config import settings
 
-        position_pct = Decimal(str(settings.position_size_pct))
+        min_pct = Decimal(str(settings.position_size_min_pct))
+        max_pct = Decimal(str(settings.position_size_max_pct))
+
+        # 신뢰도 0.5 -> min_pct, 신뢰도 0.9+ -> max_pct
+        confidence = signal.confidence
+        # 0.5~1.0 범위를 0~1로 정규화
+        normalized = max(
+            Decimal("0"),
+            min(Decimal("1"), (confidence - Decimal("0.5")) * 2),
+        )
+
+        position_pct = min_pct + (max_pct - min_pct) * normalized
         order_amount = balance_info.total_krw * position_pct / Decimal("100")
+
+        logger.info(
+            f"동적 포지션: confidence={confidence}, "
+            f"pct={position_pct:.2f}%, amount={order_amount:,.0f}원"
+        )
 
         # 최소 주문 금액 확인
         if order_amount < MIN_ORDER_AMOUNT_KRW:
@@ -343,7 +360,7 @@ class OrderExecutor:
         signal_id: int | None = None,
     ) -> OrderResult:
         """
-        재시도 로직이 포함된 주문 실행
+        재시도 로직이 포함된 주문 실행 (중복 주문 방지 포함)
 
         Args:
             side: 주문 방향 (BUY/SELL)
@@ -353,38 +370,57 @@ class OrderExecutor:
         Returns:
             OrderResult: 실행 결과
         """
-        order = await self._create_order_record(
-            side=side,
-            amount=amount,
-            signal_id=signal_id,
-        )
-
-        logger.info(
-            f"주문 생성: order_id={order.id}, side={side.value}, amount={amount}"
-        )
-
+        # 중복 주문 방지를 위한 idempotency key 생성
+        idempotency_key = str(uuid.uuid4())
+        order: Order | None = None
         last_error: Exception | None = None
 
         for attempt in range(1, MAX_ORDER_RETRIES + 1):
             try:
                 logger.info(f"주문 시도 {attempt}/{MAX_ORDER_RETRIES}")
 
+                # 재시도 시: 이전 시도에서 Upbit UUID를 받았으면 상태 확인
+                if order and order.upbit_uuid:
+                    logger.info(f"재시도: 기존 주문 상태 확인 uuid={order.upbit_uuid}")
+                    try:
+                        existing = await self._upbit_client.get_order(order.upbit_uuid)
+                        if existing.state in ("done", "wait"):
+                            logger.info(f"기존 주문 발견: state={existing.state}")
+                            await self._update_order_status(order, existing)
+                            if not order.is_executed and existing.uuid:
+                                await self._poll_order_completion(order, existing.uuid)
+                            break  # 이미 주문이 있으므로 새 주문 안 함
+                    except UpbitError as check_err:
+                        logger.warning(f"기존 주문 확인 실패: {check_err.message}")
+                        # 확인 실패 시 새 주문 시도
+
                 # Upbit 주문 실행
                 if side == OrderSide.BUY:
-                    # 시장가 매수: price에 총액 지정
                     upbit_response = await self._upbit_client.place_order(
                         market=settings.trading_ticker,
                         side="bid",
                         price=amount,
-                        ord_type="price",  # 시장가 매수
+                        ord_type="price",
                     )
                 else:
-                    # 시장가 매도: volume에 수량 지정
                     upbit_response = await self._upbit_client.place_order(
                         market=settings.trading_ticker,
                         side="ask",
                         volume=amount,
-                        ord_type="market",  # 시장가 매도
+                        ord_type="market",
+                    )
+
+                # API 성공 후에만 Order 레코드 생성 (첫 시도 시)
+                if order is None:
+                    order = await self._create_order_record(
+                        side=side,
+                        amount=amount,
+                        signal_id=signal_id,
+                        idempotency_key=idempotency_key,
+                    )
+                    logger.info(
+                        f"주문 생성: order_id={order.id}, side={side.value}, "
+                        f"amount={amount}, idempotency_key={idempotency_key}"
                     )
 
                 # 주문 성공
@@ -403,23 +439,7 @@ class OrderExecutor:
                 if not order.is_executed and upbit_response.uuid:
                     await self._poll_order_completion(order, upbit_response.uuid)
 
-                # T068: 포지션 업데이트 (순서 중요: 통계 먼저, 그 다음 포지션)
-                if order.is_executed:
-                    # 실현 손익은 포지션 변경 전에 계산해야 함
-                    await self._update_daily_stats(order)
-                    await self._update_position_after_order(order)
-
-                    # 알림 전송
-                    if self._notifier:
-                        await self._send_order_notification(order)
-
-                await self._session.commit()
-
-                return OrderResult(
-                    success=True,
-                    order=order,
-                    message=f"주문 체결 완료: {order.executed_amount}",
-                )
+                break  # 성공 시 루프 종료
 
             except UpbitError as e:
                 last_error = e
@@ -429,6 +449,13 @@ class OrderExecutor:
 
                 # 클라이언트 오류 (4xx)는 재시도하지 않음
                 if e.status_code and 400 <= e.status_code < 500:
+                    if order is None:
+                        order = await self._create_order_record(
+                            side=side,
+                            amount=amount,
+                            signal_id=signal_id,
+                            idempotency_key=idempotency_key,
+                        )
                     order.mark_failed(e.message)
                     await self._session.commit()
 
@@ -450,17 +477,54 @@ class OrderExecutor:
                 if attempt < MAX_ORDER_RETRIES:
                     await asyncio.sleep(RETRY_DELAY_SECONDS * attempt)
 
-        # 모든 재시도 실패
-        error_msg = str(last_error) if last_error else "알 수 없는 오류"
-        order.mark_failed(f"재시도 {MAX_ORDER_RETRIES}회 실패: {error_msg}")
+        # 루프 종료 후 처리
+        if order is None:
+            # Order 생성조차 못 한 경우 (모든 시도 실패)
+            order = await self._create_order_record(
+                side=side,
+                amount=amount,
+                signal_id=signal_id,
+                idempotency_key=idempotency_key,
+            )
+            error_msg = str(last_error) if last_error else "알 수 없는 오류"
+            order.mark_failed(f"재시도 {MAX_ORDER_RETRIES}회 실패: {error_msg}")
+            await self._session.commit()
+            logger.error(f"주문 최종 실패: {error_msg}")
+            return OrderResult(
+                success=False,
+                order=order,
+                message=f"주문 실패: {error_msg}",
+            )
+
+        # T068: 포지션 업데이트 (체결 시에만)
+        if order.is_executed:
+            await self._update_daily_stats(order)
+            await self._update_position_after_order(order)
+            if self._notifier:
+                await self._send_order_notification(order)
+
         await self._session.commit()
 
-        logger.error(f"주문 최종 실패: {error_msg}")
-        return OrderResult(
-            success=False,
-            order=order,
-            message=f"주문 실패: {error_msg}",
-        )
+        if order.is_executed:
+            return OrderResult(
+                success=True,
+                order=order,
+                message=f"주문 체결 완료: {order.executed_amount}",
+            )
+        elif order.is_failed:
+            return OrderResult(
+                success=False,
+                order=order,
+                message=f"주문 실패: {order.error_message}",
+            )
+        else:
+            # PENDING 상태로 종료 (타임아웃)
+            logger.warning(f"주문 체결 타임아웃: order_id={order.id}")
+            return OrderResult(
+                success=False,
+                order=order,
+                message="주문 체결 타임아웃 - 나중에 동기화 필요",
+            )
 
     # ==========================================================================
     # T061: 잔고 검증
@@ -644,6 +708,7 @@ class OrderExecutor:
         signal_id: int | None = None,
         order_type: OrderType = OrderType.MARKET,
         price: Decimal | None = None,
+        idempotency_key: str | None = None,
     ) -> Order:
         """주문 레코드 생성"""
         order = Order(
@@ -655,13 +720,15 @@ class OrderExecutor:
             price=price,
             status=OrderStatus.PENDING.value,
             created_at=datetime.now(UTC),
+            idempotency_key=idempotency_key,
         )
         self._session.add(order)
         await self._session.flush()  # ID 생성
 
         logger.info(
             f"[주문 생성] order_id={order.id}, side={side.value}, "
-            f"amount={amount}, signal_id={signal_id}"
+            f"amount={amount}, signal_id={signal_id}, "
+            f"idempotency_key={idempotency_key}"
         )
 
         return order
@@ -676,10 +743,16 @@ class OrderExecutor:
                 logger.info(f"[주문 체결 대기] order_id={order.id}, 체결 정보 폴링 필요")
                 return
 
+            executed_price = upbit_response.price or Decimal("0")
+            executed_volume = upbit_response.executed_volume
+            # 수수료 = 체결금액 * 수수료율 (KRW 기준)
+            total_value = executed_volume * executed_price
+            fee = total_value * UPBIT_FEE_RATE
+
             order.mark_executed(
-                executed_price=upbit_response.price or Decimal("0"),
-                executed_amount=upbit_response.executed_volume,
-                fee=upbit_response.executed_volume * UPBIT_FEE_RATE,
+                executed_price=executed_price,
+                executed_amount=executed_volume,
+                fee=fee,
             )
 
             logger.info(
@@ -723,14 +796,20 @@ class OrderExecutor:
                 if upbit_response.state == "done":
                     # 체결 정보가 없으면 계속 폴링
                     if upbit_response.executed_volume is None:
-                        logger.debug(f"[주문 상태] done이지만 체결 정보 없음, 계속 폴링")
+                        logger.debug("[주문 상태] done이지만 체결 정보 없음, 계속 폴링")
                         continue
 
                     # 체결 완료
+                    executed_price = upbit_response.price or Decimal("0")
+                    executed_volume = upbit_response.executed_volume
+                    # 수수료 = 체결금액 * 수수료율 (KRW 기준)
+                    total_value = executed_volume * executed_price
+                    fee = total_value * UPBIT_FEE_RATE
+
                     order.mark_executed(
-                        executed_price=upbit_response.price or Decimal("0"),
-                        executed_amount=upbit_response.executed_volume,
-                        fee=upbit_response.executed_volume * UPBIT_FEE_RATE,
+                        executed_price=executed_price,
+                        executed_amount=executed_volume,
+                        fee=fee,
                     )
                     logger.info(
                         f"[주문 체결 확인] order_id={order.id}, "
@@ -893,6 +972,81 @@ class OrderExecutor:
         )
 
         return position
+
+    # ==========================================================================
+    # PENDING 주문 동기화
+    # ==========================================================================
+
+    async def sync_pending_orders(self) -> int:
+        """
+        PENDING 상태의 주문을 Upbit와 동기화
+
+        24시간 이내의 PENDING 상태 주문을 조회하여 Upbit의 실제 상태로 업데이트합니다.
+
+        Returns:
+            int: 동기화된 주문 수
+        """
+        # 24시간 이내의 PENDING 주문만 조회
+        cutoff_time = datetime.now(UTC) - timedelta(hours=24)
+        stmt = select(Order).where(
+            Order.status == OrderStatus.PENDING.value,
+            Order.upbit_uuid.isnot(None),
+            Order.created_at > cutoff_time,
+        )
+        result = await self._session.execute(stmt)
+        pending_orders = list(result.scalars().all())
+
+        if not pending_orders:
+            return 0
+
+        logger.info(f"PENDING 주문 동기화 시작: {len(pending_orders)}건")
+
+        synced_count = 0
+        for order in pending_orders:
+            try:
+                upbit_order = await self._upbit_client.get_order(order.upbit_uuid)
+
+                if upbit_order.state == "done":
+                    # 체결 완료
+                    executed_price = upbit_order.price or Decimal("0")
+                    executed_volume = upbit_order.executed_volume or Decimal("0")
+                    total_value = executed_volume * executed_price
+                    fee = total_value * UPBIT_FEE_RATE
+
+                    order.mark_executed(
+                        executed_price=executed_price,
+                        executed_amount=executed_volume,
+                        fee=fee,
+                    )
+
+                    # 포지션 업데이트
+                    await self._update_daily_stats(order)
+                    await self._update_position_after_order(order)
+
+                    logger.info(
+                        f"PENDING 주문 체결 확인: order_id={order.id}, "
+                        f"executed_amount={executed_volume}"
+                    )
+                    synced_count += 1
+
+                elif upbit_order.state == "cancel":
+                    order.mark_cancelled()
+                    logger.info(f"PENDING 주문 취소 확인: order_id={order.id}")
+                    synced_count += 1
+
+                # state == "wait" 인 경우는 여전히 대기 중이므로 건너뜀
+
+            except UpbitError as e:
+                logger.warning(
+                    f"PENDING 주문 동기화 실패: order_id={order.id}, error={e.message}"
+                )
+                continue
+
+        if synced_count > 0:
+            await self._session.commit()
+            logger.info(f"PENDING 주문 동기화 완료: {synced_count}건")
+
+        return synced_count
 
     async def get_balance_info(self) -> BalanceInfo:
         """

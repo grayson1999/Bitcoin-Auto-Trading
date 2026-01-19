@@ -179,6 +179,15 @@ class Order(Base):
         comment="Upbit 주문 UUID",
     )
 
+    # 재시도 시 중복 주문 방지용 키
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        unique=True,
+        index=True,
+        comment="재시도 시 중복 방지용 키",
+    )
+
     # 실패 시 오류 메시지
     error_message: Mapped[str | None] = mapped_column(
         Text,

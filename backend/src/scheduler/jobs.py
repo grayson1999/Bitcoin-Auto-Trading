@@ -37,6 +37,7 @@ DATA_COLLECTION_INTERVAL_SECONDS = 10  # 데이터 수집 주기 (초)
 DATA_CLEANUP_INTERVAL_HOURS = 24  # 데이터 정리 주기 (시간)
 VOLATILITY_CHECK_INTERVAL_SECONDS = 30  # 변동성 체크 주기 (초)
 SIGNAL_PERFORMANCE_EVAL_HOURS = 4  # 신호 성과 평가 주기 (시간)
+PENDING_ORDER_SYNC_MINUTES = 5  # PENDING 주문 동기화 주기 (분)
 JOB_MAX_RETRY_ATTEMPTS = 3  # 작업 최대 재시도 횟수
 
 
@@ -305,6 +306,32 @@ async def evaluate_signal_performance_job() -> None:
             logger.exception(f"신호 성과 평가 작업 오류: {e}")
 
 
+async def sync_pending_orders_job() -> None:
+    """
+    PENDING 주문 동기화 작업
+
+    5분마다 실행되어 PENDING 상태로 남은 주문을 Upbit와 동기화합니다.
+    체결 확인 타임아웃으로 PENDING 상태가 된 주문들을 복구합니다.
+
+    처리 흐름:
+        1. 24시간 이내의 PENDING 주문 조회
+        2. 각 주문의 Upbit 상태 확인
+        3. 체결 완료(done) → 포지션 및 통계 업데이트
+        4. 취소(cancel) → CANCELLED로 변경
+    """
+    async with async_session_factory() as session:
+        try:
+            executor = await get_order_executor(session)
+            synced_count = await executor.sync_pending_orders()
+
+            if synced_count > 0:
+                logger.info(f"PENDING 주문 동기화 완료: {synced_count}건")
+
+        except Exception as e:
+            await session.rollback()
+            logger.exception(f"PENDING 주문 동기화 작업 오류: {e}")
+
+
 def setup_scheduler() -> AsyncIOScheduler:
     """
     스케줄러 설정
@@ -395,12 +422,24 @@ def setup_scheduler() -> AsyncIOScheduler:
         coalesce=True,
     )
 
+    # PENDING 주문 동기화 작업 (5분 간격)
+    scheduler.add_job(
+        sync_pending_orders_job,
+        trigger=IntervalTrigger(minutes=PENDING_ORDER_SYNC_MINUTES),
+        id="sync_pending_orders",
+        name="PENDING 주문 동기화",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+
     logger.info(
         f"스케줄러 설정 완료: "
         f"데이터 수집 ({DATA_COLLECTION_INTERVAL_SECONDS}초), "
         f"변동성 체크 ({VOLATILITY_CHECK_INTERVAL_SECONDS}초), "
         f"AI 신호 생성 ({signal_interval_hours}시간), "
         f"성과 평가 ({SIGNAL_PERFORMANCE_EVAL_HOURS}시간), "
+        f"PENDING 동기화 ({PENDING_ORDER_SYNC_MINUTES}분), "
         f"데이터 정리 ({DATA_CLEANUP_INTERVAL_HOURS}시간)"
     )
 
