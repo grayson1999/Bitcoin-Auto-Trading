@@ -109,10 +109,21 @@ const SignalCard: FC<SignalCardProps> = ({ signal }) => {
           )}
         </div>
 
-        {/* AI 분석 요약 (한 줄) */}
+        {/* AI 분석 요약 (의사결정 섹션 우선 표시) */}
         <div className="mt-4 relative z-10">
           <p className="text-sm text-dark-text-muted line-clamp-2">
-            {signal.reasoning}
+            {(() => {
+              const sections = signal.reasoning.split('\n\n');
+              // 의사결정/분석 섹션을 우선 찾음
+              const decisionSection = sections.find(s => s.startsWith('💡'));
+              if (decisionSection) {
+                // "💡 의사결정\n내용" 형태에서 내용만 추출
+                const lines = decisionSection.split('\n');
+                return lines.slice(1).join(' ') || lines[0];
+              }
+              // 없으면 첫 번째 섹션 표시
+              return sections[0];
+            })()}
           </p>
           <p className="text-xs text-banana-400 mt-2 font-medium group-hover:underline underline-offset-4 decoration-banana-400/50">
             상세 정보 보기 →

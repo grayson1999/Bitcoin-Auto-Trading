@@ -597,80 +597,9 @@ class SignalGenerator:
             # 신뢰도 범위 검증
             confidence = max(MIN_CONFIDENCE, min(MAX_CONFIDENCE, confidence))
 
-            # reasoning 처리
+            # reasoning 처리 (구조화된 포맷)
             if isinstance(reasoning_raw, dict):
-                reasoning_parts = []
-
-                if "risk_assessment" in reasoning_raw:
-                    risk = reasoning_raw["risk_assessment"]
-                    if risk.get("stop_loss_triggered"):
-                        reasoning_parts.append(
-                            f"[손절 트리거] {risk.get('trigger_reason', '손절 조건 충족')}"
-                        )
-                    pnl_pct = risk.get("unrealized_pnl_pct")
-                    if pnl_pct is not None:
-                        reasoning_parts.append(f"손익률: {pnl_pct:+.1f}%")
-
-                if "decision_rationale" in reasoning_raw:
-                    reasoning_parts.append(reasoning_raw["decision_rationale"])
-                elif "interpretation" in reasoning_raw:
-                    reasoning_parts.append(reasoning_raw["interpretation"])
-
-                if "technical_summary" in reasoning_raw:
-                    tech = reasoning_raw["technical_summary"]
-                    tech_parts = []
-                    if tech.get("confluence_score") is not None:
-                        tech_parts.append(f"합류: {tech['confluence_score']:.2f}")
-                    if tech.get("rsi_14") is not None:
-                        tech_parts.append(f"RSI: {tech['rsi_14']:.1f}")
-                    trends = []
-                    for tf in ["1h", "4h", "1d"]:
-                        trend_key = f"trend_{tf}"
-                        if tech.get(trend_key):
-                            trends.append(f"{tf.upper()}={tech[trend_key]}")
-                    if trends:
-                        tech_parts.append(" ".join(trends))
-                    if tech_parts:
-                        reasoning_parts.append("지표: " + " / ".join(tech_parts))
-                elif "facts" in reasoning_raw and reasoning_raw["facts"]:
-                    key_facts = []
-                    for fact in reasoning_raw["facts"][:5]:
-                        if any(
-                            kw in fact
-                            for kw in ["RSI", "볼린저", "BB", "합류", "타임프레임"]
-                        ):
-                            key_facts.append(fact)
-                    if key_facts:
-                        reasoning_parts.append("지표: " + " / ".join(key_facts[:3]))
-                    else:
-                        reasoning_parts.append(
-                            "근거: " + ", ".join(reasoning_raw["facts"][:3])
-                        )
-
-                if "key_factors" in reasoning_raw and reasoning_raw["key_factors"]:
-                    reasoning_parts.append(
-                        "핵심: " + ", ".join(reasoning_raw["key_factors"])
-                    )
-
-                if "risks" in reasoning_raw and reasoning_raw["risks"]:
-                    reasoning_parts.append("위험: " + ", ".join(reasoning_raw["risks"]))
-
-                if "action_levels" in reasoning_raw:
-                    levels = reasoning_raw["action_levels"]
-                    validated_levels = self._validate_action_levels(
-                        levels, balance_info
-                    )
-                    level_parts = []
-                    if validated_levels.get("stop_loss"):
-                        level_parts.append(f"손절: {validated_levels['stop_loss']}")
-                    if validated_levels.get("take_profit"):
-                        level_parts.append(f"익절: {validated_levels['take_profit']}")
-                    if level_parts:
-                        reasoning_parts.append(" / ".join(level_parts))
-
-                reasoning = (
-                    " | ".join(reasoning_parts) if reasoning_parts else "분석 근거 없음"
-                )
+                reasoning = self._format_reasoning(reasoning_raw, balance_info)
             else:
                 reasoning = str(reasoning_raw)
 
@@ -683,6 +612,97 @@ class SignalGenerator:
                 DEFAULT_CONFIDENCE,
                 f"파싱 실패로 기본 HOLD 신호 생성. 원본: {text[:100]}",
             )
+
+    def _format_reasoning(
+        self,
+        reasoning_raw: dict,
+        balance_info: dict | None,
+    ) -> str:
+        """
+        reasoning을 구조화된 형식으로 포맷팅
+
+        가독성을 높이기 위해 섹션별로 구분하고 줄바꿈을 사용합니다.
+        """
+        sections = []
+
+        # 1. 손절 트리거 / 손익률 섹션
+        if "risk_assessment" in reasoning_raw:
+            risk = reasoning_raw["risk_assessment"]
+            if risk.get("stop_loss_triggered"):
+                trigger_reason = risk.get("trigger_reason", "손절 조건 충족")
+                sections.append(f"🚨 손절 트리거\n{trigger_reason}")
+
+            pnl_pct = risk.get("unrealized_pnl_pct")
+            if pnl_pct is not None:
+                sections.append(f"📊 손익률: {pnl_pct:+.1f}%")
+
+        # 2. 의사결정 근거 섹션
+        if "decision_rationale" in reasoning_raw:
+            sections.append(f"💡 의사결정\n{reasoning_raw['decision_rationale']}")
+        elif "interpretation" in reasoning_raw:
+            sections.append(f"💡 분석\n{reasoning_raw['interpretation']}")
+
+        # 3. 기술적 지표 섹션
+        if "technical_summary" in reasoning_raw:
+            tech = reasoning_raw["technical_summary"]
+            tech_lines = ["📈 기술적 지표"]
+
+            if tech.get("confluence_score") is not None:
+                tech_lines.append(f"• 합류 점수: {tech['confluence_score']:.2f}")
+            if tech.get("rsi_14") is not None:
+                tech_lines.append(f"• RSI: {tech['rsi_14']:.1f}")
+
+            trends = []
+            for tf in ["1h", "4h", "1d"]:
+                trend_key = f"trend_{tf}"
+                if tech.get(trend_key):
+                    trends.append(f"{tf.upper()}={tech[trend_key]}")
+            if trends:
+                tech_lines.append(f"• 추세: {' / '.join(trends)}")
+
+            if len(tech_lines) > 1:
+                sections.append("\n".join(tech_lines))
+
+        elif "facts" in reasoning_raw and reasoning_raw["facts"]:
+            # facts 기반 지표 표시 (fallback)
+            key_facts = []
+            for fact in reasoning_raw["facts"][:5]:
+                if any(
+                    kw in fact for kw in ["RSI", "볼린저", "BB", "합류", "타임프레임"]
+                ):
+                    key_facts.append(fact)
+
+            if key_facts:
+                sections.append("📈 지표\n" + "\n".join(f"• {f}" for f in key_facts[:3]))
+            else:
+                sections.append(
+                    "📋 근거\n" + "\n".join(f"• {f}" for f in reasoning_raw["facts"][:3])
+                )
+
+        # 4. 핵심 요소 섹션
+        if "key_factors" in reasoning_raw and reasoning_raw["key_factors"]:
+            factors = reasoning_raw["key_factors"]
+            sections.append("⭐ 핵심 요소\n" + "\n".join(f"• {f}" for f in factors))
+
+        # 5. 위험 요소 섹션
+        if "risks" in reasoning_raw and reasoning_raw["risks"]:
+            risks = reasoning_raw["risks"]
+            sections.append("⚠️ 위험 요소\n" + "\n".join(f"• {r}" for r in risks))
+
+        # 6. 목표가 섹션
+        if "action_levels" in reasoning_raw:
+            levels = self._validate_action_levels(
+                reasoning_raw["action_levels"], balance_info
+            )
+            level_lines = ["🎯 목표가"]
+            if levels.get("stop_loss"):
+                level_lines.append(f"• 손절: {levels['stop_loss']}")
+            if levels.get("take_profit"):
+                level_lines.append(f"• 익절: {levels['take_profit']}")
+            if len(level_lines) > 1:
+                sections.append("\n".join(level_lines))
+
+        return "\n\n".join(sections) if sections else "분석 근거 없음"
 
     def _parse_price(self, price_str: str | None) -> float | None:
         """가격 문자열 파싱"""

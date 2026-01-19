@@ -138,7 +138,7 @@ const SignalDetailModal: FC<SignalDetailModalProps> = ({ signal, onClose }) => {
                             <CpuChipIcon className="w-4 h-4 text-banana-400" />
                             AI 분석 근거
                         </h4>
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/5 text-sm leading-relaxed text-white/90">
+                        <div className="bg-white/5 rounded-xl p-4 border border-white/5 text-sm leading-relaxed text-white/90 whitespace-pre-line">
                             {signal.reasoning}
                         </div>
                     </div>
