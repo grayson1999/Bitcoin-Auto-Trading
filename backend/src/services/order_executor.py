@@ -734,8 +734,8 @@ class OrderExecutor:
         """
         체결가 계산 헬퍼
 
-        시장가 매수는 avg_price 또는 executed_funds/executed_volume 사용,
-        그 외에는 price 사용.
+        시장가 주문(매수/매도 모두)은 avg_price 또는 executed_funds/executed_volume 사용,
+        지정가 주문은 price 사용.
 
         Args:
             order: 주문 객체
@@ -744,18 +744,24 @@ class OrderExecutor:
         Returns:
             Decimal: 계산된 체결가
         """
-        # 시장가 매수: avg_price 또는 executed_funds/executed_volume 사용
-        if order.is_buy and order.order_type == OrderType.MARKET.value:
-            if upbit_response.avg_price:
-                return upbit_response.avg_price
-            elif upbit_response.executed_funds and upbit_response.executed_volume:
-                return upbit_response.executed_funds / upbit_response.executed_volume
-            # fallback: price 필드 (정확하지 않을 수 있음)
-            logger.warning(
-                f"[체결가 계산] 시장가 매수이나 avg_price/executed_funds 없음, "
-                f"price 사용: order_id={order.id}"
-            )
-        return upbit_response.price or Decimal("0")
+        # 시장가 주문 (매수/매도 모두): avg_price 우선 사용
+        # - 시장가 매수: ord_type='price' (KRW 금액 지정)
+        # - 시장가 매도: ord_type='market' (수량 지정)
+        if upbit_response.avg_price:
+            return upbit_response.avg_price
+        elif upbit_response.executed_funds and upbit_response.executed_volume:
+            return upbit_response.executed_funds / upbit_response.executed_volume
+
+        # fallback: price 필드 (지정가 주문에서 사용)
+        if upbit_response.price:
+            return upbit_response.price
+
+        # 모든 방법 실패 시 경고
+        logger.warning(
+            f"[체결가 계산] avg_price/executed_funds/price 모두 없음, "
+            f"order_id={order.id}"
+        )
+        return Decimal("0")
 
     async def _update_order_status(self, order: Order, upbit_response) -> None:
         """Upbit 응답으로 주문 상태 업데이트"""
