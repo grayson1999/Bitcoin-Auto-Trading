@@ -206,8 +206,8 @@ async def generate_trading_signal_job() -> None:
 
                     # 잔고 부족으로 주문 실패 시 신호에 실패 사유 기록
                     if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
-                        signal.analysis_summary = (
-                            signal.analysis_summary or ""
+                        signal.reasoning = (
+                            signal.reasoning or ""
                         ) + f" [주문 실패: {order_result.blocked_reason.value}]"
                         logger.info(f"잔고 부족 - 신호 {signal.id}에 실패 사유 기록")
 
@@ -282,8 +282,8 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
                 # 잔고 부족으로 주문 실패 시 신호를 HOLD로 변환
                 if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
                     signal.signal_type = SignalType.HOLD.value
-                    signal.analysis_summary = (
-                        signal.analysis_summary or ""
+                    signal.reasoning = (
+                        signal.reasoning or ""
                     ) + " [잔고 부족으로 HOLD 처리]"
                     await session.commit()
                     logger.info(f"잔고 부족 - 신호 {signal_id}를 HOLD로 변환")
