@@ -48,6 +48,32 @@ HTTP_STATUS_FORBIDDEN = 403
 HTTP_STATUS_NOT_FOUND = 404
 HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
 
+# === API 페이지네이션 ===
+API_PAGINATION_MIN_LIMIT = 1  # 최소 조회 개수
+API_PAGINATION_MAX_LIMIT = 100  # 최대 조회 개수
+API_PAGINATION_DEFAULT_LIMIT = 50  # 기본 조회 개수
+
+# === 백테스트 설정 ===
+BACKTEST_TRADING_FEE_PCT = 0.0005  # 백테스트 거래 수수료 (0.05%)
+BACKTEST_SLIPPAGE_PCT = 0.001  # 백테스트 슬리피지 (0.1%)
+BACKTEST_MIN_TRADE_AMOUNT_PCT = 0.02  # 백테스트 최소 거래 비율 (2%)
+BACKTEST_RISK_FREE_RATE = 0.035  # 무위험 수익률 (연 3.5%)
+BACKTEST_DEFAULT_INITIAL_CAPITAL = 1_000_000  # 기본 초기 자본금 (100만원)
+BACKTEST_CANDLE_FETCH_LIMIT = 200  # Upbit 캔들 API 최대 조회 개수
+
+# === 신호 생성 설정 ===
+SIGNAL_MARKET_DATA_HOURS = 168  # 분석에 사용할 시장 데이터 기간 (7일)
+SIGNAL_COOLDOWN_MINUTES = 5  # 수동 신호 생성 쿨다운 (분)
+SIGNAL_MIN_CONFIDENCE = 0.0  # 최소 신뢰도
+SIGNAL_MAX_CONFIDENCE = 1.0  # 최대 신뢰도
+SIGNAL_DEFAULT_CONFIDENCE = 0.5  # 기본 신뢰도 (파싱 실패 시)
+
+# === 주문 실행 설정 ===
+ORDER_POLL_INTERVAL_SECONDS = 1.0  # 주문 체결 확인 간격 (초)
+ORDER_POLL_MAX_ATTEMPTS = 30  # 주문 체결 확인 최대 시도 횟수
+ORDER_MAX_RETRIES = 3  # 주문 재시도 횟수
+ORDER_RETRY_DELAY_SECONDS = 1.0  # 주문 재시도 대기 시간 (초)
+
 # === 에러 메시지 ===
 ERROR_INTERNAL_SERVER = "서버 내부 오류가 발생했습니다"
 ERROR_UNAUTHORIZED = "인증이 필요합니다"

@@ -163,23 +163,23 @@
 
 ### 6.1 order_executor.py (1,129줄) → 3개
 
-- [ ] T056 [P] [US4] Extract order validation logic to backend/src/modules/trading/order_validator.py
-- [ ] T057 [P] [US4] Extract order monitoring logic to backend/src/modules/trading/order_monitor.py
-- [ ] T058 [US4] Create TradingService with core order execution in backend/src/modules/trading/service.py
-- [ ] T059 [US4] Create trading routes from api/trading.py in backend/src/modules/trading/routes.py
+- [X] T056 [P] [US4] Extract order validation logic to backend/src/modules/trading/order_validator.py
+- [X] T057 [P] [US4] Extract order monitoring logic to backend/src/modules/trading/order_monitor.py
+- [X] T058 [US4] Create TradingService with core order execution in backend/src/modules/trading/service.py
+- [X] T059 [US4] Create trading routes from api/trading.py in backend/src/modules/trading/routes.py
 
 ### 6.2 signal_generator.py (790줄) → 3개
 
-- [ ] T060 [P] [US4] Extract prompt building logic to backend/src/modules/signal/prompt_builder.py
-- [ ] T061 [P] [US4] Extract response parsing logic to backend/src/modules/signal/response_parser.py
-- [ ] T062 [US4] Create SignalService with core generation logic in backend/src/modules/signal/service.py
-- [ ] T063 [US4] Create signal routes from api/signals.py in backend/src/modules/signal/routes.py
+- [X] T060 [P] [US4] Extract prompt building logic to backend/src/modules/signal/prompt_builder.py
+- [X] T061 [P] [US4] Extract response parsing logic to backend/src/modules/signal/response_parser.py
+- [X] T062 [US4] Create SignalService with core generation logic in backend/src/modules/signal/service.py
+- [X] T063 [US4] Create signal routes from api/signals.py in backend/src/modules/signal/routes.py
 
 ### 6.3 backtest_runner.py (792줄) → 2개
 
-- [ ] T064 [P] [US4] Extract simulation engine to backend/src/modules/backtest/engine.py
-- [ ] T065 [P] [US4] Extract reporting logic to backend/src/modules/backtest/reporter.py
-- [ ] T066 [US4] Create backtest routes from api/backtest.py in backend/src/modules/backtest/routes.py
+- [X] T064 [P] [US4] Extract simulation engine to backend/src/modules/backtest/engine.py
+- [X] T065 [P] [US4] Extract reporting logic to backend/src/modules/backtest/reporter.py
+- [X] T066 [US4] Create backtest routes from api/backtest.py in backend/src/modules/backtest/routes.py
 
 **Checkpoint**: 대형 파일 분할 완료, 모든 파일 500줄 이하
 

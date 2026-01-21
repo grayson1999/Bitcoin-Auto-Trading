@@ -1,5 +1,13 @@
 """Trading module - order execution and management."""
 
+from src.modules.trading.order_monitor import OrderMonitor
+from src.modules.trading.order_validator import (
+    BalanceInfo,
+    OrderBlockedReason,
+    OrderValidator,
+    ValidationResult,
+)
+from src.modules.trading.routes import router
 from src.modules.trading.schemas import (
     BalanceResponse,
     ExecuteOrderRequest,
@@ -13,8 +21,15 @@ from src.modules.trading.schemas import (
     OrderTypeEnum,
     PositionResponse,
 )
+from src.modules.trading.service import (
+    OrderResult,
+    TradingService,
+    TradingServiceError,
+    get_trading_service,
+)
 
 __all__ = [
+    # Schemas
     "OrderTypeEnum",
     "OrderSideEnum",
     "OrderStatusEnum",
@@ -26,4 +41,18 @@ __all__ = [
     "PositionResponse",
     "BalanceResponse",
     "OrderErrorResponse",
+    # Service
+    "TradingService",
+    "TradingServiceError",
+    "get_trading_service",
+    "OrderResult",
+    # Validator
+    "OrderValidator",
+    "OrderBlockedReason",
+    "ValidationResult",
+    "BalanceInfo",
+    # Monitor
+    "OrderMonitor",
+    # Router
+    "router",
 ]
