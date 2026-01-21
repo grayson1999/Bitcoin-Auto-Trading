@@ -193,22 +193,22 @@
 
 ### 7.1 Upbit Client
 
-- [ ] T067 [P] [US5] Extract public API (ticker, candles) to backend/src/clients/upbit/public_api.py
-- [ ] T068 [P] [US5] Extract private API (order, balance) to backend/src/clients/upbit/private_api.py
-- [ ] T069 [US5] Create clients/upbit/__init__.py with exports in backend/src/clients/upbit/__init__.py
+- [X] T067 [P] [US5] Extract public API (ticker, candles) to backend/src/clients/upbit/public_api.py
+- [X] T068 [P] [US5] Extract private API (order, balance) to backend/src/clients/upbit/private_api.py
+- [X] T069 [US5] Create clients/upbit/__init__.py with exports in backend/src/clients/upbit/__init__.py
 
 ### 7.2 AI Client
 
-- [ ] T070 [P] [US5] Create AI base interface in backend/src/clients/ai/base.py
-- [ ] T071 [P] [US5] Extract Gemini client to backend/src/clients/ai/gemini_client.py
-- [ ] T072 [P] [US5] Extract OpenAI client to backend/src/clients/ai/openai_client.py
-- [ ] T073 [US5] Create clients/ai/__init__.py with exports in backend/src/clients/ai/__init__.py
+- [X] T070 [P] [US5] Create AI base interface in backend/src/clients/ai/base.py
+- [X] T071 [P] [US5] Extract Gemini client to backend/src/clients/ai/gemini_client.py
+- [X] T072 [P] [US5] Extract OpenAI client to backend/src/clients/ai/openai_client.py
+- [X] T073 [US5] Create clients/ai/__init__.py with exports in backend/src/clients/ai/__init__.py
 
 ### 7.3 Other Clients
 
-- [ ] T074 [P] [US5] Move notifier.py to backend/src/clients/slack_client.py
-- [ ] T075 [P] [US5] Move auth_client.py to backend/src/clients/auth_client.py
-- [ ] T076 [US5] Create clients/__init__.py with all exports in backend/src/clients/__init__.py
+- [X] T074 [P] [US5] Move notifier.py to backend/src/clients/slack_client.py
+- [X] T075 [P] [US5] Move auth_client.py to backend/src/clients/auth_client.py
+- [X] T076 [US5] Create clients/__init__.py with all exports in backend/src/clients/__init__.py
 
 **Checkpoint**: 외부 클라이언트 분리 완료
 
