@@ -85,51 +85,51 @@
 
 #### 4.1 Entity Migration (models → entities)
 
-- [ ] T025 [P] [US2] Move market_data.py from models/ to entities/ in backend/src/entities/market_data.py
-- [ ] T026 [P] [US2] Move trading_signal.py from models/ to entities/ in backend/src/entities/trading_signal.py
-- [ ] T027 [P] [US2] Move order.py from models/ to entities/ in backend/src/entities/order.py
-- [ ] T028 [P] [US2] Move position.py from models/ to entities/ in backend/src/entities/position.py
-- [ ] T029 [P] [US2] Move daily_stats.py from models/ to entities/ in backend/src/entities/daily_stats.py
-- [ ] T030 [P] [US2] Move risk_event.py from models/ to entities/ in backend/src/entities/risk_event.py
-- [ ] T031 [P] [US2] Move backtest_result.py from models/ to entities/ in backend/src/entities/backtest_result.py
+- [X] T025 [P] [US2] Move market_data.py from models/ to entities/ in backend/src/entities/market_data.py
+- [X] T026 [P] [US2] Move trading_signal.py from models/ to entities/ in backend/src/entities/trading_signal.py
+- [X] T027 [P] [US2] Move order.py from models/ to entities/ in backend/src/entities/order.py
+- [X] T028 [P] [US2] Move position.py from models/ to entities/ in backend/src/entities/position.py
+- [X] T029 [P] [US2] Move daily_stats.py from models/ to entities/ in backend/src/entities/daily_stats.py
+- [X] T030 [P] [US2] Move risk_event.py from models/ to entities/ in backend/src/entities/risk_event.py
+- [X] T031 [P] [US2] Move backtest_result.py from models/ to entities/ in backend/src/entities/backtest_result.py
 
 #### 4.2 Market Module
 
-- [ ] T032 [P] [US2] Create market schemas from api/schemas/market.py + dashboard.py in backend/src/modules/market/schemas.py
+- [X] T032 [P] [US2] Create market schemas from api/schemas/market.py + dashboard.py in backend/src/modules/market/schemas.py
 - [ ] T033 [US2] Create MarketService from data_collector.py in backend/src/modules/market/service.py
 - [ ] T034 [US2] Create market routes from api/dashboard.py in backend/src/modules/market/routes.py
-- [ ] T035 [US2] Create modules/market/__init__.py in backend/src/modules/market/__init__.py
+- [X] T035 [US2] Create modules/market/__init__.py in backend/src/modules/market/__init__.py
 
 #### 4.3 Signal Module
 
-- [ ] T036 [P] [US2] Create signal schemas from api/schemas/signal.py in backend/src/modules/signal/schemas.py
-- [ ] T037 [US2] Create modules/signal/__init__.py in backend/src/modules/signal/__init__.py
+- [X] T036 [P] [US2] Create signal schemas from api/schemas/signal.py in backend/src/modules/signal/schemas.py
+- [X] T037 [US2] Create modules/signal/__init__.py in backend/src/modules/signal/__init__.py
 
 #### 4.4 Trading Module
 
-- [ ] T038 [P] [US2] Create trading schemas from api/schemas/order.py in backend/src/modules/trading/schemas.py
-- [ ] T039 [US2] Create modules/trading/__init__.py in backend/src/modules/trading/__init__.py
+- [X] T038 [P] [US2] Create trading schemas from api/schemas/order.py in backend/src/modules/trading/schemas.py
+- [X] T039 [US2] Create modules/trading/__init__.py in backend/src/modules/trading/__init__.py
 
 #### 4.5 Risk Module
 
-- [ ] T040 [P] [US2] Create risk schemas from api/schemas/risk.py in backend/src/modules/risk/schemas.py
+- [X] T040 [P] [US2] Create risk schemas from api/schemas/risk.py in backend/src/modules/risk/schemas.py
 - [ ] T041 [US2] Create RiskService from risk_manager.py in backend/src/modules/risk/service.py
 - [ ] T042 [US2] Create risk routes from api/risk.py in backend/src/modules/risk/routes.py
-- [ ] T043 [US2] Create modules/risk/__init__.py in backend/src/modules/risk/__init__.py
+- [X] T043 [US2] Create modules/risk/__init__.py in backend/src/modules/risk/__init__.py
 
 #### 4.6 Backtest Module
 
-- [ ] T044 [P] [US2] Create backtest schemas from api/schemas/backtest.py in backend/src/modules/backtest/schemas.py
-- [ ] T045 [US2] Create modules/backtest/__init__.py in backend/src/modules/backtest/__init__.py
+- [X] T044 [P] [US2] Create backtest schemas from api/schemas/backtest.py in backend/src/modules/backtest/schemas.py
+- [X] T045 [US2] Create modules/backtest/__init__.py in backend/src/modules/backtest/__init__.py
 
 #### 4.7 Health Module
 
-- [ ] T046 [US2] Create health routes from api/health.py in backend/src/modules/health/routes.py
-- [ ] T047 [US2] Create modules/health/__init__.py in backend/src/modules/health/__init__.py
+- [X] T046 [US2] Create health routes from api/health.py in backend/src/modules/health/routes.py
+- [X] T047 [US2] Create modules/health/__init__.py in backend/src/modules/health/__init__.py
 
 #### 4.8 Router Integration
 
-- [ ] T048 [US2] Update main.py to include all module routers in backend/src/main.py
+- [X] T048 [US2] Update main.py to include all module routers in backend/src/main.py
 
 **Checkpoint**: 7개 도메인 모듈 구조 완료
 
@@ -239,7 +239,15 @@
 - [ ] T088 Verify all API endpoints return same responses (/api/v1/... paths)
 - [ ] T089 Verify all files are 500 lines or less
 - [ ] T090 Update CLAUDE.md with new project structure in CLAUDE.md
+- [ ] T090-1 Rewrite CLAUDE.md - 간결하게 재작성, 자주 사용하는 명령어 포함:
+  - systemctl 로그 확인: `journalctl -u bitcoin-backend -f`, `journalctl -u bitcoin-frontend -f`
+  - 백엔드 재시작: `sudo systemctl restart bitcoin-backend`
+  - 프론트엔드 재시작: `sudo systemctl restart bitcoin-frontend`
+  - 서비스 상태 확인: `systemctl status bitcoin-backend bitcoin-frontend`
 - [ ] T091 Run quickstart.md validation steps
+- [ ] T092 Remove deprecated position_size_pct field (settings.py, schemas, routes, DEFAULT_CONFIGS, DB_OVERRIDABLE_KEYS)
+- [ ] T093 Clean up DB_OVERRIDABLE_KEYS - 프론트엔드에서 실제 설정 가능한 필드만 포함
+- [ ] T094 Update settings.py [DB 오버라이드 가능] comments - 실제 오버라이드 가능한 필드만 표시
 
 ---
 
