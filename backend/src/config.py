@@ -78,15 +78,15 @@ class Settings(BaseSettings):
     # 각 파라미터는 ge(이상), le(이하)로 유효 범위가 제한됨
     # 동적 포지션 사이징: AI 신뢰도에 따라 min~max 범위에서 계산
     position_size_min_pct: float = Field(
-        default=1.0,
-        ge=0.1,
-        le=10.0,
+        default=25.0,
+        ge=1.0,
+        le=50.0,
         description="최소 포지션 크기 비율 (신뢰도 낮을 때)",
     )
     position_size_max_pct: float = Field(
-        default=3.0,
-        ge=0.5,
-        le=20.0,
+        default=50.0,
+        ge=5.0,
+        le=100.0,
         description="최대 포지션 크기 비율 (신뢰도 높을 때)",
     )
     # 기존 호환성을 위해 유지 (deprecated, max_pct와 동일하게 동작)
