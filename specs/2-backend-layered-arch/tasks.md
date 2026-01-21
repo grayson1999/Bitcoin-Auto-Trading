@@ -58,18 +58,18 @@
 
 ### Implementation for User Story 1
 
-- [ ] T013 [P] [US1] Extract settings from config.py to backend/src/config/settings.py (Pydantic BaseSettings)
-- [ ] T014 [P] [US1] Create constants.py with hardcoded values from services in backend/src/config/constants.py
-- [ ] T015 [P] [US1] Extract logging setup from config.py to backend/src/config/logging.py
-- [ ] T016 [US1] Create config/__init__.py exporting settings, constants in backend/src/config/__init__.py
-- [ ] T017 [US1] Move system_config.py from models/ to entities/ in backend/src/entities/system_config.py
-- [ ] T018 [US1] Create ConfigRepository with get_value/set_value in backend/src/repositories/config_repository.py
-- [ ] T019 [US1] Create ConfigService with DB-first priority logic in backend/src/modules/config/service.py
-- [ ] T020 [P] [US1] Create config schemas in backend/src/modules/config/schemas.py
-- [ ] T021 [US1] Create config routes (GET/PATCH) in backend/src/modules/config/routes.py
-- [ ] T022 [US1] Create modules/config/__init__.py in backend/src/modules/config/__init__.py
-- [ ] T023 [US1] Add DB override comments to settings.py fields in backend/src/config/settings.py
-- [ ] T024 [US1] Update main.py to import from config/ instead of config.py in backend/src/main.py
+- [X] T013 [P] [US1] Extract settings from config.py to backend/src/config/settings.py (Pydantic BaseSettings)
+- [X] T014 [P] [US1] Create constants.py with hardcoded values from services in backend/src/config/constants.py
+- [X] T015 [P] [US1] Extract logging setup from config.py to backend/src/config/logging.py
+- [X] T016 [US1] Create config/__init__.py exporting settings, constants in backend/src/config/__init__.py
+- [X] T017 [US1] Move system_config.py from models/ to entities/ in backend/src/entities/system_config.py
+- [X] T018 [US1] Create ConfigRepository with get_value/set_value in backend/src/repositories/config_repository.py
+- [X] T019 [US1] Create ConfigService with DB-first priority logic in backend/src/modules/config/service.py
+- [X] T020 [P] [US1] Create config schemas in backend/src/modules/config/schemas.py
+- [X] T021 [US1] Create config routes (GET/PATCH) in backend/src/modules/config/routes.py
+- [X] T022 [US1] Create modules/config/__init__.py in backend/src/modules/config/__init__.py
+- [X] T023 [US1] Add DB override comments to settings.py fields in backend/src/config/settings.py
+- [X] T024 [US1] Update main.py to import from config/ instead of config.py in backend/src/main.py
 
 **Checkpoint**: 설정 중앙 관리 완료, DB 우선순위 적용 확인
 
