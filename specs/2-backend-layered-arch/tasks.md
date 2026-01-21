@@ -24,13 +24,13 @@
 
 **Purpose**: 새 디렉토리 구조 생성 및 기본 설정
 
-- [ ] T001 [P] Create config/ directory structure in backend/src/config/
-- [ ] T002 [P] Create entities/ directory structure in backend/src/entities/
-- [ ] T003 [P] Create repositories/ directory structure in backend/src/repositories/
-- [ ] T004 [P] Create modules/ directory structure with 7 domains in backend/src/modules/
-- [ ] T005 [P] Create clients/ directory structure in backend/src/clients/
-- [ ] T006 [P] Create utils/ directory structure in backend/src/utils/
-- [ ] T007 [P] Create scheduler/jobs/ directory structure in backend/src/scheduler/jobs/
+- [X] T001 [P] Create config/ directory structure in backend/src/config/
+- [X] T002 [P] Create entities/ directory structure in backend/src/entities/
+- [X] T003 [P] Create repositories/ directory structure in backend/src/repositories/
+- [X] T004 [P] Create modules/ directory structure with 7 domains in backend/src/modules/
+- [X] T005 [P] Create clients/ directory structure in backend/src/clients/
+- [X] T006 [P] Create utils/ directory structure in backend/src/utils/
+- [X] T007 [P] Create scheduler/jobs/ directory structure in backend/src/scheduler/jobs/
 
 ---
 
