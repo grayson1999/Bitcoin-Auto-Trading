@@ -1,253 +1,89 @@
-# Bitcoin Auto-Trading System
+# Bitcoin Auto-Trading
 
-비트코인 자동 거래 시스템 - Gemini AI 기반 매매 신호 생성 및 Upbit 자동 거래
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6+-3178C6?logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini_AI-2.5_Pro-8E75B2?logo=googlegemini&logoColor=white)
 
-## 시스템 구성
+> Gemini AI 기반 매매 신호 생성 및 Upbit 자동 거래 시스템
 
-- **Backend**: FastAPI + SQLAlchemy + APScheduler
-- **Frontend**: React + Vite + TailwindCSS
-- **Database**: PostgreSQL
-- **AI**: Google Gemini 2.5 Flash
-- **거래소**: Upbit
-- **인증**: Auth Server (별도 서비스, localhost:9000)
-
-## 서버 관리
-
-### 전체 서비스 관리 (Backend + Auth Server)
-
-```bash
-# 두 서비스 함께 재시작 (권장)
-sudo systemctl restart trading-stack.target
-
-# 두 서비스 함께 시작
-sudo systemctl start trading-stack.target
-
-# 두 서비스 함께 중지
-sudo systemctl stop trading-stack.target
-
-# 두 서비스 상태 확인
-sudo systemctl status auth-server bitcoin-trading-backend
-```
-
-### Backend 서비스 관리
-
-```bash
-# 상태 확인
-sudo systemctl status bitcoin-trading-backend
-
-# 시작
-sudo systemctl start bitcoin-trading-backend
-
-# 중지
-sudo systemctl stop bitcoin-trading-backend
-
-# 재시작
-sudo systemctl restart bitcoin-trading-backend
-
-# 부팅 시 자동 시작 활성화
-sudo systemctl enable bitcoin-trading-backend
-
-# 부팅 시 자동 시작 비활성화
-sudo systemctl disable bitcoin-trading-backend
-```
-
-### 로그 확인
-
-```bash
-# 실시간 로그 보기
-sudo journalctl -u bitcoin-trading-backend -f
-
-# 최근 100줄 로그
-sudo journalctl -u bitcoin-trading-backend -n 100
-
-# 오늘 로그만 보기
-sudo journalctl -u bitcoin-trading-backend --since today
-
-# 오류 로그만 보기
-sudo journalctl -u bitcoin-trading-backend -p err
-```
-
-### Nginx 관리
-
-```bash
-# 상태 확인
-sudo systemctl status nginx
-
-# 재시작
-sudo systemctl restart nginx
-
-# 설정 테스트
-sudo nginx -t
-
-# 설정 리로드 (무중단)
-sudo systemctl reload nginx
-```
-
-### 데이터베이스 마이그레이션
-
-```bash
-cd /home/ubuntu/Bitcoin-Auto-Trading/backend
-source .venv/bin/activate
-
-# 현재 마이그레이션 상태 확인
-alembic current
-
-# 마이그레이션 히스토리 보기
-alembic history
-
-# 최신 마이그레이션 적용
-alembic upgrade head
-
-# 한 단계 롤백
-alembic downgrade -1
-```
-
-## 개발 환경
-
-### Backend 개발 서버
-
-```bash
-cd /home/ubuntu/Bitcoin-Auto-Trading/backend
-source .venv/bin/activate
-uvicorn src.main:app --reload --port 8000
-```
-
-### Frontend 개발 서버
-
-```bash
-cd /home/ubuntu/Bitcoin-Auto-Trading/frontend
-npm run dev
-```
-
-### Frontend 빌드 (프로덕션)
-
-```bash
-cd /home/ubuntu/Bitcoin-Auto-Trading/frontend
-npm run build
-# 빌드 결과: /home/ubuntu/Bitcoin-Auto-Trading/frontend/dist
-```
-
-## API 엔드포인트
-
-### 공개 엔드포인트
-| 경로 | 설명 |
-|------|------|
-| `GET /api/v1/health` | 서버 상태 확인 |
-
-### 인증 필요 엔드포인트
-| 경로 | 설명 |
-|------|------|
-| `GET /api/v1/dashboard/summary` | 대시보드 요약 |
-| `GET /api/v1/signals` | AI 신호 목록 |
-| `POST /api/v1/signals/generate` | AI 신호 수동 생성 |
-| `GET /api/v1/trading/orders` | 주문 내역 |
-| `GET /api/v1/risk/status` | 리스크 상태 |
-| `POST /api/v1/backtest/run` | 백테스트 실행 |
-| `GET /api/v1/backtest/results` | 백테스트 결과 목록 |
-
-> **참고**: 인증 필요 엔드포인트는 `Authorization: Bearer <token>` 헤더가 필요합니다.
-
-## 디렉토리 구조
+## Directory Structure
 
 ```
 Bitcoin-Auto-Trading/
-├── backend/
-│   ├── src/
-│   │   ├── main.py           # FastAPI 앱
-│   │   ├── config.py         # 설정
-│   │   ├── database.py       # DB 연결
-│   │   ├── models/           # SQLAlchemy 모델
-│   │   ├── services/         # 비즈니스 로직
-│   │   ├── api/              # API 엔드포인트
-│   │   └── scheduler/        # 스케줄러 작업
-│   ├── alembic/              # DB 마이그레이션
-│   ├── .venv/                # Python 가상환경
-│   └── .env                  # 환경 변수
-├── frontend/
-│   ├── src/
-│   │   ├── pages/            # 페이지 컴포넌트
-│   │   ├── components/       # 재사용 컴포넌트
-│   │   ├── contexts/         # React Context (Auth 등)
-│   │   ├── hooks/            # React 훅
-│   │   └── api/              # API 클라이언트
-│   └── dist/                 # 빌드 결과물
-└── specs/                    # 설계 문서
+├── backend/          # FastAPI 백엔드 (Python 3.11+)
+├── frontend/         # React 프론트엔드 (TypeScript)
+├── docker-compose.yml
+├── Makefile
+└── CLAUDE.md         # 개발 가이드 (상세)
 ```
 
-## 환경 변수
-
-### Backend `.env`
-파일 위치: `/home/ubuntu/Bitcoin-Auto-Trading/backend/.env`
+## Quick Start
 
 ```bash
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/bitcoin
-AUTH_SERVER_URL=http://localhost:9000
-UPBIT_ACCESS_KEY=your-access-key
-UPBIT_SECRET_KEY=your-secret-key
-GEMINI_API_KEY=your-gemini-api-key
-SLACK_WEBHOOK_URL=https://hooks.slack.com/...
+# 1. 저장소 클론
+git clone https://github.com/your-username/Bitcoin-Auto-Trading.git
+cd Bitcoin-Auto-Trading
+
+# 2. 환경 변수 설정
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+# backend/.env 에서 GEMINI_API_KEY, UPBIT_ACCESS_KEY, UPBIT_SECRET_KEY 설정
+
+# 3. PostgreSQL 시작
+make dev-db
+
+# 4. 백엔드 실행 (새 터미널)
+cd backend && uv sync && uv run alembic upgrade head
+cd .. && make dev-backend
+
+# 5. 프론트엔드 실행 (새 터미널)
+cd frontend && npm install
+make dev-frontend
 ```
 
-### Frontend `.env`
-파일 위치: `/home/ubuntu/Bitcoin-Auto-Trading/frontend/.env`
+| 서비스 | URL |
+|--------|-----|
+| Frontend | http://localhost:5173 |
+| Backend | http://localhost:8000 |
+| API Docs (Swagger) | http://localhost:8000/docs |
+| API Docs (ReDoc) | http://localhost:8000/redoc |
+
+## Environment Variables
+
+| 위치 | 파일 | 필수 변수 |
+|------|------|-----------|
+| `/backend` | `.env.example` | `DATABASE_URL`, `GEMINI_API_KEY` |
+| `/frontend` | `.env.example` | `VITE_API_URL` |
+
+## Production
+
+### 서비스 관리
 
 ```bash
-VITE_API_URL=http://localhost:8000
-VITE_AUTH_API_URL=http://localhost:9000
-```
-
-## 문제 해결
-
-### Backend가 시작되지 않을 때
-
-```bash
-# 로그 확인
-sudo journalctl -u bitcoin-trading-backend -n 50
-
-# 포트 사용 중인지 확인
-sudo lsof -i :8000
-
-# 수동으로 실행해서 에러 확인
-cd /home/ubuntu/Bitcoin-Auto-Trading/backend
-source .venv/bin/activate
-uvicorn src.main:app --host 0.0.0.0 --port 8000
-```
-
-### 데이터베이스 연결 오류
-
-```bash
-# PostgreSQL 상태 확인
-sudo systemctl status postgresql
-
-# PostgreSQL 재시작
-sudo systemctl restart postgresql
-```
-
-### Frontend 변경사항이 반영되지 않을 때
-
-```bash
-# 프론트엔드 재빌드
-cd /home/ubuntu/Bitcoin-Auto-Trading/frontend
-npm run build
-
-# Nginx 캐시 무효화 (브라우저에서 Ctrl+Shift+R)
-```
-
-### 인증 오류 (401 Unauthorized)
-
-```bash
-# Auth Server 상태 확인
-curl http://localhost:9000/api/v1/health
-
-# Auth Server가 실행 중이지 않다면 시작
-sudo systemctl start auth-server
-
-# 또는 두 서비스 함께 재시작
+# 전체 서비스 재시작
 sudo systemctl restart trading-stack.target
+
+# 상태 확인
+sudo systemctl status auth-server bitcoin-trading-backend
+
+# 로그 확인
+sudo journalctl -u bitcoin-trading-backend -f
 ```
 
-### 로그인 실패
+### Nginx
 
-1. **잘못된 자격증명**: 이메일/비밀번호 확인
-2. **계정 잠김 (5회 실패)**: 15분 대기 후 재시도
-3. **Auth Server 연결 불가**: Auth Server 실행 상태 확인
+```bash
+sudo systemctl status nginx
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+## Documentation
+
+| 문서 | 설명 |
+|------|------|
+| [CLAUDE.md](./CLAUDE.md) | 개발 가이드, 아키텍처, API 상세 |
+| [backend/README.md](./backend/README.md) | 백엔드 설치·실행·API 문서 |
+| [frontend/README.md](./frontend/README.md) | 프론트엔드 설치·실행·빌드 |

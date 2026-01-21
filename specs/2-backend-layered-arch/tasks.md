@@ -239,7 +239,7 @@
 - [ ] T088 Verify all API endpoints return same responses (/api/v1/... paths)
 - [ ] T089 Verify all files are 500 lines or less
 - [ ] T090 Update CLAUDE.md with new project structure in CLAUDE.md
-- [ ] T090-1 Rewrite CLAUDE.md - 간결하게 재작성, 자주 사용하는 명령어 포함:
+- [X] T090-1 Rewrite CLAUDE.md - 간결하게 재작성, 자주 사용하는 명령어 포함:
   - systemctl 로그 확인: `journalctl -u bitcoin-backend -f`, `journalctl -u bitcoin-frontend -f`
   - 백엔드 재시작: `sudo systemctl restart bitcoin-backend`
   - 프론트엔드 재시작: `sudo systemctl restart bitcoin-frontend`
