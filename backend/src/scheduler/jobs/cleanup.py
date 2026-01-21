@@ -1,0 +1,32 @@
+"""
+데이터 정리 스케줄러 작업
+
+오래된 시장 데이터 정리 작업을 정의합니다.
+"""
+
+from loguru import logger
+
+from src.database import async_session_factory
+from src.services.data_collector import get_data_collector
+
+
+async def cleanup_old_data_job() -> None:
+    """
+    오래된 데이터 정리 작업
+
+    매일 실행되어 보관 기간이 지난 시장 데이터를 삭제합니다.
+    설정의 data_retention_days 값을 기준으로 삭제합니다.
+    """
+    collector = get_data_collector()
+
+    async with async_session_factory() as session:
+        try:
+            deleted_count = await collector.cleanup_old_data(session)
+            await session.commit()
+
+            if deleted_count > 0:
+                logger.info(f"데이터 정리 완료: {deleted_count}건 삭제")
+
+        except Exception as e:
+            await session.rollback()
+            logger.exception(f"데이터 정리 작업 오류: {e}")

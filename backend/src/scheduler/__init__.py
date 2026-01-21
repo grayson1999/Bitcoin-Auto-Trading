@@ -9,7 +9,7 @@ APScheduler 작업 패키지
 - get_scheduler_status: 스케줄러 상태 조회
 """
 
-from src.scheduler.jobs import (
+from src.scheduler.scheduler import (
     get_scheduler_status,
     scheduler,
     setup_scheduler,

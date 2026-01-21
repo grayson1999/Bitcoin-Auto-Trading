@@ -218,13 +218,13 @@
 
 **Purpose**: 스케줄러 작업 도메인별 분리
 
-- [ ] T077 [P] Extract data collection job to backend/src/scheduler/jobs/data_collection.py
-- [ ] T078 [P] Extract signal generation job to backend/src/scheduler/jobs/signal_generation.py
-- [ ] T079 [P] Extract order sync job to backend/src/scheduler/jobs/order_sync.py
-- [ ] T080 [P] Extract cleanup job to backend/src/scheduler/jobs/cleanup.py
-- [ ] T081 Create scheduler/jobs/__init__.py with exports in backend/src/scheduler/jobs/__init__.py
-- [ ] T082 Refactor scheduler.py to use job modules in backend/src/scheduler/scheduler.py
-- [ ] T083 Update scheduler/__init__.py in backend/src/scheduler/__init__.py
+- [X] T077 [P] Extract data collection job to backend/src/scheduler/jobs/data_collection.py
+- [X] T078 [P] Extract signal generation job to backend/src/scheduler/jobs/signal_generation.py
+- [X] T079 [P] Extract order sync job to backend/src/scheduler/jobs/order_sync.py
+- [X] T080 [P] Extract cleanup job to backend/src/scheduler/jobs/cleanup.py
+- [X] T081 Create scheduler/jobs/__init__.py with exports in backend/src/scheduler/jobs/__init__.py
+- [X] T082 Refactor scheduler.py to use job modules in backend/src/scheduler/scheduler.py
+- [X] T083 Update scheduler/__init__.py in backend/src/scheduler/__init__.py
 
 ---
 

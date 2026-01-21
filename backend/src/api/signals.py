@@ -22,7 +22,7 @@ from src.api.schemas.signal import (
 )
 from src.database import get_session
 from src.models import SignalType
-from src.scheduler.jobs import execute_trading_from_signal_job
+from src.scheduler.jobs.signal_generation import execute_trading_from_signal_job
 from src.services.signal_generator import (
     SignalGeneratorError,
     get_signal_generator,

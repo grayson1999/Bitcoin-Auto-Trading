@@ -28,7 +28,7 @@ from src.modules.signal.schemas import (
     TradingSignalResponse,
 )
 from src.modules.signal.service import SignalServiceError, get_signal_service
-from src.scheduler.jobs import execute_trading_from_signal_job
+from src.scheduler.jobs.signal_generation import execute_trading_from_signal_job
 
 router = APIRouter(prefix="/signals")
 
