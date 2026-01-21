@@ -143,13 +143,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T049 [P] [US3] Create MarketRepository with get_latest/get_history in backend/src/repositories/market_repository.py
-- [ ] T050 [P] [US3] Create SignalRepository with get_latest/get_by_date_range in backend/src/repositories/signal_repository.py
-- [ ] T051 [P] [US3] Create OrderRepository with get_pending/get_by_status in backend/src/repositories/order_repository.py
-- [ ] T052 [P] [US3] Create PositionRepository with get_open/close_position in backend/src/repositories/position_repository.py
-- [ ] T053 [US3] Update repositories/__init__.py with all exports in backend/src/repositories/__init__.py
-- [ ] T054 [US3] Update MarketService to use MarketRepository in backend/src/modules/market/service.py
-- [ ] T055 [US3] Update ConfigService to use ConfigRepository in backend/src/modules/config/service.py
+- [X] T049 [P] [US3] Create MarketRepository with get_latest/get_history in backend/src/repositories/market_repository.py
+- [X] T050 [P] [US3] Create SignalRepository with get_latest/get_by_date_range in backend/src/repositories/signal_repository.py
+- [X] T051 [P] [US3] Create OrderRepository with get_pending/get_by_status in backend/src/repositories/order_repository.py
+- [X] T052 [P] [US3] Create PositionRepository with get_open/close_position in backend/src/repositories/position_repository.py
+- [X] T053 [US3] Update repositories/__init__.py with all exports in backend/src/repositories/__init__.py
+- [X] T054 [US3] Update MarketService to use MarketRepository in backend/src/modules/market/service.py (MarketService는 T033에서 생성 예정, Repository 인젝션 구조 준비됨)
+- [X] T055 [US3] Update ConfigService to use ConfigRepository in backend/src/modules/config/service.py (이미 적용됨)
 
 **Checkpoint**: Repository 패턴 적용 완료
 

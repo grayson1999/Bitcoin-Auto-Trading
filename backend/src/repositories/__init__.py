@@ -7,7 +7,7 @@ Repository 패키지
 Phase 3 (User Story 1)에서 추가:
 - ConfigRepository
 
-Phase 5 (User Story 3)에서 추가 예정:
+Phase 5 (User Story 3)에서 추가:
 - MarketRepository
 - SignalRepository
 - OrderRepository
@@ -16,8 +16,16 @@ Phase 5 (User Story 3)에서 추가 예정:
 
 from src.repositories.base import BaseRepository
 from src.repositories.config_repository import ConfigRepository
+from src.repositories.market_repository import MarketRepository
+from src.repositories.order_repository import OrderRepository
+from src.repositories.position_repository import PositionRepository
+from src.repositories.signal_repository import SignalRepository
 
 __all__ = [
     "BaseRepository",
     "ConfigRepository",
+    "MarketRepository",
+    "OrderRepository",
+    "PositionRepository",
+    "SignalRepository",
 ]
