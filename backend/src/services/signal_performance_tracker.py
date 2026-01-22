@@ -14,8 +14,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.models import TradingSignal
-from src.models.trading_signal import SignalType
+from src.entities import SignalType, TradingSignal
 from src.services.upbit_client import UpbitClient, get_upbit_client
 
 

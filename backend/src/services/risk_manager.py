@@ -20,7 +20,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.models import (
+from src.entities import (
     DailyStats,
     MarketData,
     Position,
@@ -138,7 +138,9 @@ class RiskManager:
         position_size_max_pct = await self._get_config_value(
             "position_size_max_pct", settings.position_size_max_pct
         )
-        max_amount = total_balance * Decimal(str(position_size_max_pct)) / Decimal("100")
+        max_amount = (
+            total_balance * Decimal(str(position_size_max_pct)) / Decimal("100")
+        )
 
         if requested_amount > max_amount:
             message = (

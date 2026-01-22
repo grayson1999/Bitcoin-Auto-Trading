@@ -27,7 +27,7 @@ from src.api.schemas.order import (
 )
 from src.config import settings
 from src.database import get_session
-from src.models import OrderStatus, Position
+from src.entities import OrderStatus, Position
 from src.services.order_executor import get_order_executor
 from src.services.upbit_client import UpbitError, get_upbit_client
 
@@ -295,7 +295,7 @@ async def sync_pending_orders(
     Returns:
         dict: 동기화 결과 (synced_count, updated_orders)
     """
-    from src.models import Order
+    from src.entities import Order
 
     upbit_client = get_upbit_client()
 

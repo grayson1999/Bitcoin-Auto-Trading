@@ -17,7 +17,7 @@ from loguru import logger
 
 from src.config import settings
 from src.database import async_session_factory
-from src.models import SignalType
+from src.entities import SignalType
 from src.services.data_collector import get_data_collector
 from src.services.order_executor import (
     OrderBlockedReason,
@@ -205,7 +205,10 @@ async def generate_trading_signal_job() -> None:
                     )
 
                     # 잔고 부족으로 주문 실패 시 신호에 실패 사유 기록
-                    if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
+                    if (
+                        order_result.blocked_reason
+                        == OrderBlockedReason.INSUFFICIENT_BALANCE
+                    ):
                         signal.reasoning = (
                             signal.reasoning or ""
                         ) + f" [주문 실패: {order_result.blocked_reason.value}]"
@@ -242,7 +245,7 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
     """
     from sqlalchemy import select
 
-    from src.models import TradingSignal
+    from src.entities import TradingSignal
 
     async with async_session_factory() as session:
         try:
@@ -280,7 +283,10 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
                 )
 
                 # 잔고 부족으로 주문 실패 시 신호를 HOLD로 변환
-                if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
+                if (
+                    order_result.blocked_reason
+                    == OrderBlockedReason.INSUFFICIENT_BALANCE
+                ):
                     signal.signal_type = SignalType.HOLD.value
                     signal.reasoning = (
                         signal.reasoning or ""

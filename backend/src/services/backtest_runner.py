@@ -19,8 +19,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.models import BacktestResult, BacktestStatus, TradingSignal
-from src.models.trading_signal import SignalType
+from src.entities import BacktestResult, BacktestStatus, SignalType, TradingSignal
 from src.services.upbit_client import UpbitClient, get_upbit_client
 
 # === 백테스트 상수 ===

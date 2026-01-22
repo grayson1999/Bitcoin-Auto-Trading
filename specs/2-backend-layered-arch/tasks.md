@@ -232,7 +232,7 @@
 
 **Purpose**: 정리 및 검증
 
-- [ ] T084 Update all import paths across the codebase (models → entities, services → clients/modules)
+- [X] T084 Update all import paths across the codebase (models → entities, services → clients/modules)
 - [ ] T085 Delete old directories: backend/src/models/, backend/src/services/, backend/src/api/
 - [ ] T086 Update pyproject.toml with enhanced Ruff rules in backend/pyproject.toml
 - [ ] T087 Run Ruff lint and fix all issues

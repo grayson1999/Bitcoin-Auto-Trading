@@ -19,8 +19,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.models import MarketData, TradingSignal
-from src.models.trading_signal import SignalType
+from src.entities import MarketData, SignalType, TradingSignal
 from src.services.ai_client import AIClient, AIClientError, get_ai_client
 from src.services.coin_classifier import get_coin_type
 from src.services.multi_timeframe_analyzer import (
@@ -673,10 +672,13 @@ class SignalGenerator:
                     key_facts.append(fact)
 
             if key_facts:
-                sections.append("📈 지표\n" + "\n".join(f"• {f}" for f in key_facts[:3]))
+                sections.append(
+                    "📈 지표\n" + "\n".join(f"• {f}" for f in key_facts[:3])
+                )
             else:
                 sections.append(
-                    "📋 근거\n" + "\n".join(f"• {f}" for f in reasoning_raw["facts"][:3])
+                    "📋 근거\n"
+                    + "\n".join(f"• {f}" for f in reasoning_raw["facts"][:3])
                 )
 
         # 4. 핵심 요소 섹션

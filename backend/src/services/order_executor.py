@@ -22,7 +22,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.models import (
+from src.entities import (
     DailyStats,
     Order,
     OrderSide,
@@ -770,7 +770,9 @@ class OrderExecutor:
             # 시장가 매수는 첫 응답에 executed_volume이 없을 수 있음 → 폴링 필요
             if upbit_response.executed_volume is None:
                 order.status = OrderStatus.PENDING.value
-                logger.info(f"[주문 체결 대기] order_id={order.id}, 체결 정보 폴링 필요")
+                logger.info(
+                    f"[주문 체결 대기] order_id={order.id}, 체결 정보 폴링 필요"
+                )
                 return
 
             executed_price = self._calculate_executed_price(order, upbit_response)
@@ -830,7 +832,9 @@ class OrderExecutor:
                         continue
 
                     # 체결 완료 - _calculate_executed_price 사용
-                    executed_price = self._calculate_executed_price(order, upbit_response)
+                    executed_price = self._calculate_executed_price(
+                        order, upbit_response
+                    )
                     executed_volume = upbit_response.executed_volume
                     # 수수료 = 체결금액 * 수수료율 (KRW 기준)
                     total_value = executed_volume * executed_price

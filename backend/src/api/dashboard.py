@@ -27,7 +27,7 @@ from src.api.schemas.order import BalanceResponse, PositionResponse
 from src.api.schemas.signal import TradingSignalResponse
 from src.config import settings
 from src.database import get_session
-from src.models import (
+from src.entities import (
     DailyStats,
     Order,
     OrderStatus,

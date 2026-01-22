@@ -27,7 +27,7 @@ from src.api.schemas.risk import (
 )
 from src.config import settings
 from src.database import get_session
-from src.models import RiskEventType
+from src.entities import RiskEventType
 from src.services.risk_manager import RiskManagerError, get_risk_manager
 
 # === 상수 ===

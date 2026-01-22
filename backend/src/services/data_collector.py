@@ -19,7 +19,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.models.market_data import MarketData
+from src.entities import MarketData
 from src.services.upbit_client import UpbitClient, UpbitError, get_upbit_client
 
 # === 수집 관련 상수 ===

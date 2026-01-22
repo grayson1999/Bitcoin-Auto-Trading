@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.deps import CurrentUser
 from src.api.schemas.config import SystemConfigResponse, SystemConfigUpdateRequest
 from src.database import get_session
-from src.models import DEFAULT_CONFIGS, SystemConfig
+from src.entities import DEFAULT_CONFIGS, SystemConfig
 
 router = APIRouter(prefix="/config")
 
@@ -218,13 +218,17 @@ async def update_config(
         await _set_config_value(
             session, "position_size_min_pct", str(request.position_size_min_pct)
         )
-        logger.info(f"설정 변경: position_size_min_pct = {request.position_size_min_pct}")
+        logger.info(
+            f"설정 변경: position_size_min_pct = {request.position_size_min_pct}"
+        )
 
     if request.position_size_max_pct is not None:
         await _set_config_value(
             session, "position_size_max_pct", str(request.position_size_max_pct)
         )
-        logger.info(f"설정 변경: position_size_max_pct = {request.position_size_max_pct}")
+        logger.info(
+            f"설정 변경: position_size_max_pct = {request.position_size_max_pct}"
+        )
 
     if request.position_size_pct is not None:
         await _set_config_value(

@@ -18,10 +18,10 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from src.api import api_router
+from src.clients import close_auth_client, get_auth_client
 from src.config import APP_VERSION, settings, setup_logging
 from src.database import close_db, init_db
 from src.scheduler import setup_scheduler, start_scheduler, stop_scheduler
-from src.services.auth_client import close_auth_client, get_auth_client
 
 # CORS 허용 오리진 목록
 # 프론트엔드 개발 서버 주소들을 허용

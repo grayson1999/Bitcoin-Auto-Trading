@@ -20,8 +20,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.models import TradingSignal
-from src.models.trading_signal import SignalType
+from src.entities import SignalType, TradingSignal
 from src.services.signal_generator import SignalGenerator, get_signal_generator
 from src.services.volatility_breakout import (
     BreakoutCalculationError,
