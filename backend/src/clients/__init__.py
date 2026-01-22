@@ -9,6 +9,27 @@ Clients for external service communication.
 """
 
 # Common constants
+# AI clients
+from src.clients.ai import (
+    AIClient,
+    AIClientError,
+    AIResponse,
+    BaseAIClient,
+    GeminiClient,
+    OpenAIClient,
+    get_ai_client,
+    get_gemini_client,
+    get_openai_client,
+)
+
+# Auth client
+from src.clients.auth_client import (
+    AuthClient,
+    AuthError,
+    AuthUser,
+    close_auth_client,
+    get_auth_client,
+)
 from src.clients.common import (
     DEFAULT_TIMEOUT,
     HTTP_BAD_REQUEST,
@@ -18,6 +39,19 @@ from src.clients.common import (
     HTTP_UNAUTHORIZED,
     MAX_RETRIES,
     RETRY_DELAY,
+)
+
+# Slack client
+from src.clients.slack_client import (
+    AlertLevel,
+    AlertMessage,
+    # Backward compatibility aliases
+    Notifier,
+    NotifierError,
+    SlackClient,
+    SlackClientError,
+    get_notifier,
+    get_slack_client,
 )
 
 # Upbit clients
@@ -32,41 +66,6 @@ from src.clients.upbit import (
     UpbitTickerData,
     get_upbit_private_api,
     get_upbit_public_api,
-)
-
-# AI clients
-from src.clients.ai import (
-    AIClient,
-    AIClientError,
-    AIResponse,
-    BaseAIClient,
-    GeminiClient,
-    OpenAIClient,
-    get_ai_client,
-    get_gemini_client,
-    get_openai_client,
-)
-
-# Slack client
-from src.clients.slack_client import (
-    AlertLevel,
-    AlertMessage,
-    SlackClient,
-    SlackClientError,
-    get_slack_client,
-    # Backward compatibility aliases
-    Notifier,
-    NotifierError,
-    get_notifier,
-)
-
-# Auth client
-from src.clients.auth_client import (
-    AuthClient,
-    AuthError,
-    AuthUser,
-    close_auth_client,
-    get_auth_client,
 )
 
 __all__ = [

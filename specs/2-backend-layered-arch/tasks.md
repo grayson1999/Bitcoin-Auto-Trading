@@ -96,7 +96,7 @@
 #### 4.2 Market Module
 
 - [X] T032 [P] [US2] Create market schemas from api/schemas/market.py + dashboard.py in backend/src/modules/market/schemas.py
-- [ ] T033 [US2] Create MarketService from data_collector.py in backend/src/modules/market/service.py
+- [X] T033 [US2] Create MarketService from data_collector.py in backend/src/modules/market/service.py
 - [ ] T034 [US2] Create market routes from api/dashboard.py in backend/src/modules/market/routes.py
 - [X] T035 [US2] Create modules/market/__init__.py in backend/src/modules/market/__init__.py
 

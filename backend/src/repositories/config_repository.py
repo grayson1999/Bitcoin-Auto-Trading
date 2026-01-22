@@ -6,7 +6,7 @@
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -77,7 +77,7 @@ class ConfigRepository(BaseRepository[SystemConfig]):
         config = result.scalar_one_or_none()
 
         json_value = json.dumps(value)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if config is None:
             config = SystemConfig(

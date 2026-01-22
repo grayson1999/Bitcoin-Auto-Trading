@@ -7,11 +7,11 @@ Upbit exchange API clients.
 """
 
 from src.clients.upbit.common import (
+    MAX_RETRIES,
+    REQUEST_TIMEOUT,
+    RETRY_DELAY,
     # Constants
     UPBIT_API_URL,
-    REQUEST_TIMEOUT,
-    MAX_RETRIES,
-    RETRY_DELAY,
     # Models
     UpbitBalance,
     UpbitCandleData,

@@ -11,12 +11,12 @@ from loguru import logger
 from openai import AsyncOpenAI
 
 from src.clients.ai.base import (
-    AIClientError,
-    AIResponse,
-    BaseAIClient,
     DEFAULT_TIMEOUT,
     MAX_RETRIES,
     RETRY_DELAY,
+    AIClientError,
+    AIResponse,
+    BaseAIClient,
 )
 from src.config import settings
 
