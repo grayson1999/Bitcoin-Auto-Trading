@@ -14,8 +14,26 @@ from src.modules.risk.schemas import (
     StopLossCheckResponse,
     VolatilityCheckResponse,
 )
+from src.modules.risk.service import (
+    PositionCheckResult,
+    RiskCheckResult,
+    RiskService,
+    RiskServiceError,
+    RiskStatus,
+    StopLossCheckResult,
+    get_risk_service,
+)
 
 __all__ = [
+    # Service
+    "RiskService",
+    "RiskServiceError",
+    "get_risk_service",
+    "RiskCheckResult",
+    "RiskStatus",
+    "PositionCheckResult",
+    "StopLossCheckResult",
+    # Schemas
     "RiskEventTypeEnum",
     "RiskEventResponse",
     "RiskEventListResponse",

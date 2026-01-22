@@ -113,7 +113,7 @@
 #### 4.5 Risk Module
 
 - [X] T040 [P] [US2] Create risk schemas from api/schemas/risk.py in backend/src/modules/risk/schemas.py
-- [ ] T041 [US2] Create RiskService from risk_manager.py in backend/src/modules/risk/service.py
+- [X] T041 [US2] Create RiskService from risk_manager.py in backend/src/modules/risk/service.py
 - [ ] T042 [US2] Create risk routes from api/risk.py in backend/src/modules/risk/routes.py
 - [X] T043 [US2] Create modules/risk/__init__.py in backend/src/modules/risk/__init__.py
 

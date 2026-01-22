@@ -87,6 +87,9 @@ ORDER_POLL_MAX_ATTEMPTS = 30  # 주문 체결 확인 최대 시도 횟수
 ORDER_MAX_RETRIES = 3  # 주문 재시도 횟수
 ORDER_RETRY_DELAY_SECONDS = 1.0  # 주문 재시도 대기 시간 (초)
 
+# === 리스크 관리 설정 ===
+RISK_WARNING_THRESHOLD_RATIO = 0.8  # 경고 발생 임계값 비율 (80%)
+
 # === 에러 메시지 ===
 ERROR_INTERNAL_SERVER = "서버 내부 오류가 발생했습니다"
 ERROR_UNAUTHORIZED = "인증이 필요합니다"
