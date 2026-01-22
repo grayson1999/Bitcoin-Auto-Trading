@@ -1,5 +1,6 @@
 """Risk module - risk management and trading controls."""
 
+from src.modules.risk.routes import router
 from src.modules.risk.schemas import (
     HaltTradingRequest,
     HaltTradingResponse,
@@ -25,6 +26,8 @@ from src.modules.risk.service import (
 )
 
 __all__ = [
+    # Router
+    "router",
     # Service
     "RiskService",
     "RiskServiceError",
