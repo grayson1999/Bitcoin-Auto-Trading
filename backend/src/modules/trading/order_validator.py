@@ -16,7 +16,7 @@ from loguru import logger
 from src.config import settings
 from src.config.constants import UPBIT_MIN_ORDER_KRW
 from src.entities import Position, SignalType, TradingSignal
-from src.services.risk_manager import RiskCheckResult, RiskManager
+from src.modules.risk.service import RiskCheckResult, RiskService
 from src.services.upbit_client import UpbitClient, UpbitError
 
 # 상수를 Decimal로 변환
@@ -67,17 +67,17 @@ class OrderValidator:
     def __init__(
         self,
         upbit_client: UpbitClient,
-        risk_manager: RiskManager,
+        risk_service: RiskService,
     ) -> None:
         """
         OrderValidator 초기화
 
         Args:
             upbit_client: Upbit API 클라이언트
-            risk_manager: 리스크 관리 서비스
+            risk_service: 리스크 관리 서비스
         """
         self._upbit_client = upbit_client
-        self._risk_manager = risk_manager
+        self._risk_service = risk_service
 
     async def validate_signal(
         self,
@@ -104,7 +104,7 @@ class OrderValidator:
             )
 
         # 1. 거래 활성화 상태 확인
-        if not await self._risk_manager.is_trading_enabled():
+        if not await self._risk_service.is_trading_enabled():
             logger.warning("거래 비활성화 상태 - 주문 실행 불가")
             return (
                 ValidationResult(
@@ -116,7 +116,7 @@ class OrderValidator:
             )
 
         # 2. 일일 손실 한도 체크
-        daily_result, daily_msg = await self._risk_manager.check_daily_loss_limit()
+        daily_result, daily_msg = await self._risk_service.check_daily_loss_limit()
         if daily_result == RiskCheckResult.BLOCKED:
             logger.warning(f"일일 손실 한도 도달: {daily_msg}")
             return (
@@ -129,7 +129,7 @@ class OrderValidator:
             )
 
         # 3. 변동성 체크
-        vol_result, _vol_pct, vol_msg = await self._risk_manager.check_volatility()
+        vol_result, _vol_pct, vol_msg = await self._risk_service.check_volatility()
         if vol_result == RiskCheckResult.BLOCKED:
             logger.warning(f"고변동성 감지: {vol_msg}")
             return (
@@ -219,7 +219,7 @@ class OrderValidator:
             )
 
         # 포지션 크기 검증
-        pos_result = await self._risk_manager.check_position_size(
+        pos_result = await self._risk_service.check_position_size(
             order_amount, balance_info.total_krw
         )
         if pos_result.result == RiskCheckResult.BLOCKED:
@@ -282,7 +282,7 @@ class OrderValidator:
             )
 
         # 손절 체크
-        stop_loss_result = await self._risk_manager.check_stop_loss(
+        stop_loss_result = await self._risk_service.check_stop_loss(
             position, current_price
         )
         if stop_loss_result.result == RiskCheckResult.BLOCKED:

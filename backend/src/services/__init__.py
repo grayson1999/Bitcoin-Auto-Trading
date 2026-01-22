@@ -1,29 +1,24 @@
 """
-비즈니스 로직 서비스 패키지
+공유 인프라 서비스 패키지
 
-이 패키지는 핵심 비즈니스 로직 서비스를 제공합니다.
+이 패키지는 모듈에서 공유하는 인프라 서비스를 제공합니다.
 - UpbitClient: Upbit 거래소 API 클라이언트
 - DataCollector: 실시간 시장 데이터 수집기
 - AIClient: Gemini AI API 클라이언트
-- SignalGenerator: AI 매매 신호 생성기
-- HybridSignalGenerator: AI + 변동성 돌파 하이브리드 신호 생성기
-- VolatilityBreakoutStrategy: 변동성 돌파 전략
 - TechnicalIndicatorCalculator: 기술적 지표 계산기
 - MultiTimeframeAnalyzer: 멀티 타임프레임 분석기
 - SignalPerformanceTracker: 신호 성과 추적기
-- RiskManager: 리스크 관리 서비스
-- OrderExecutor: 주문 실행 서비스
 - Notifier: 알림 서비스
 - SlackLogHandler: ERROR 레벨 로그 자동 Slack 알림
+
+도메인 서비스는 modules/로 이동:
+- SignalService (modules/signal/service.py)
+- TradingService (modules/trading/service.py)
+- RiskService (modules/risk/service.py)
 """
 
 from src.services.ai_client import AIClient, AIClientError, AIResponse, get_ai_client
 from src.services.data_collector import DataCollector, get_data_collector
-from src.services.hybrid_signal_generator import (
-    HybridSignalGenerator,
-    HybridSignalResult,
-    get_hybrid_signal_generator,
-)
 from src.services.multi_timeframe_analyzer import (
     MultiTimeframeAnalyzer,
     MultiTimeframeResult,
@@ -37,28 +32,6 @@ from src.services.notifier import (
     NotifierError,
     get_notifier,
 )
-from src.services.order_executor import (
-    BalanceInfo,
-    OrderBlockedReason,
-    OrderExecutor,
-    OrderExecutorError,
-    OrderResult,
-    get_order_executor,
-)
-from src.services.risk_manager import (
-    PositionCheckResult,
-    RiskCheckResult,
-    RiskManager,
-    RiskManagerError,
-    RiskStatus,
-    StopLossCheckResult,
-    get_risk_manager,
-)
-from src.services.signal_generator import (
-    SignalGenerator,
-    SignalGeneratorError,
-    get_signal_generator,
-)
 from src.services.signal_performance_tracker import (
     PerformanceSummary,
     SignalOutcome,
@@ -71,12 +44,6 @@ from src.services.technical_indicators import (
     get_technical_calculator,
 )
 from src.services.upbit_client import UpbitClient, get_upbit_client
-from src.services.volatility_breakout import (
-    BreakoutCalculationError,
-    BreakoutResult,
-    VolatilityBreakoutStrategy,
-    get_volatility_breakout_strategy,
-)
 
 __all__ = [
     # Upbit
@@ -90,19 +57,6 @@ __all__ = [
     "AIClientError",
     "AIResponse",
     "get_ai_client",
-    # Signal Generator
-    "SignalGenerator",
-    "SignalGeneratorError",
-    "get_signal_generator",
-    # Hybrid Signal Generator
-    "HybridSignalGenerator",
-    "HybridSignalResult",
-    "get_hybrid_signal_generator",
-    # Volatility Breakout Strategy
-    "VolatilityBreakoutStrategy",
-    "BreakoutResult",
-    "BreakoutCalculationError",
-    "get_volatility_breakout_strategy",
     # Technical Indicators
     "TechnicalIndicatorCalculator",
     "IndicatorResult",
@@ -116,21 +70,6 @@ __all__ = [
     "SignalPerformanceTracker",
     "SignalOutcome",
     "PerformanceSummary",
-    # Risk Manager
-    "RiskManager",
-    "RiskManagerError",
-    "RiskStatus",
-    "RiskCheckResult",
-    "PositionCheckResult",
-    "StopLossCheckResult",
-    "get_risk_manager",
-    # Order Executor
-    "OrderExecutor",
-    "OrderExecutorError",
-    "OrderResult",
-    "OrderBlockedReason",
-    "BalanceInfo",
-    "get_order_executor",
     # Notifier
     "Notifier",
     "NotifierError",

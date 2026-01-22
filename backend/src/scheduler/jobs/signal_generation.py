@@ -178,24 +178,24 @@ async def check_volatility_job() -> None:
     임계값을 초과하면 자동으로 거래를 중단합니다.
 
     처리 흐름:
-        1. RiskManager 인스턴스 생성
+        1. RiskService 인스턴스 생성
         2. 최근 5분간의 변동성 계산
         3. 임계값 초과 시 거래 중단
         4. 변동성 정상화 시 별도 조치 없음 (수동 재개 필요)
     """
     # 순환 참조 방지를 위한 지연 임포트
-    from src.services.risk_manager import RiskCheckResult, get_risk_manager
+    from src.modules.risk.service import RiskCheckResult, get_risk_service
 
     async with async_session_factory() as session:
         try:
-            risk_manager = await get_risk_manager(session)
+            risk_service = get_risk_service(session)
 
-            result, volatility_pct, message = await risk_manager.check_volatility()
+            result, volatility_pct, message = await risk_service.check_volatility()
 
             if result == RiskCheckResult.BLOCKED:
                 # 고변동성 감지 - 거래 중단
                 logger.warning(f"고변동성 감지로 거래 중단: {volatility_pct:.2f}%")
-                await risk_manager.halt_trading(
+                await risk_service.halt_trading(
                     f"고변동성 자동 감지: {volatility_pct:.2f}% (5분 내)"
                 )
                 await session.commit()

@@ -33,12 +33,12 @@ from src.entities import (
     TradingSignal,
 )
 from src.modules.trading.order_monitor import OrderMonitor
+from src.modules.risk.service import RiskService
 from src.modules.trading.order_validator import (
     BalanceInfo,
     OrderBlockedReason,
     OrderValidator,
 )
-from src.services.risk_manager import RiskManager
 from src.services.upbit_client import UpbitClient, UpbitError
 from src.utils import UTC
 
@@ -76,7 +76,7 @@ class TradingService:
         _upbit_client: Upbit API 클라이언트
         _validator: 주문 검증기
         _monitor: 주문 모니터
-        _risk_manager: 리스크 관리 서비스
+        _risk_service: 리스크 관리 서비스
         _notifier: 알림 서비스 (선택)
     """
 
@@ -84,7 +84,7 @@ class TradingService:
         self,
         session: AsyncSession,
         upbit_client: UpbitClient,
-        risk_manager: RiskManager,
+        risk_service: RiskService,
         notifier: "Notifier | None" = None,
     ) -> None:
         """
@@ -93,16 +93,16 @@ class TradingService:
         Args:
             session: SQLAlchemy 비동기 세션
             upbit_client: Upbit API 클라이언트
-            risk_manager: 리스크 관리 서비스
+            risk_service: 리스크 관리 서비스
             notifier: 알림 서비스 (선택)
         """
         self._session = session
         self._upbit_client = upbit_client
-        self._risk_manager = risk_manager
+        self._risk_service = risk_service
         self._notifier = notifier
 
         # 검증기 및 모니터 초기화
-        self._validator = OrderValidator(upbit_client, risk_manager)
+        self._validator = OrderValidator(upbit_client, risk_service)
         self._monitor = OrderMonitor(session, upbit_client)
 
     async def execute_from_signal(self, signal: TradingSignal) -> OrderResult:
@@ -684,7 +684,7 @@ class TradingService:
 async def get_trading_service(
     session: AsyncSession,
     upbit_client: UpbitClient | None = None,
-    risk_manager: RiskManager | None = None,
+    risk_service: RiskService | None = None,
     notifier: "Notifier | None" = None,
 ) -> TradingService:
     """
@@ -693,19 +693,19 @@ async def get_trading_service(
     Args:
         session: SQLAlchemy 비동기 세션
         upbit_client: Upbit API 클라이언트 (기본: 싱글톤)
-        risk_manager: 리스크 관리 서비스 (기본: 새 인스턴스)
+        risk_service: 리스크 관리 서비스 (기본: 새 인스턴스)
         notifier: 알림 서비스 (선택)
 
     Returns:
         TradingService: 거래 서비스
     """
-    from src.services.risk_manager import RiskManager
+    from src.modules.risk.service import get_risk_service
     from src.services.upbit_client import get_upbit_client
 
     if upbit_client is None:
         upbit_client = get_upbit_client()
 
-    if risk_manager is None:
-        risk_manager = RiskManager(session, notifier)
+    if risk_service is None:
+        risk_service = get_risk_service(session)
 
-    return TradingService(session, upbit_client, risk_manager, notifier)
+    return TradingService(session, upbit_client, risk_service, notifier)

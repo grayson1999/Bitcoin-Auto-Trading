@@ -32,10 +32,10 @@ from src.entities import (
     Position,
     TradingSignal,
 )
+from src.modules.risk.service import get_risk_service
 from src.modules.signal import TradingSignalResponse
 from src.modules.trading import BalanceResponse, PositionResponse
-from src.services.order_executor import get_order_executor
-from src.services.risk_manager import get_risk_manager
+from src.modules.trading.service import get_trading_service
 from src.services.upbit_client import UpbitError, get_upbit_client
 from src.utils import UTC
 
@@ -95,8 +95,8 @@ async def get_dashboard_summary(
 
     # Upbit 실제 잔고와 Position 테이블 동기화
     try:
-        executor = await get_order_executor(session)
-        position = await executor.sync_position_from_upbit()
+        trading_service = await get_trading_service(session)
+        position = await trading_service.sync_position_from_upbit()
         await session.commit()
     except Exception as e:
         logger.warning(f"포지션 동기화 실패: {e}")
@@ -175,8 +175,8 @@ async def get_dashboard_summary(
         latest_signal_response = TradingSignalResponse.model_validate(latest_signal)
 
     # === 6. 거래 활성화 여부 조회 ===
-    risk_manager = await get_risk_manager(session)
-    is_trading_active = await risk_manager.is_trading_enabled()
+    risk_service = get_risk_service(session)
+    is_trading_active = await risk_service.is_trading_enabled()
 
     # === 7. 오늘 거래 횟수 조회 ===
     today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=UTC)
