@@ -1,0 +1,770 @@
+openapi: 3.1.0
+info:
+  title: Bitcoin Auto-Trading API
+  description: |
+    Upbit 거래소와 AI를 연동한 비트코인 자동 매매 시스템 API.
+    개인 프로젝트용으로 인증 없이 로컬 네트워크에서 운영.
+  version: 1.0.0
+  contact:
+    name: Bitcoin Auto-Trading
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+tags:
+  - name: Dashboard
+    description: 대시보드 데이터 조회
+  - name: Trading
+    description: 거래 관련 API
+  - name: Signals
+    description: AI 신호 관련 API
+  - name: Risk
+    description: 리스크 관리 API
+  - name: Config
+    description: 시스템 설정 API
+  - name: Backtest
+    description: 백테스팅 API
+
+paths:
+  # ==================== Dashboard ====================
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: 대시보드 요약 정보
+      description: 현재 가격, 포지션, 잔고, 일일 손익 등 요약 정보
+      operationId: getDashboardSummary
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+
+  /dashboard/market:
+    get:
+      tags: [Dashboard]
+      summary: 실시간 시장 데이터
+      description: 최근 시장 데이터 및 차트용 시계열
+      operationId: getMarketData
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [1h, 6h, 24h, 7d]
+            default: 24h
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketDataResponse'
+
+  # ==================== Trading ====================
+  /trading/orders:
+    get:
+      tags: [Trading]
+      summary: 주문 내역 조회
+      operationId: getOrders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, pending, executed, failed]
+            default: all
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+
+  /trading/orders/{order_id}:
+    get:
+      tags: [Trading]
+      summary: 주문 상세 조회
+      operationId: getOrder
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: 주문 없음
+
+  /trading/position:
+    get:
+      tags: [Trading]
+      summary: 현재 포지션 조회
+      operationId: getPosition
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Position'
+
+  /trading/balance:
+    get:
+      tags: [Trading]
+      summary: 계좌 잔고 조회
+      description: Upbit 계좌 잔고 실시간 조회
+      operationId: getBalance
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+
+  # ==================== Signals ====================
+  /signals:
+    get:
+      tags: [Signals]
+      summary: AI 신호 내역 조회
+      operationId: getSignals
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: signal_type
+          in: query
+          schema:
+            type: string
+            enum: [all, BUY, HOLD, SELL]
+            default: all
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalListResponse'
+
+  /signals/latest:
+    get:
+      tags: [Signals]
+      summary: 최신 AI 신호 조회
+      operationId: getLatestSignal
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingSignal'
+        '404':
+          description: 신호 없음
+
+  /signals/generate:
+    post:
+      tags: [Signals]
+      summary: AI 신호 수동 생성
+      description: 스케줄과 별개로 즉시 AI 신호 생성 (디버깅용)
+      operationId: generateSignal
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingSignal'
+        '429':
+          description: Rate limit (최근 생성 후 5분 미경과)
+
+  # ==================== Risk ====================
+  /risk/events:
+    get:
+      tags: [Risk]
+      summary: 리스크 이벤트 내역
+      operationId: getRiskEvents
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEventListResponse'
+
+  /risk/status:
+    get:
+      tags: [Risk]
+      summary: 현재 리스크 상태
+      description: 일일 손익, 거래 가능 여부, 리스크 지표
+      operationId: getRiskStatus
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskStatus'
+
+  /risk/halt:
+    post:
+      tags: [Risk]
+      summary: 거래 수동 중단
+      operationId: haltTrading
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+              required: [reason]
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskStatus'
+
+  /risk/resume:
+    post:
+      tags: [Risk]
+      summary: 거래 재개
+      operationId: resumeTrading
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskStatus'
+
+  # ==================== Config ====================
+  /config:
+    get:
+      tags: [Config]
+      summary: 시스템 설정 조회
+      operationId: getConfig
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemConfig'
+    patch:
+      tags: [Config]
+      summary: 시스템 설정 수정
+      operationId: updateConfig
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemConfigUpdate'
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemConfig'
+        '400':
+          description: 유효하지 않은 설정값
+
+  # ==================== Backtest ====================
+  /backtest/run:
+    post:
+      tags: [Backtest]
+      summary: 백테스트 실행
+      operationId: runBacktest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BacktestRequest'
+      responses:
+        '202':
+          description: 백테스트 시작됨
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestStartResponse'
+        '400':
+          description: 잘못된 요청
+
+  /backtest/results:
+    get:
+      tags: [Backtest]
+      summary: 백테스트 결과 목록
+      operationId: getBacktestResults
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestResultListResponse'
+
+  /backtest/results/{result_id}:
+    get:
+      tags: [Backtest]
+      summary: 백테스트 결과 상세
+      operationId: getBacktestResult
+      parameters:
+        - name: result_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestResult'
+        '404':
+          description: 결과 없음
+
+  # ==================== System ====================
+  /health:
+    get:
+      summary: 헬스체크
+      operationId: healthCheck
+      responses:
+        '200':
+          description: 정상
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  upbit_connected:
+                    type: boolean
+                  ai_available:
+                    type: boolean
+                  scheduler_running:
+                    type: boolean
+
+components:
+  schemas:
+    # ==================== Dashboard ====================
+    DashboardSummary:
+      type: object
+      properties:
+        current_price:
+          type: number
+          format: double
+          description: 현재 BTC 가격 (KRW)
+        price_change_24h:
+          type: number
+          format: double
+          description: 24시간 가격 변동률 (%)
+        position:
+          $ref: '#/components/schemas/Position'
+        balance:
+          $ref: '#/components/schemas/BalanceResponse'
+        daily_pnl:
+          type: number
+          format: double
+          description: 오늘 실현 손익 (KRW)
+        daily_pnl_pct:
+          type: number
+          format: double
+          description: 오늘 손익률 (%)
+        latest_signal:
+          $ref: '#/components/schemas/TradingSignal'
+        is_trading_active:
+          type: boolean
+          description: 거래 활성화 여부
+
+    MarketDataResponse:
+      type: object
+      properties:
+        current:
+          $ref: '#/components/schemas/MarketData'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketData'
+
+    MarketData:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        price:
+          type: number
+          format: double
+        volume:
+          type: number
+          format: double
+        high_price:
+          type: number
+          format: double
+        low_price:
+          type: number
+          format: double
+
+    # ==================== Trading ====================
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        signal_id:
+          type: integer
+          nullable: true
+        order_type:
+          type: string
+          enum: [MARKET, LIMIT]
+        side:
+          type: string
+          enum: [BUY, SELL]
+        amount:
+          type: number
+          format: double
+        price:
+          type: number
+          format: double
+          nullable: true
+        status:
+          type: string
+          enum: [PENDING, EXECUTED, CANCELLED, FAILED]
+        executed_price:
+          type: number
+          format: double
+          nullable: true
+        executed_amount:
+          type: number
+          format: double
+          nullable: true
+        fee:
+          type: number
+          format: double
+          nullable: true
+        upbit_uuid:
+          type: string
+          nullable: true
+        error_message:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        executed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    OrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    Position:
+      type: object
+      properties:
+        symbol:
+          type: string
+          example: BTC-KRW
+        quantity:
+          type: number
+          format: double
+        avg_buy_price:
+          type: number
+          format: double
+        current_value:
+          type: number
+          format: double
+        unrealized_pnl:
+          type: number
+          format: double
+        unrealized_pnl_pct:
+          type: number
+          format: double
+        updated_at:
+          type: string
+          format: date-time
+
+    BalanceResponse:
+      type: object
+      properties:
+        krw:
+          type: number
+          format: double
+          description: KRW 잔고
+        btc:
+          type: number
+          format: double
+          description: BTC 잔고
+        total_krw:
+          type: number
+          format: double
+          description: 총 평가금액 (KRW 환산)
+
+    # ==================== Signals ====================
+    TradingSignal:
+      type: object
+      properties:
+        id:
+          type: integer
+        signal_type:
+          type: string
+          enum: [BUY, HOLD, SELL]
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        reasoning:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        model_name:
+          type: string
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+
+    SignalListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TradingSignal'
+        total:
+          type: integer
+
+    # ==================== Risk ====================
+    RiskEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_id:
+          type: integer
+          nullable: true
+        event_type:
+          type: string
+          enum: [STOP_LOSS, DAILY_LIMIT, POSITION_LIMIT, VOLATILITY_HALT, SYSTEM_ERROR]
+        trigger_value:
+          type: number
+          format: double
+        action_taken:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        notified:
+          type: boolean
+
+    RiskEventListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskEvent'
+        total:
+          type: integer
+
+    RiskStatus:
+      type: object
+      properties:
+        is_trading_active:
+          type: boolean
+        halt_reason:
+          type: string
+          nullable: true
+        daily_pnl:
+          type: number
+          format: double
+        daily_pnl_pct:
+          type: number
+          format: double
+        daily_loss_limit_pct:
+          type: number
+          format: double
+        remaining_risk_budget_pct:
+          type: number
+          format: double
+        today_trade_count:
+          type: integer
+
+    # ==================== Config ====================
+    SystemConfig:
+      type: object
+      properties:
+        position_size_pct:
+          type: number
+          format: double
+          default: 2.0
+        stop_loss_pct:
+          type: number
+          format: double
+          default: 5.0
+        daily_loss_limit_pct:
+          type: number
+          format: double
+          default: 5.0
+        signal_interval_hours:
+          type: integer
+          default: 1
+        ai_model:
+          type: string
+          default: gemini-2.5-flash
+        volatility_threshold_pct:
+          type: number
+          format: double
+          default: 3.0
+
+    SystemConfigUpdate:
+      type: object
+      properties:
+        position_size_pct:
+          type: number
+          format: double
+          minimum: 1
+          maximum: 5
+        stop_loss_pct:
+          type: number
+          format: double
+          minimum: 3
+          maximum: 10
+        daily_loss_limit_pct:
+          type: number
+          format: double
+          minimum: 3
+          maximum: 10
+        signal_interval_hours:
+          type: integer
+          minimum: 1
+          maximum: 4
+        ai_model:
+          type: string
+          enum: [gemini-2.5-flash, gpt-4o-mini, claude-3-haiku]
+        volatility_threshold_pct:
+          type: number
+          format: double
+          minimum: 1
+          maximum: 10
+
+    # ==================== Backtest ====================
+    BacktestRequest:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        config_override:
+          $ref: '#/components/schemas/SystemConfigUpdate'
+      required: [start_date, end_date]
+
+    BacktestStartResponse:
+      type: object
+      properties:
+        result_id:
+          type: integer
+        status:
+          type: string
+          example: running
+        estimated_duration_seconds:
+          type: integer
+
+    BacktestResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        total_return:
+          type: number
+          format: double
+        max_drawdown:
+          type: number
+          format: double
+        win_rate:
+          type: number
+          format: double
+        profit_loss_ratio:
+          type: number
+          format: double
+        total_trades:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        config_snapshot:
+          $ref: '#/components/schemas/SystemConfig'
+
+    BacktestResultListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BacktestResult'
+        total:
+          type: integer
