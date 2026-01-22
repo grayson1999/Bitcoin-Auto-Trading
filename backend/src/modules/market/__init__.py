@@ -1,5 +1,6 @@
 """Market module - market data collection and retrieval."""
 
+from src.modules.market.routes import router
 from src.modules.market.schemas import (
     BalanceResponse,
     CollectorStatsResponse,
@@ -16,6 +17,8 @@ from src.modules.market.service import (
 )
 
 __all__ = [
+    # Router
+    "router",
     # Service
     "MarketService",
     "MarketServiceError",

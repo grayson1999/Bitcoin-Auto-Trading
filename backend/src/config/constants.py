@@ -56,6 +56,16 @@ API_PAGINATION_MIN_LIMIT = 1  # 최소 조회 개수
 API_PAGINATION_MAX_LIMIT = 100  # 최대 조회 개수
 API_PAGINATION_DEFAULT_LIMIT = 50  # 기본 조회 개수
 
+# === 시장 데이터 조회 ===
+MARKET_MIN_HOURS = 1  # 최소 조회 시간 (시간)
+MARKET_MAX_HOURS = 168  # 최대 조회 시간 (7일 = 168시간)
+MARKET_DEFAULT_HOURS = 24  # 기본 조회 시간
+MARKET_MAX_LIMIT_HISTORY = 1000  # 히스토리 최대 레코드 수
+MARKET_DEFAULT_LIMIT_HISTORY = 100  # 히스토리 기본 레코드 수
+MARKET_MAX_LIMIT_LATEST = 100  # 최신 데이터 최대 레코드 수
+MARKET_DEFAULT_LIMIT_LATEST = 10  # 최신 데이터 기본 레코드 수
+MS_TO_SECONDS = 1000  # 밀리초 → 초 변환 상수
+
 # === 백테스트 설정 ===
 BACKTEST_TRADING_FEE_PCT = 0.0005  # 백테스트 거래 수수료 (0.05%)
 BACKTEST_SLIPPAGE_PCT = 0.001  # 백테스트 슬리피지 (0.1%)
