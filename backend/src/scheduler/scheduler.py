@@ -5,7 +5,7 @@ APScheduler 스케줄러 설정 모듈
 실제 작업 로직은 jobs/ 패키지에 분리되어 있습니다.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -28,6 +28,7 @@ from src.scheduler.jobs import (
     generate_trading_signal_job,
     sync_pending_orders_job,
 )
+from src.utils import UTC
 
 # === 스케줄러 인스턴스 (비동기) ===
 scheduler = AsyncIOScheduler()

@@ -5,7 +5,7 @@ MarketData 엔티티에 대한 데이터베이스 접근 계층입니다.
 시세 조회, 히스토리, 통계 관련 쿼리를 추상화합니다.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.entities.market_data import MarketData
 from src.repositories.base import BaseRepository
+from src.utils import UTC
 
 
 class MarketRepository(BaseRepository[MarketData]):

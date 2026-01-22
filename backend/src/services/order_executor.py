@@ -12,7 +12,7 @@
 import asyncio
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -34,6 +34,7 @@ from src.entities import (
 )
 from src.services.risk_manager import RiskCheckResult, RiskManager
 from src.services.upbit_client import UpbitClient, UpbitError
+from src.utils import UTC
 
 if TYPE_CHECKING:
     from src.services.notifier import Notifier

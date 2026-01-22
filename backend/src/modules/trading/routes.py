@@ -8,7 +8,7 @@
 - 잔고 조회 (GET /trading/balance)
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -35,6 +35,7 @@ from src.modules.trading.schemas import (
 )
 from src.modules.trading.service import get_trading_service
 from src.services.upbit_client import UpbitError, get_upbit_client
+from src.utils import UTC
 
 router = APIRouter(prefix="/trading")
 

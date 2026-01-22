@@ -8,7 +8,7 @@
 - Upbit 캔들 API 활용 (장기 백테스트 지원)
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 
 from loguru import logger
@@ -24,6 +24,7 @@ from src.entities import BacktestResult, BacktestStatus, TradingSignal
 from src.modules.backtest.engine import BacktestEngine, BacktestState, CandlePriceData
 from src.modules.backtest.reporter import BacktestReporter
 from src.services.upbit_client import UpbitClient, get_upbit_client
+from src.utils import UTC
 
 # 상수를 Decimal로 변환
 DEFAULT_INITIAL_CAPITAL = Decimal(str(BACKTEST_DEFAULT_INITIAL_CAPITAL))

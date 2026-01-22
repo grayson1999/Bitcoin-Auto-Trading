@@ -8,7 +8,7 @@
 """
 
 import asyncio
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -23,6 +23,7 @@ from src.config.constants import (
 )
 from src.entities import Order, OrderStatus
 from src.services.upbit_client import UpbitClient, UpbitError
+from src.utils import UTC
 
 if TYPE_CHECKING:
     pass

@@ -11,8 +11,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-from src.api.schemas.order import BalanceResponse, PositionResponse
-from src.api.schemas.signal import TradingSignalResponse
+from src.modules.signal import TradingSignalResponse
+from src.modules.trading import BalanceResponse, PositionResponse
 
 
 class DashboardSummaryResponse(BaseModel):

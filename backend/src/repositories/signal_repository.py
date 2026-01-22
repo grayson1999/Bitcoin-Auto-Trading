@@ -5,13 +5,14 @@ TradingSignal 엔티티에 대한 데이터베이스 접근 계층입니다.
 AI 매매 신호 조회, 날짜 범위 조회 등 쿼리를 추상화합니다.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.entities.trading_signal import SignalType, TradingSignal
 from src.repositories.base import BaseRepository
+from src.utils import UTC
 
 
 class SignalRepository(BaseRepository[TradingSignal]):

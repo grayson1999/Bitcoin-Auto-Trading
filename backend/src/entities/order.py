@@ -7,7 +7,7 @@
 - 주문 상태 추적 (PENDING → EXECUTED/CANCELLED/FAILED)
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.config import settings
 from src.entities.base import Base
+from src.utils import UTC
 
 if TYPE_CHECKING:
     from src.entities.trading_signal import TradingSignal

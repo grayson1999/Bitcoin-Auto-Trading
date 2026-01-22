@@ -5,7 +5,7 @@ Position 엔티티에 대한 데이터베이스 접근 계층입니다.
 포지션 조회, 업데이트, 종료 등 쿼리를 추상화합니다.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.entities.position import Position
 from src.repositories.base import BaseRepository
+from src.utils import UTC
 
 
 class PositionRepository(BaseRepository[Position]):

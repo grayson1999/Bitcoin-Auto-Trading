@@ -5,13 +5,14 @@ Order 엔티티에 대한 데이터베이스 접근 계층입니다.
 주문 조회, 상태별 필터링 등 쿼리를 추상화합니다.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.entities.order import Order, OrderSide, OrderStatus
 from src.repositories.base import BaseRepository
+from src.utils import UTC
 
 
 class OrderRepository(BaseRepository[Order]):

@@ -12,7 +12,7 @@ Market 관련 엔드포인트는 modules/market/routes.py로 이동:
 - GET /market/collector/stats - 데이터 수집기 상태 조회
 """
 
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -23,8 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import CurrentUser
 from src.api.schemas.dashboard import DashboardSummaryResponse
-from src.api.schemas.order import BalanceResponse, PositionResponse
-from src.api.schemas.signal import TradingSignalResponse
 from src.config import settings
 from src.database import get_session
 from src.entities import (
@@ -34,9 +32,12 @@ from src.entities import (
     Position,
     TradingSignal,
 )
+from src.modules.signal import TradingSignalResponse
+from src.modules.trading import BalanceResponse, PositionResponse
 from src.services.order_executor import get_order_executor
 from src.services.risk_manager import get_risk_manager
 from src.services.upbit_client import UpbitError, get_upbit_client
+from src.utils import UTC
 
 router = APIRouter(prefix="/dashboard")
 

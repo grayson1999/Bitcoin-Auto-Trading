@@ -8,12 +8,13 @@
 기존 파일: api/health.py
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 from src.config import APP_VERSION
+from src.utils import UTC
 
 router = APIRouter()
 

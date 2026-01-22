@@ -6,7 +6,7 @@
 """
 
 import json
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.entities.system_config import SystemConfig
 from src.repositories.base import BaseRepository
+from src.utils import UTC
 
 
 class ConfigRepository(BaseRepository[SystemConfig]):

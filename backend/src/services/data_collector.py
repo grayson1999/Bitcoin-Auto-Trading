@@ -10,7 +10,7 @@
 
 import asyncio
 import random
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.entities import MarketData
 from src.services.upbit_client import UpbitClient, UpbitError, get_upbit_client
+from src.utils import UTC
 
 # === 수집 관련 상수 ===
 # DEFAULT_MARKET은 settings.trading_ticker에서 동적으로 로드됨

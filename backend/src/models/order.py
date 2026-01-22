@@ -302,7 +302,7 @@ class Order(Base):
             fee: 수수료
             executed_at: 체결 시간 (기본: 현재 시간)
         """
-        from datetime import UTC
+        from src.utils import UTC
 
         self.status = OrderStatus.EXECUTED.value
         self.executed_price = executed_price

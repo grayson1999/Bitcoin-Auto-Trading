@@ -11,7 +11,7 @@
 import json
 import math
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 
 from loguru import logger
@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.entities import BacktestResult, BacktestStatus, SignalType, TradingSignal
 from src.services.upbit_client import UpbitClient, get_upbit_client
+from src.utils import UTC
 
 # === 백테스트 상수 ===
 DEFAULT_INITIAL_CAPITAL = Decimal("1000000")  # 기본 초기 자본금 (100만원)

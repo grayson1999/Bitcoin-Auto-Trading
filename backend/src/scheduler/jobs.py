@@ -8,7 +8,7 @@ APScheduler 작업 정의 모듈
 - 오래된 데이터 정리 (DATA_CLEANUP_INTERVAL_HOURS)
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -27,6 +27,7 @@ from src.services.order_executor import (
 from src.services.risk_manager import RiskCheckResult, get_risk_manager
 from src.services.signal_generator import SignalGeneratorError, get_signal_generator
 from src.services.signal_performance_tracker import SignalPerformanceTracker
+from src.utils import UTC
 
 # 스케줄러 인스턴스 (비동기)
 scheduler = AsyncIOScheduler()

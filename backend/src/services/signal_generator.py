@@ -11,7 +11,7 @@ AI 매매 신호 생성 서비스 (동적 코인 지원 버전)
 
 import json
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from loguru import logger
@@ -38,6 +38,7 @@ from src.services.signal_performance_tracker import (
     SignalPerformanceTracker,
 )
 from src.services.upbit_client import UpbitError, get_upbit_client
+from src.utils import UTC
 
 # === 신호 생성 상수 ===
 MIN_CONFIDENCE = 0.0  # 최소 신뢰도

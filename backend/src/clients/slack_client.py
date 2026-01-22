@@ -9,7 +9,7 @@ Slack 웹훅을 통해 알림을 전송하는 클라이언트를 제공합니다
 
 import asyncio
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 
 import httpx
@@ -17,6 +17,7 @@ from loguru import logger
 
 from src.clients.common import MAX_RETRIES, RETRY_DELAY
 from src.config import settings
+from src.utils import UTC
 
 # === 상수 ===
 SLACK_TIMEOUT_SECONDS = 10  # Slack API 타임아웃

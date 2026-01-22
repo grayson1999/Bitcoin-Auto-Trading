@@ -10,7 +10,7 @@
 기존 파일: api/risk.py
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -31,6 +31,7 @@ from src.modules.risk.schemas import (
     RiskStatusResponse,
 )
 from src.modules.risk.service import RiskServiceError, get_risk_service
+from src.utils import UTC
 
 # === 상수 ===
 MIN_LIMIT = 1  # 최소 조회 개수

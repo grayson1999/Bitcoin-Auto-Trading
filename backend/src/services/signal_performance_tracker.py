@@ -6,7 +6,7 @@ Multi-Agent Bitcoin Trading System의 verbal feedback 메커니즘을 적용합�
 """
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from loguru import logger
@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.entities import SignalType, TradingSignal
 from src.services.upbit_client import UpbitClient, get_upbit_client
+from src.utils import UTC
 
 
 @dataclass

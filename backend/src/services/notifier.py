@@ -8,13 +8,14 @@
 
 import asyncio
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 
 import httpx
 from loguru import logger
 
 from src.config import settings
+from src.utils import UTC
 
 # === 상수 ===
 SLACK_TIMEOUT_SECONDS = 10  # Slack API 타임아웃

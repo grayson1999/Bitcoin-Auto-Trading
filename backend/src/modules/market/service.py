@@ -7,7 +7,7 @@
 - 통계 및 요약 정보 제공
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from loguru import logger
@@ -22,6 +22,7 @@ from src.services.data_collector import (
     get_data_collector,
 )
 from src.services.upbit_client import UpbitClient, UpbitError, get_upbit_client
+from src.utils import UTC
 
 
 class MarketServiceError(Exception):

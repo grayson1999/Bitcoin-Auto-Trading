@@ -10,7 +10,7 @@
 기존 파일: api/dashboard.py에서 market 관련 엔드포인트 추출
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -40,6 +40,7 @@ from src.modules.market.schemas import (
 )
 from src.modules.market.service import get_market_service
 from src.services.upbit_client import UpbitError, get_upbit_client
+from src.utils import UTC
 
 router = APIRouter(prefix="/market")
 
