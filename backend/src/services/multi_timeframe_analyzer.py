@@ -10,13 +10,17 @@ from dataclasses import dataclass, field
 
 from loguru import logger
 
+from src.clients.upbit import (
+    UpbitCandleData,
+    UpbitPublicAPI,
+    get_upbit_public_api,
+)
 from src.config import settings
 from src.services.technical_indicators import (
     IndicatorResult,
     TechnicalIndicatorCalculator,
     get_technical_calculator,
 )
-from src.services.upbit_client import UpbitCandleData, UpbitClient, get_upbit_client
 
 
 @dataclass
@@ -79,17 +83,17 @@ class MultiTimeframeAnalyzer:
 
     def __init__(
         self,
-        upbit_client: UpbitClient | None = None,
+        upbit_client: UpbitPublicAPI | None = None,
         calculator: TechnicalIndicatorCalculator | None = None,
     ):
         """
         멀티 타임프레임 분석기 초기화
 
         Args:
-            upbit_client: Upbit API 클라이언트 (기본값: 싱글톤)
+            upbit_client: Upbit Public API 클라이언트 (기본값: 싱글톤)
             calculator: 기술적 지표 계산기 (기본값: 싱글톤)
         """
-        self.upbit_client = upbit_client or get_upbit_client()
+        self.upbit_client = upbit_client or get_upbit_public_api()
         self.calculator = calculator or get_technical_calculator()
 
     async def fetch_candle_data(

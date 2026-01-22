@@ -13,9 +13,9 @@ from loguru import logger
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.upbit import UpbitPublicAPI, get_upbit_public_api
 from src.config import settings
 from src.entities import SignalType, TradingSignal
-from src.services.upbit_client import UpbitClient, get_upbit_client
 from src.utils import UTC
 
 
@@ -98,17 +98,17 @@ class SignalPerformanceTracker:
     def __init__(
         self,
         db: AsyncSession,
-        upbit_client: UpbitClient | None = None,
+        upbit_client: UpbitPublicAPI | None = None,
     ):
         """
         신호 성과 추적기 초기화
 
         Args:
             db: 데이터베이스 세션
-            upbit_client: Upbit API 클라이언트 (기본값: 싱글톤)
+            upbit_client: Upbit Public API 클라이언트 (기본값: 싱글톤)
         """
         self.db = db
-        self.upbit_client = upbit_client or get_upbit_client()
+        self.upbit_client = upbit_client or get_upbit_public_api()
 
     async def evaluate_pending_signals(self, market: str | None = None) -> int:
         """

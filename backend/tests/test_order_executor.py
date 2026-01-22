@@ -20,7 +20,7 @@ from src.services.order_executor import (
     BalanceInfo,
     UPBIT_FEE_RATE,
 )
-from src.services.upbit_client import UpbitError
+from src.clients.upbit import UpbitPrivateAPIError
 
 
 class TestFeeCalculation:

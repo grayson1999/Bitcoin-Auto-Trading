@@ -18,6 +18,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import CurrentUser
+from src.clients.upbit import (
+    UpbitPrivateAPIError,
+    UpbitPublicAPIError,
+    get_upbit_public_api,
+)
 from src.config import settings
 from src.config.constants import (
     API_PAGINATION_DEFAULT_LIMIT,
@@ -34,7 +39,6 @@ from src.modules.trading.schemas import (
     PositionResponse,
 )
 from src.modules.trading.service import get_trading_service
-from src.services.upbit_client import UpbitError, get_upbit_client
 from src.utils import UTC
 
 router = APIRouter(prefix="/trading")
@@ -204,10 +208,10 @@ async def get_position(
 
     # 현재가로 평가금액 업데이트
     try:
-        upbit_client = get_upbit_client()
-        ticker = await upbit_client.get_ticker()
+        public_api = get_upbit_public_api()
+        ticker = await public_api.get_ticker()
         position.update_value(ticker.trade_price)
-    except UpbitError as e:
+    except UpbitPublicAPIError as e:
         logger.warning(f"현재가 조회 실패, 마지막 평가금액 사용: {e.message}")
 
     return PositionResponse(
@@ -256,7 +260,7 @@ async def get_balance(
     try:
         service = await get_trading_service(session)
         balance_info = await service.get_balance_info()
-    except UpbitError as e:
+    except (UpbitPrivateAPIError, UpbitPublicAPIError) as e:
         logger.error(f"잔고 조회 실패: {e.message}")
         raise HTTPException(
             status_code=503,

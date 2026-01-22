@@ -16,13 +16,13 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.upbit import UpbitPrivateAPI, UpbitPrivateAPIError
 from src.config.constants import (
     ORDER_POLL_INTERVAL_SECONDS,
     ORDER_POLL_MAX_ATTEMPTS,
     UPBIT_FEE_RATE,
 )
 from src.entities import Order, OrderStatus
-from src.services.upbit_client import UpbitClient, UpbitError
 from src.utils import UTC
 
 if TYPE_CHECKING:
@@ -42,17 +42,17 @@ class OrderMonitor:
     def __init__(
         self,
         session: AsyncSession,
-        upbit_client: UpbitClient,
+        private_api: UpbitPrivateAPI,
     ) -> None:
         """
         OrderMonitor 초기화
 
         Args:
             session: SQLAlchemy 비동기 세션
-            upbit_client: Upbit API 클라이언트
+            private_api: Upbit Private API 클라이언트
         """
         self._session = session
-        self._upbit_client = upbit_client
+        self._private_api = private_api
 
     def calculate_executed_price(self, order: Order, upbit_response) -> Decimal:
         """
@@ -148,7 +148,7 @@ class OrderMonitor:
             await asyncio.sleep(ORDER_POLL_INTERVAL_SECONDS)
 
             try:
-                upbit_response = await self._upbit_client.get_order(uuid)
+                upbit_response = await self._private_api.get_order(uuid)
 
                 logger.debug(
                     f"[주문 상태 확인] attempt={attempt + 1}, "
@@ -187,7 +187,7 @@ class OrderMonitor:
 
                 # state == "wait" 계속 폴링
 
-            except UpbitError as e:
+            except UpbitPrivateAPIError as e:
                 logger.warning(f"주문 상태 조회 실패: {e.message}")
                 continue
 
@@ -223,7 +223,7 @@ class OrderMonitor:
         synced_count = 0
         for order in pending_orders:
             try:
-                upbit_order = await self._upbit_client.get_order(order.upbit_uuid)
+                upbit_order = await self._private_api.get_order(order.upbit_uuid)
 
                 if upbit_order.state == "done":
                     # 체결 완료 - calculate_executed_price 사용
@@ -263,7 +263,7 @@ class OrderMonitor:
 
                 # state == "wait" 인 경우는 여전히 대기 중이므로 건너뜀
 
-            except UpbitError as e:
+            except UpbitPrivateAPIError as e:
                 logger.warning(
                     f"PENDING 주문 동기화 실패: order_id={order.id}, error={e.message}"
                 )
@@ -292,14 +292,14 @@ class OrderMonitor:
 
         logger.info(f"재시도: 기존 주문 상태 확인 uuid={order.upbit_uuid}")
         try:
-            existing = await self._upbit_client.get_order(order.upbit_uuid)
+            existing = await self._private_api.get_order(order.upbit_uuid)
             if existing.state in ("done", "wait"):
                 logger.info(f"기존 주문 발견: state={existing.state}")
                 await self.update_order_status(order, existing)
                 if not order.is_executed and existing.uuid:
                     await self.poll_order_completion(order, existing.uuid)
                 return True  # 이미 주문이 있으므로 새 주문 안 함
-        except UpbitError as check_err:
+        except UpbitPrivateAPIError as check_err:
             logger.warning(f"기존 주문 확인 실패: {check_err.message}")
             # 확인 실패 시 새 주문 시도
         return False

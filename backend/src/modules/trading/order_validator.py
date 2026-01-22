@@ -13,11 +13,16 @@ from enum import Enum
 
 from loguru import logger
 
+from src.clients.upbit import (
+    UpbitPrivateAPI,
+    UpbitPrivateAPIError,
+    UpbitPublicAPI,
+    UpbitPublicAPIError,
+)
 from src.config import settings
 from src.config.constants import UPBIT_MIN_ORDER_KRW
 from src.entities import Position, SignalType, TradingSignal
 from src.modules.risk.service import RiskCheckResult, RiskService
-from src.services.upbit_client import UpbitClient, UpbitError
 
 # 상수를 Decimal로 변환
 MIN_ORDER_AMOUNT_KRW = Decimal(str(UPBIT_MIN_ORDER_KRW))
@@ -66,17 +71,20 @@ class OrderValidator:
 
     def __init__(
         self,
-        upbit_client: UpbitClient,
+        private_api: UpbitPrivateAPI,
+        public_api: UpbitPublicAPI,
         risk_service: RiskService,
     ) -> None:
         """
         OrderValidator 초기화
 
         Args:
-            upbit_client: Upbit API 클라이언트
+            private_api: Upbit Private API 클라이언트
+            public_api: Upbit Public API 클라이언트
             risk_service: 리스크 관리 서비스
         """
-        self._upbit_client = upbit_client
+        self._private_api = private_api
+        self._public_api = public_api
         self._risk_service = risk_service
 
     async def validate_signal(
@@ -144,7 +152,7 @@ class OrderValidator:
         # 4. 잔고 조회
         try:
             balance_info = await self._get_balance_info()
-        except UpbitError as e:
+        except (UpbitPrivateAPIError, UpbitPublicAPIError) as e:
             logger.error(f"잔고 조회 실패: {e.message}")
             return (
                 ValidationResult(
@@ -272,9 +280,9 @@ class OrderValidator:
 
         # 현재가 조회
         try:
-            ticker = await self._upbit_client.get_ticker(settings.trading_ticker)
+            ticker = await self._public_api.get_ticker(settings.trading_ticker)
             current_price = ticker.trade_price
-        except UpbitError as e:
+        except UpbitPublicAPIError as e:
             logger.error(f"현재가 조회 실패: {e.message}")
             return ValidationResult(
                 is_valid=False,
@@ -317,7 +325,7 @@ class OrderValidator:
         Returns:
             BalanceInfo: 잔고 정보
         """
-        accounts = await self._upbit_client.get_accounts()
+        accounts = await self._private_api.get_accounts()
 
         krw_available = Decimal("0")
         krw_locked = Decimal("0")
@@ -336,9 +344,9 @@ class OrderValidator:
 
         # 현재가 조회
         try:
-            ticker = await self._upbit_client.get_ticker(settings.trading_ticker)
+            ticker = await self._public_api.get_ticker(settings.trading_ticker)
             current_price = ticker.trade_price
-        except UpbitError:
+        except UpbitPublicAPIError:
             current_price = coin_avg_price  # 조회 실패 시 평균 매수가 사용
 
         # 총 평가금액 계산

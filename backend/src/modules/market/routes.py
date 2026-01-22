@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import CurrentUser
+from src.clients.upbit import UpbitPublicAPIError, get_upbit_public_api
 from src.config import settings
 from src.config.constants import (
     API_PAGINATION_MIN_LIMIT,
@@ -39,7 +40,6 @@ from src.modules.market.schemas import (
     MarketSummaryResponse,
 )
 from src.modules.market.service import get_market_service
-from src.services.upbit_client import UpbitError, get_upbit_client
 from src.utils import UTC
 
 router = APIRouter(prefix="/market")
@@ -66,7 +66,7 @@ async def get_current_market(
     Raises:
         HTTPException: Upbit API 오류 시 503 반환
     """
-    client = get_upbit_client()
+    client = get_upbit_public_api()
 
     try:
         ticker = await client.get_ticker()
@@ -91,7 +91,7 @@ async def get_current_market(
             change_24h_pct=change_24h_pct,
         )
 
-    except UpbitError as e:
+    except UpbitPublicAPIError as e:
         raise HTTPException(
             status_code=e.status_code or 503,
             detail=f"시세 조회 실패: {e.message}",

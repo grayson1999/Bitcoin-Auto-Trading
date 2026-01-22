@@ -15,6 +15,7 @@ from loguru import logger
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.upbit import UpbitPublicAPI, get_upbit_public_api
 from src.config import settings
 from src.config.constants import (
     BACKTEST_CANDLE_FETCH_LIMIT,
@@ -23,7 +24,6 @@ from src.config.constants import (
 from src.entities import BacktestResult, BacktestStatus, TradingSignal
 from src.modules.backtest.engine import BacktestEngine, BacktestState, CandlePriceData
 from src.modules.backtest.reporter import BacktestReporter
-from src.services.upbit_client import UpbitClient, get_upbit_client
 from src.utils import UTC
 
 # 상수를 Decimal로 변환
@@ -53,16 +53,16 @@ class BacktestService:
         print(f"수익률: {result.total_return_pct}%")
     """
 
-    def __init__(self, db: AsyncSession, upbit_client: UpbitClient | None = None):
+    def __init__(self, db: AsyncSession, upbit_client: UpbitPublicAPI | None = None):
         """
         백테스트 서비스 초기화
 
         Args:
             db: SQLAlchemy 비동기 세션
-            upbit_client: Upbit API 클라이언트 (없으면 자동 생성)
+            upbit_client: Upbit Public API 클라이언트 (없으면 자동 생성)
         """
         self.db = db
-        self.upbit_client = upbit_client or get_upbit_client()
+        self.upbit_client = upbit_client or get_upbit_public_api()
         self._engine = BacktestEngine()
         self._reporter = BacktestReporter()
 

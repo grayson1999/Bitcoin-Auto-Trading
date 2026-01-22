@@ -20,6 +20,12 @@ from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.upbit import (
+    UpbitPrivateAPI,
+    UpbitPrivateAPIError,
+    UpbitPublicAPI,
+    UpbitPublicAPIError,
+)
 from src.config import settings
 from src.config.constants import ORDER_MAX_RETRIES, ORDER_RETRY_DELAY_SECONDS
 from src.entities import (
@@ -32,14 +38,13 @@ from src.entities import (
     SignalType,
     TradingSignal,
 )
-from src.modules.trading.order_monitor import OrderMonitor
 from src.modules.risk.service import RiskService
+from src.modules.trading.order_monitor import OrderMonitor
 from src.modules.trading.order_validator import (
     BalanceInfo,
     OrderBlockedReason,
     OrderValidator,
 )
-from src.services.upbit_client import UpbitClient, UpbitError
 from src.utils import UTC
 
 if TYPE_CHECKING:
@@ -83,7 +88,8 @@ class TradingService:
     def __init__(
         self,
         session: AsyncSession,
-        upbit_client: UpbitClient,
+        private_api: UpbitPrivateAPI,
+        public_api: UpbitPublicAPI,
         risk_service: RiskService,
         notifier: "Notifier | None" = None,
     ) -> None:
@@ -92,18 +98,20 @@ class TradingService:
 
         Args:
             session: SQLAlchemy 비동기 세션
-            upbit_client: Upbit API 클라이언트
+            private_api: Upbit Private API 클라이언트
+            public_api: Upbit Public API 클라이언트
             risk_service: 리스크 관리 서비스
             notifier: 알림 서비스 (선택)
         """
         self._session = session
-        self._upbit_client = upbit_client
+        self._private_api = private_api
+        self._public_api = public_api
         self._risk_service = risk_service
         self._notifier = notifier
 
         # 검증기 및 모니터 초기화
-        self._validator = OrderValidator(upbit_client, risk_service)
-        self._monitor = OrderMonitor(session, upbit_client)
+        self._validator = OrderValidator(private_api, public_api, risk_service)
+        self._monitor = OrderMonitor(session, private_api)
 
     async def execute_from_signal(self, signal: TradingSignal) -> OrderResult:
         """
@@ -241,14 +249,14 @@ class TradingService:
 
                 # Upbit 주문 실행
                 if side == OrderSide.BUY:
-                    upbit_response = await self._upbit_client.place_order(
+                    upbit_response = await self._private_api.place_order(
                         market=settings.trading_ticker,
                         side="bid",
                         price=amount,
                         ord_type="price",
                     )
                 else:
-                    upbit_response = await self._upbit_client.place_order(
+                    upbit_response = await self._private_api.place_order(
                         market=settings.trading_ticker,
                         side="ask",
                         volume=amount,
@@ -286,7 +294,7 @@ class TradingService:
 
                 break  # 성공 시 루프 종료
 
-            except UpbitError as e:
+            except (UpbitPrivateAPIError, UpbitPublicAPIError) as e:
                 last_error = e
                 logger.warning(
                     f"주문 실패 (시도 {attempt}/{ORDER_MAX_RETRIES}): {e.message}"
@@ -452,9 +460,9 @@ class TradingService:
 
         # 현재가로 평가금액 업데이트
         try:
-            ticker = await self._upbit_client.get_ticker(settings.trading_ticker)
+            ticker = await self._public_api.get_ticker(settings.trading_ticker)
             position.update_value(ticker.trade_price)
-        except UpbitError:
+        except (UpbitPrivateAPIError, UpbitPublicAPIError):
             pass
 
         position.updated_at = datetime.now(UTC)
@@ -514,7 +522,7 @@ class TradingService:
         try:
             balance_info = await self._validator.get_balance_info()
             daily_stats.ending_balance = balance_info.total_krw
-        except UpbitError:
+        except (UpbitPrivateAPIError, UpbitPublicAPIError):
             pass
 
         logger.info(
@@ -601,7 +609,7 @@ class TradingService:
         """
         try:
             balance_info = await self._validator.get_balance_info()
-        except UpbitError as e:
+        except (UpbitPrivateAPIError, UpbitPublicAPIError) as e:
             logger.warning(f"포지션 동기화 실패 - 잔고 조회 오류: {e.message}")
             return None
 
@@ -638,9 +646,9 @@ class TradingService:
 
         # 현재가로 평가금액 및 손익 계산
         try:
-            ticker = await self._upbit_client.get_ticker(settings.trading_ticker)
+            ticker = await self._public_api.get_ticker(settings.trading_ticker)
             position.update_value(ticker.trade_price)
-        except UpbitError:
+        except (UpbitPrivateAPIError, UpbitPublicAPIError):
             # 현재가 조회 실패 시 평균 매수가로 계산
             position.current_value = total_coin * balance_info.coin_avg_price
             position.unrealized_pnl = Decimal("0")
@@ -683,7 +691,8 @@ class TradingService:
 
 async def get_trading_service(
     session: AsyncSession,
-    upbit_client: UpbitClient | None = None,
+    private_api: UpbitPrivateAPI | None = None,
+    public_api: UpbitPublicAPI | None = None,
     risk_service: RiskService | None = None,
     notifier: "Notifier | None" = None,
 ) -> TradingService:
@@ -692,20 +701,24 @@ async def get_trading_service(
 
     Args:
         session: SQLAlchemy 비동기 세션
-        upbit_client: Upbit API 클라이언트 (기본: 싱글톤)
+        private_api: Upbit Private API 클라이언트 (기본: 싱글톤)
+        public_api: Upbit Public API 클라이언트 (기본: 싱글톤)
         risk_service: 리스크 관리 서비스 (기본: 새 인스턴스)
         notifier: 알림 서비스 (선택)
 
     Returns:
         TradingService: 거래 서비스
     """
+    from src.clients.upbit import get_upbit_private_api, get_upbit_public_api
     from src.modules.risk.service import get_risk_service
-    from src.services.upbit_client import get_upbit_client
 
-    if upbit_client is None:
-        upbit_client = get_upbit_client()
+    if private_api is None:
+        private_api = get_upbit_private_api()
+
+    if public_api is None:
+        public_api = get_upbit_public_api()
 
     if risk_service is None:
         risk_service = get_risk_service(session)
 
-    return TradingService(session, upbit_client, risk_service, notifier)
+    return TradingService(session, private_api, public_api, risk_service, notifier)

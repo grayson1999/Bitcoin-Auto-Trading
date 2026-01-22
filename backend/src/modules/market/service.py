@@ -13,6 +13,11 @@ from typing import Any
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.upbit import (
+    UpbitPublicAPI,
+    UpbitPublicAPIError,
+    get_upbit_public_api,
+)
 from src.config import settings
 from src.entities import MarketData
 from src.repositories.market_repository import MarketRepository
@@ -21,7 +26,6 @@ from src.services.data_collector import (
     DataCollectorError,
     get_data_collector,
 )
-from src.services.upbit_client import UpbitClient, UpbitError, get_upbit_client
 from src.utils import UTC
 
 
@@ -48,7 +52,7 @@ class MarketService:
         self,
         db: AsyncSession,
         data_collector: DataCollector | None = None,
-        upbit_client: UpbitClient | None = None,
+        upbit_client: UpbitPublicAPI | None = None,
     ):
         """
         시장 서비스 초기화
@@ -56,11 +60,11 @@ class MarketService:
         Args:
             db: SQLAlchemy 비동기 세션
             data_collector: 데이터 수집기 (기본값: 싱글톤 사용)
-            upbit_client: Upbit 클라이언트 (기본값: 싱글톤 사용)
+            upbit_client: Upbit Public API 클라이언트 (기본값: 싱글톤 사용)
         """
         self.db = db
         self._collector = data_collector or get_data_collector()
-        self._upbit_client = upbit_client or get_upbit_client()
+        self._upbit_client = upbit_client or get_upbit_public_api()
         self._repository = MarketRepository(db)
 
         # 마켓 설정
@@ -240,7 +244,7 @@ class MarketService:
                 "change_24h_pct": change_24h_pct,
                 "timestamp": datetime.now(UTC).isoformat(),
             }
-        except UpbitError as e:
+        except UpbitPublicAPIError as e:
             logger.error(f"현재 시세 조회 실패: {e.message}")
             raise MarketServiceError(f"Upbit API 오류: {e.message}") from e
 

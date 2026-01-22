@@ -23,6 +23,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import CurrentUser
 from src.api.schemas.dashboard import DashboardSummaryResponse
+from src.clients.upbit import (
+    UpbitPrivateAPIError,
+    UpbitPublicAPIError,
+    get_upbit_private_api,
+    get_upbit_public_api,
+)
 from src.config import settings
 from src.database import get_session
 from src.entities import (
@@ -36,7 +42,6 @@ from src.modules.risk.service import get_risk_service
 from src.modules.signal import TradingSignalResponse
 from src.modules.trading import BalanceResponse, PositionResponse
 from src.modules.trading.service import get_trading_service
-from src.services.upbit_client import UpbitError, get_upbit_client
 from src.utils import UTC
 
 router = APIRouter(prefix="/dashboard")
@@ -70,9 +75,9 @@ async def get_dashboard_summary(
     now = datetime.now(UTC)
 
     # === 1. 현재 시세 조회 ===
-    client = get_upbit_client()
+    public_api = get_upbit_public_api()
     try:
-        ticker = await client.get_ticker()
+        ticker = await public_api.get_ticker()
         current_price = ticker.trade_price
 
         # 24시간 변동률 계산
@@ -83,7 +88,7 @@ async def get_dashboard_summary(
                 change_24h_pct = float(
                     (ticker.trade_price - mid_price) / mid_price * 100
                 )
-    except UpbitError as e:
+    except UpbitPublicAPIError as e:
         logger.error(f"시세 조회 실패: {e.message}")
         raise HTTPException(
             status_code=503,
@@ -120,7 +125,8 @@ async def get_dashboard_summary(
     # === 3. 잔고 정보 조회 ===
     balance_response: BalanceResponse | None = None
     try:
-        accounts = await client.get_accounts()
+        private_api = get_upbit_private_api()
+        accounts = await private_api.get_accounts()
         krw_balance = Decimal("0")
         krw_locked = Decimal("0")
         coin_balance = Decimal("0")
@@ -148,7 +154,7 @@ async def get_dashboard_summary(
             coin_avg_buy_price=coin_avg_price,
             total_krw=total_krw,
         )
-    except UpbitError as e:
+    except UpbitPrivateAPIError as e:
         logger.warning(f"잔고 조회 실패: {e.message}")
 
     # === 4. 일일 손익 조회 ===

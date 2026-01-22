@@ -18,9 +18,13 @@ from loguru import logger
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.upbit import (
+    UpbitPublicAPI,
+    UpbitPublicAPIError,
+    get_upbit_public_api,
+)
 from src.config import settings
 from src.entities import MarketData
-from src.services.upbit_client import UpbitClient, UpbitError, get_upbit_client
 from src.utils import UTC
 
 # === 수집 관련 상수 ===
@@ -65,17 +69,17 @@ class DataCollector:
 
     def __init__(
         self,
-        upbit_client: UpbitClient | None = None,
+        upbit_client: UpbitPublicAPI | None = None,
         market: str | None = None,
     ):
         """
         데이터 수집기 초기화
 
         Args:
-            upbit_client: Upbit API 클라이언트 (기본값: 싱글톤 사용)
+            upbit_client: Upbit Public API 클라이언트 (기본값: 싱글톤 사용)
             market: 수집할 마켓 코드 (기본값: settings.trading_ticker)
         """
-        self._client = upbit_client or get_upbit_client()
+        self._client = upbit_client or get_upbit_public_api()
         self._market = market or settings.trading_ticker
         self._is_running = False
         self._consecutive_failures = 0
@@ -164,7 +168,7 @@ class DataCollector:
 
             return market_data
 
-        except UpbitError as e:
+        except UpbitPublicAPIError as e:
             # API 오류 처리
             self._consecutive_failures += 1
             logger.error(

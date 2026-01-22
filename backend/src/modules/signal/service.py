@@ -16,28 +16,32 @@ from loguru import logger
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.ai import AIClient, AIClientError, get_ai_client
+from src.clients.upbit import (
+    UpbitPrivateAPIError,
+    UpbitPublicAPIError,
+    get_upbit_private_api,
+)
 from src.config import settings
 from src.config.constants import SIGNAL_COOLDOWN_MINUTES, SIGNAL_MARKET_DATA_HOURS
 from src.entities import MarketData, TradingSignal
-from src.modules.signal.prompt_builder import SignalPromptBuilder
-from src.modules.signal.response_parser import SignalResponseParser
-from src.clients.ai import AIClient, AIClientError, get_ai_client
 from src.modules.signal.coin_classifier import get_coin_type
-from src.services.multi_timeframe_analyzer import (
-    MultiTimeframeAnalyzer,
-    MultiTimeframeResult,
-    get_multi_timeframe_analyzer,
-)
+from src.modules.signal.prompt_builder import SignalPromptBuilder
 from src.modules.signal.prompt_templates import (
     PromptConfig,
     get_config_for_coin,
     get_system_instruction,
 )
+from src.modules.signal.response_parser import SignalResponseParser
+from src.services.multi_timeframe_analyzer import (
+    MultiTimeframeAnalyzer,
+    MultiTimeframeResult,
+    get_multi_timeframe_analyzer,
+)
 from src.services.signal_performance_tracker import (
     PerformanceSummary,
     SignalPerformanceTracker,
 )
-from src.services.upbit_client import UpbitError, get_upbit_client
 from src.utils import UTC
 
 
@@ -262,8 +266,8 @@ class SignalService:
             dict | None: 잔고 정보 딕셔너리 또는 None (조회 실패 시)
         """
         try:
-            client = get_upbit_client()
-            accounts = await client.get_accounts()
+            private_api = get_upbit_private_api()
+            accounts = await private_api.get_accounts()
 
             krw_available = Decimal("0")
             coin_available = Decimal("0")
@@ -276,11 +280,11 @@ class SignalService:
                     coin_available = acc.balance
                     coin_avg_price = acc.avg_buy_price
 
-            # 현재가 조회
+            # 현재가 조회 (mtf_analyzer의 public API 사용)
             try:
-                ticker = await client.get_ticker(self.ticker)
+                ticker = await self.mtf_analyzer.upbit_client.get_ticker(self.ticker)
                 current_price = ticker.trade_price
-            except UpbitError:
+            except UpbitPublicAPIError:
                 current_price = coin_avg_price
 
             # 미실현 손익 계산
@@ -305,7 +309,7 @@ class SignalService:
                 "unrealized_pnl_pct": unrealized_pnl_pct,
             }
 
-        except UpbitError as e:
+        except UpbitPrivateAPIError as e:
             logger.warning(f"잔고 조회 실패: {e.message}")
             return None
         except Exception as e:
