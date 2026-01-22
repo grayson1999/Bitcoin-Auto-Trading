@@ -13,7 +13,7 @@
 
 from dataclasses import dataclass
 
-from src.services.coin_classifier import CoinType
+from src.modules.signal.coin_classifier import CoinType
 
 
 @dataclass

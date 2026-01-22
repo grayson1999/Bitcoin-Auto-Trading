@@ -12,7 +12,7 @@ from datetime import datetime
 
 from src.entities import MarketData
 from src.services.multi_timeframe_analyzer import MultiTimeframeResult
-from src.services.prompt_templates import PromptConfig, get_analysis_prompt
+from src.modules.signal.prompt_templates import PromptConfig, get_analysis_prompt
 from src.services.signal_performance_tracker import PerformanceSummary
 from src.utils import UTC
 

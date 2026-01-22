@@ -21,14 +21,14 @@ from src.config.constants import SIGNAL_COOLDOWN_MINUTES, SIGNAL_MARKET_DATA_HOU
 from src.entities import MarketData, TradingSignal
 from src.modules.signal.prompt_builder import SignalPromptBuilder
 from src.modules.signal.response_parser import SignalResponseParser
-from src.services.ai_client import AIClient, AIClientError, get_ai_client
-from src.services.coin_classifier import get_coin_type
+from src.clients.ai import AIClient, AIClientError, get_ai_client
+from src.modules.signal.coin_classifier import get_coin_type
 from src.services.multi_timeframe_analyzer import (
     MultiTimeframeAnalyzer,
     MultiTimeframeResult,
     get_multi_timeframe_analyzer,
 )
-from src.services.prompt_templates import (
+from src.modules.signal.prompt_templates import (
     PromptConfig,
     get_config_for_coin,
     get_system_instruction,

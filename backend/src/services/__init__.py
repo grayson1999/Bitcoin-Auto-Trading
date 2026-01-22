@@ -4,7 +4,6 @@
 이 패키지는 모듈에서 공유하는 인프라 서비스를 제공합니다.
 - UpbitClient: Upbit 거래소 API 클라이언트
 - DataCollector: 실시간 시장 데이터 수집기
-- AIClient: Gemini AI API 클라이언트
 - TechnicalIndicatorCalculator: 기술적 지표 계산기
 - MultiTimeframeAnalyzer: 멀티 타임프레임 분석기
 - SignalPerformanceTracker: 신호 성과 추적기
@@ -15,9 +14,11 @@
 - SignalService (modules/signal/service.py)
 - TradingService (modules/trading/service.py)
 - RiskService (modules/risk/service.py)
+
+AI Client는 clients/ai/로 이동:
+- AIClient, get_ai_client (clients/ai/)
 """
 
-from src.services.ai_client import AIClient, AIClientError, AIResponse, get_ai_client
 from src.services.data_collector import DataCollector, get_data_collector
 from src.services.multi_timeframe_analyzer import (
     MultiTimeframeAnalyzer,
@@ -52,11 +53,6 @@ __all__ = [
     # Data Collector
     "DataCollector",
     "get_data_collector",
-    # AI
-    "AIClient",
-    "AIClientError",
-    "AIResponse",
-    "get_ai_client",
     # Technical Indicators
     "TechnicalIndicatorCalculator",
     "IndicatorResult",
