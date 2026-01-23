@@ -181,7 +181,11 @@ class SlackLogHandler:
         timestamp: datetime,
     ) -> None:
         """비동기 Slack 전송"""
-        from src.services.notifier import AlertLevel, AlertMessage, get_notifier
+        from src.modules.notification.notifier import (
+            AlertLevel,
+            AlertMessage,
+            get_notifier,
+        )
 
         if self._notifier is None:
             self._notifier = get_notifier()

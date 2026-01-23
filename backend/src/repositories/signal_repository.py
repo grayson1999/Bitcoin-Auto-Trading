@@ -50,9 +50,7 @@ class SignalRepository(BaseRepository[TradingSignal]):
             최신 매매 신호 목록 (최신순)
         """
         result = await self.session.execute(
-            select(TradingSignal)
-            .order_by(TradingSignal.created_at.desc())
-            .limit(limit)
+            select(TradingSignal).order_by(TradingSignal.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 

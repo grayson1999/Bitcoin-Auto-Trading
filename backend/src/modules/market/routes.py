@@ -109,12 +109,18 @@ async def get_market_history(
     current_user: CurrentUser,
     hours: Annotated[
         int,
-        Query(ge=MARKET_MIN_HOURS, le=MARKET_MAX_HOURS, description="조회할 시간 범위 (1-168시간)"),
+        Query(
+            ge=MARKET_MIN_HOURS,
+            le=MARKET_MAX_HOURS,
+            description="조회할 시간 범위 (1-168시간)",
+        ),
     ] = MARKET_DEFAULT_HOURS,
     limit: Annotated[
         int,
         Query(
-            ge=API_PAGINATION_MIN_LIMIT, le=MARKET_MAX_LIMIT_HISTORY, description="최대 레코드 수 (1-1000)"
+            ge=API_PAGINATION_MIN_LIMIT,
+            le=MARKET_MAX_LIMIT_HISTORY,
+            description="최대 레코드 수 (1-1000)",
         ),
     ] = MARKET_DEFAULT_LIMIT_HISTORY,
     interval: Annotated[
@@ -181,7 +187,11 @@ async def get_market_summary(
     current_user: CurrentUser,
     hours: Annotated[
         int,
-        Query(ge=MARKET_MIN_HOURS, le=MARKET_MAX_HOURS, description="통계 기간 (1-168시간)"),
+        Query(
+            ge=MARKET_MIN_HOURS,
+            le=MARKET_MAX_HOURS,
+            description="통계 기간 (1-168시간)",
+        ),
     ] = MARKET_DEFAULT_HOURS,
 ) -> MarketSummaryResponse:
     """
@@ -212,7 +222,11 @@ async def get_latest_market_data(
     current_user: CurrentUser,
     limit: Annotated[
         int,
-        Query(ge=API_PAGINATION_MIN_LIMIT, le=MARKET_MAX_LIMIT_LATEST, description="레코드 수 (1-100)"),
+        Query(
+            ge=API_PAGINATION_MIN_LIMIT,
+            le=MARKET_MAX_LIMIT_LATEST,
+            description="레코드 수 (1-100)",
+        ),
     ] = MARKET_DEFAULT_LIMIT_LATEST,
 ) -> list[MarketDataResponse]:
     """
@@ -250,7 +264,7 @@ async def get_collector_stats(
     Returns:
         CollectorStatsResponse: 수집기 상태 및 통계 정보
     """
-    from src.services.data_collector import get_data_collector
+    from src.modules.market import get_data_collector
 
     collector = get_data_collector()
     stats = collector.stats

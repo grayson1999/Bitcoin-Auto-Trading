@@ -57,9 +57,7 @@ class SystemConfig(Base):
         comment="최종 수정 시간",
     )
 
-    __table_args__ = (
-        Index("idx_system_config_updated", updated_at.desc()),
-    )
+    __table_args__ = (Index("idx_system_config_updated", updated_at.desc()),)
 
     def __repr__(self) -> str:
         """디버깅용 문자열 표현"""

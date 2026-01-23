@@ -86,7 +86,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # Slack 로그 핸들러 종료
     if settings.slack_webhook_url:
-        from src.services.slack_log_handler import get_slack_log_handler
+        from src.modules.notification import get_slack_log_handler
 
         get_slack_log_handler().close()
         logger.info("Slack 로그 핸들러 종료됨")

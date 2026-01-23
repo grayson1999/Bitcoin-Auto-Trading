@@ -25,7 +25,16 @@ from src.clients.upbit import (
 from src.config import settings
 from src.config.constants import SIGNAL_COOLDOWN_MINUTES, SIGNAL_MARKET_DATA_HOURS
 from src.entities import MarketData, TradingSignal
+from src.modules.market import (
+    MultiTimeframeAnalyzer,
+    MultiTimeframeResult,
+    get_multi_timeframe_analyzer,
+)
 from src.modules.signal.coin_classifier import get_coin_type
+from src.modules.signal.performance_tracker import (
+    PerformanceSummary,
+    SignalPerformanceTracker,
+)
 from src.modules.signal.prompt_builder import SignalPromptBuilder
 from src.modules.signal.prompt_templates import (
     PromptConfig,
@@ -33,15 +42,6 @@ from src.modules.signal.prompt_templates import (
     get_system_instruction,
 )
 from src.modules.signal.response_parser import SignalResponseParser
-from src.services.multi_timeframe_analyzer import (
-    MultiTimeframeAnalyzer,
-    MultiTimeframeResult,
-    get_multi_timeframe_analyzer,
-)
-from src.services.signal_performance_tracker import (
-    PerformanceSummary,
-    SignalPerformanceTracker,
-)
 from src.utils import UTC
 
 
@@ -229,7 +229,9 @@ class SignalService:
 
     async def _check_cooldown(self) -> None:
         """쿨다운 체크"""
-        cooldown_threshold = datetime.now(UTC) - timedelta(minutes=SIGNAL_COOLDOWN_MINUTES)
+        cooldown_threshold = datetime.now(UTC) - timedelta(
+            minutes=SIGNAL_COOLDOWN_MINUTES
+        )
 
         stmt = select(TradingSignal).where(
             TradingSignal.created_at > cooldown_threshold

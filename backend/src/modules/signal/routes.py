@@ -44,7 +44,11 @@ async def get_signals(
     current_user: CurrentUser,
     limit: Annotated[
         int,
-        Query(ge=API_PAGINATION_MIN_LIMIT, le=API_PAGINATION_MAX_LIMIT, description="최대 조회 개수 (1-100)"),
+        Query(
+            ge=API_PAGINATION_MIN_LIMIT,
+            le=API_PAGINATION_MAX_LIMIT,
+            description="최대 조회 개수 (1-100)",
+        ),
     ] = API_PAGINATION_DEFAULT_LIMIT,
     page: Annotated[
         int,

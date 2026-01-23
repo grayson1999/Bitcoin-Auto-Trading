@@ -8,7 +8,7 @@ from loguru import logger
 
 from src.config.constants import DEFAULT_MAX_RETRIES
 from src.database import async_session_factory
-from src.services.data_collector import get_data_collector
+from src.modules.market import get_data_collector
 
 
 async def collect_market_data_job() -> None:

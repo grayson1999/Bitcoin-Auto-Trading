@@ -16,7 +16,7 @@ from src.clients.upbit import (
     get_upbit_public_api,
 )
 from src.config import settings
-from src.services.technical_indicators import (
+from src.modules.market.indicators import (
     IndicatorResult,
     TechnicalIndicatorCalculator,
     get_technical_calculator,

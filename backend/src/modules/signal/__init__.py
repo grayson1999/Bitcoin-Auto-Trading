@@ -1,5 +1,10 @@
-"""Signal module - AI trading signal generation and retrieval."""
+"""Signal module - AI trading signal generation, performance tracking, and retrieval."""
 
+from src.modules.signal.performance_tracker import (
+    PerformanceSummary,
+    SignalOutcome,
+    SignalPerformanceTracker,
+)
 from src.modules.signal.prompt_builder import SignalPromptBuilder
 from src.modules.signal.response_parser import ParsedSignal, SignalResponseParser
 from src.modules.signal.routes import router
@@ -34,6 +39,10 @@ __all__ = [
     # Response Parser
     "SignalResponseParser",
     "ParsedSignal",
+    # Performance Tracker
+    "SignalPerformanceTracker",
+    "SignalOutcome",
+    "PerformanceSummary",
     # Router
     "router",
 ]

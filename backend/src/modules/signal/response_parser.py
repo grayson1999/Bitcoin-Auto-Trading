@@ -73,7 +73,9 @@ class SignalResponseParser:
                 signal = SignalType.HOLD.value
 
             # 신뢰도 범위 검증
-            confidence = max(SIGNAL_MIN_CONFIDENCE, min(SIGNAL_MAX_CONFIDENCE, confidence))
+            confidence = max(
+                SIGNAL_MIN_CONFIDENCE, min(SIGNAL_MAX_CONFIDENCE, confidence)
+            )
 
             # reasoning 처리 (구조화된 포맷)
             if isinstance(reasoning_raw, dict):

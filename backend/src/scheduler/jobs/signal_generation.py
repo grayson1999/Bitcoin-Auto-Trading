@@ -82,7 +82,10 @@ async def generate_trading_signal_job() -> None:
                     )
 
                     # 잔고 부족으로 주문 실패 시 신호에 실패 사유 기록
-                    if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
+                    if (
+                        order_result.blocked_reason
+                        == OrderBlockedReason.INSUFFICIENT_BALANCE
+                    ):
                         signal.reasoning = (
                             signal.reasoning or ""
                         ) + f" [주문 실패: {order_result.blocked_reason.value}]"
@@ -157,7 +160,10 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
                 )
 
                 # 잔고 부족으로 주문 실패 시 신호를 HOLD로 변환
-                if order_result.blocked_reason == OrderBlockedReason.INSUFFICIENT_BALANCE:
+                if (
+                    order_result.blocked_reason
+                    == OrderBlockedReason.INSUFFICIENT_BALANCE
+                ):
                     signal.signal_type = SignalType.HOLD.value
                     signal.reasoning = (
                         signal.reasoning or ""
@@ -223,7 +229,7 @@ async def evaluate_signal_performance_job() -> None:
         3. 정확도 및 수익률 계산
     """
     # 순환 참조 방지를 위한 지연 임포트
-    from src.services.signal_performance_tracker import SignalPerformanceTracker
+    from src.modules.signal import SignalPerformanceTracker
 
     async with async_session_factory() as session:
         try:

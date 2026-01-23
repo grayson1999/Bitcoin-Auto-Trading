@@ -319,7 +319,7 @@ def setup_logging() -> None:
 
     # Slack 핸들러 추가 (ERROR 레벨 이상만)
     if settings.slack_webhook_url:
-        from src.services.slack_log_handler import get_slack_log_handler
+        from src.modules.notification import get_slack_log_handler
 
         slack_handler = get_slack_log_handler()
         logger.add(

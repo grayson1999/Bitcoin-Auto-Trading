@@ -224,9 +224,9 @@ class MarketRepository(BaseRepository[MarketData]):
         """
         target_symbol = symbol or settings.trading_ticker
         result = await self.session.execute(
-            select(func.count()).select_from(MarketData).where(
-                MarketData.symbol == target_symbol
-            )
+            select(func.count())
+            .select_from(MarketData)
+            .where(MarketData.symbol == target_symbol)
         )
         return result.scalar() or 0
 

@@ -162,7 +162,9 @@ class OrderMonitor:
                         continue
 
                     # 체결 완료 - calculate_executed_price 사용
-                    executed_price = self.calculate_executed_price(order, upbit_response)
+                    executed_price = self.calculate_executed_price(
+                        order, upbit_response
+                    )
                     executed_volume = upbit_response.executed_volume
                     # 수수료 = 체결금액 * 수수료율 (KRW 기준)
                     total_value = executed_volume * executed_price
@@ -192,9 +194,7 @@ class OrderMonitor:
                 continue
 
         # 최대 시도 횟수 초과
-        logger.warning(
-            f"주문 체결 확인 타임아웃: order_id={order.id}, uuid={uuid}"
-        )
+        logger.warning(f"주문 체결 확인 타임아웃: order_id={order.id}, uuid={uuid}")
 
     async def sync_pending_orders(self) -> int:
         """

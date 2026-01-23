@@ -10,10 +10,10 @@ from collections.abc import Callable, Generator
 
 import pytest
 from fastapi.testclient import TestClient
+from src.clients import AuthUser
 
 from src.api.deps import get_current_user
 from src.main import app
-from src.services.auth_client import AuthUser
 
 # === 테스트용 사용자 데이터 ===
 TEST_USER = AuthUser(

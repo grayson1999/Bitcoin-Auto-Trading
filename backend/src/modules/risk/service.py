@@ -139,7 +139,9 @@ class RiskService:
         position_size_max_pct = await self._get_config_value(
             "position_size_max_pct", settings.position_size_max_pct
         )
-        max_amount = total_balance * Decimal(str(position_size_max_pct)) / Decimal("100")
+        max_amount = (
+            total_balance * Decimal(str(position_size_max_pct)) / Decimal("100")
+        )
 
         if requested_amount > max_amount:
             message = (

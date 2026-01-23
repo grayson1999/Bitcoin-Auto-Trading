@@ -185,10 +185,14 @@ class UpbitPrivateAPI:
 
             except httpx.RequestError as e:
                 last_error = e
-                logger.warning(f"Request error (attempt {attempt + 1}/{MAX_RETRIES}): {e}")
+                logger.warning(
+                    f"Request error (attempt {attempt + 1}/{MAX_RETRIES}): {e}"
+                )
                 await asyncio.sleep(RETRY_DELAY)
 
-        raise UpbitPrivateAPIError(f"Request failed after {MAX_RETRIES} retries: {last_error}")
+        raise UpbitPrivateAPIError(
+            f"Request failed after {MAX_RETRIES} retries: {last_error}"
+        )
 
     async def get_accounts(self) -> list[UpbitBalance]:
         """

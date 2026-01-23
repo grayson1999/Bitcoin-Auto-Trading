@@ -48,7 +48,7 @@ from src.modules.trading.order_validator import (
 from src.utils import UTC
 
 if TYPE_CHECKING:
-    from src.services.notifier import Notifier
+    from src.modules.notification import Notifier
 
 
 class TradingServiceError(Exception):
@@ -290,7 +290,9 @@ class TradingService:
 
                 # 시장가 주문이 대기 상태면 폴링하여 체결 확인
                 if not order.is_executed and upbit_response.uuid:
-                    await self._monitor.poll_order_completion(order, upbit_response.uuid)
+                    await self._monitor.poll_order_completion(
+                        order, upbit_response.uuid
+                    )
 
                 break  # 성공 시 루프 종료
 
