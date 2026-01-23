@@ -18,17 +18,17 @@ class Settings(BaseSettings):
     환경 변수 또는 .env 파일에서 설정을 자동으로 로드합니다.
     Pydantic의 Field를 사용하여 기본값과 유효성 검증 규칙을 정의합니다.
 
-    DB 오버라이드 가능 필드:
+    DB 오버라이드 가능 필드 (7개):
         - position_size_min_pct, position_size_max_pct
         - stop_loss_pct, daily_loss_limit_pct
-        - signal_interval_hours, ai_model
-        - volatility_threshold_pct, trading_ticker
-        - trading_enabled
+        - signal_interval_hours, volatility_threshold_pct
+        - ai_model
 
     환경변수 전용 (민감 정보):
         - database_url, upbit_access_key, upbit_secret_key
         - gemini_api_key, openai_api_key
         - slack_webhook_url, auth_server_url
+        - trading_ticker (거래 대상 변경은 배포 레벨)
     """
 
     model_config = SettingsConfigDict(
@@ -115,10 +115,10 @@ class Settings(BaseSettings):
         default="gpt-4.1-mini", description="AI Fallback 모델 (Gemini 실패 시)"
     )
 
-    # === 거래 대상 설정 (DB 오버라이드 가능) ===
+    # === 거래 대상 설정 (환경변수 전용) ===
     trading_ticker: str = Field(
         default="KRW-SOL",
-        description="거래 마켓 코드 [DB 오버라이드 가능]",
+        description="거래 마켓 코드 (환경변수로 관리)",
     )
     trading_currency: str = Field(
         default="SOL",
@@ -171,6 +171,9 @@ class Settings(BaseSettings):
 
 
 # DB 오버라이드 가능한 설정 키 목록
+# - 프론트엔드 Settings 페이지에서 수정 가능한 항목만 포함
+# - trading_ticker: 환경변수로 관리 (거래 대상 변경은 배포 레벨)
+# - trading_enabled: Risk API (/halt, /resume)로 제어
 DB_OVERRIDABLE_KEYS = frozenset(
     {
         "position_size_min_pct",
@@ -180,8 +183,6 @@ DB_OVERRIDABLE_KEYS = frozenset(
         "signal_interval_hours",
         "volatility_threshold_pct",
         "ai_model",
-        "trading_ticker",
-        "trading_enabled",
     }
 )
 

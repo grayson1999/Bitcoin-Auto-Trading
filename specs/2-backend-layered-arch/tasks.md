@@ -246,8 +246,8 @@
   - 서비스 상태 확인: `systemctl status bitcoin-backend bitcoin-frontend`
 - [X] T091 Run quickstart.md validation steps
 - [X] T092 Remove deprecated position_size_pct field (settings.py, schemas, routes, DEFAULT_CONFIGS, DB_OVERRIDABLE_KEYS)
-- [ ] T093 Clean up DB_OVERRIDABLE_KEYS - 프론트엔드에서 실제 설정 가능한 필드만 포함
-- [ ] T094 Update settings.py [DB 오버라이드 가능] comments - 실제 오버라이드 가능한 필드만 표시
+- [X] T093 Clean up DB_OVERRIDABLE_KEYS - trading_ticker, trading_enabled 제거 (7개 유지)
+- [X] T094 Update settings.py [DB 오버라이드 가능] comments - 실제 오버라이드 가능한 필드만 표시
 
 ---
 

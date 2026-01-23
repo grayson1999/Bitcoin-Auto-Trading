@@ -66,6 +66,9 @@ class SystemConfig(Base):
 
 
 # 기본 설정값 상수
+# DB 오버라이드 가능한 7개 설정만 포함
+# - trading_ticker: 환경변수로 관리
+# - trading_enabled: Risk API로 제어
 DEFAULT_CONFIGS = {
     "position_size_min_pct": "25.0",
     "position_size_max_pct": "50.0",
@@ -74,5 +77,4 @@ DEFAULT_CONFIGS = {
     "signal_interval_hours": "1",
     "ai_model": '"gemini-2.5-pro"',
     "volatility_threshold_pct": "3.0",
-    "trading_enabled": "true",
 }
