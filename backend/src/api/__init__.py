@@ -12,9 +12,9 @@ FastAPI 라우터 패키지
 from fastapi import APIRouter
 
 # 모듈에서 라우터 import
-from src.api.dashboard import router as dashboard_router
 from src.modules.backtest import router as backtest_router
 from src.modules.config import router as config_router
+from src.modules.dashboard import router as dashboard_router
 from src.modules.health import router as health_router
 from src.modules.market import router as market_router
 from src.modules.risk import router as risk_router

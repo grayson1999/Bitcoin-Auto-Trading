@@ -21,8 +21,6 @@ from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import CurrentUser
-from src.api.schemas.dashboard import DashboardSummaryResponse
 from src.clients.upbit import (
     UpbitPrivateAPIError,
     UpbitPublicAPIError,
@@ -38,6 +36,8 @@ from src.entities import (
     Position,
     TradingSignal,
 )
+from src.modules.auth import CurrentUser
+from src.modules.dashboard.schemas import DashboardSummaryResponse
 from src.modules.risk.service import get_risk_service
 from src.modules.signal import TradingSignalResponse
 from src.modules.trading import BalanceResponse, PositionResponse

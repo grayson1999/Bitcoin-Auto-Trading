@@ -17,10 +17,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import CurrentUser
 from src.config import settings
 from src.database import get_session
 from src.entities import RiskEventType
+from src.modules.auth import CurrentUser
 from src.modules.risk.schemas import (
     HaltTradingRequest,
     HaltTradingResponse,

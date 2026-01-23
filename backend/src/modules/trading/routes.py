@@ -17,7 +17,6 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import CurrentUser
 from src.clients.upbit import (
     UpbitPrivateAPIError,
     UpbitPublicAPIError,
@@ -31,6 +30,7 @@ from src.config.constants import (
 )
 from src.database import get_session
 from src.entities import OrderStatus, Position
+from src.modules.auth import CurrentUser
 from src.modules.trading.schemas import (
     BalanceResponse,
     OrderListResponse,

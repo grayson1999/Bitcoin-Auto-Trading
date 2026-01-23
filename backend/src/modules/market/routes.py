@@ -16,7 +16,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import CurrentUser
 from src.clients.upbit import UpbitPublicAPIError, get_upbit_public_api
 from src.config import settings
 from src.config.constants import (
@@ -32,6 +31,7 @@ from src.config.constants import (
 )
 from src.database import get_session
 from src.entities import MarketData
+from src.modules.auth import CurrentUser
 from src.modules.market.schemas import (
     CollectorStatsResponse,
     CurrentMarketResponse,

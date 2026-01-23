@@ -14,13 +14,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import CurrentUser
 from src.config.constants import (
     API_PAGINATION_DEFAULT_LIMIT,
     API_PAGINATION_MAX_LIMIT,
     API_PAGINATION_MIN_LIMIT,
 )
 from src.database import get_session
+from src.modules.auth import CurrentUser
 from src.modules.backtest.schemas import (
     BacktestRequest,
     BacktestResultDetailResponse,
