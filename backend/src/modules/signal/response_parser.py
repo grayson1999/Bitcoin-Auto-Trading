@@ -57,10 +57,7 @@ class SignalResponseParser:
         """
         # JSON 블록 추출 시도
         json_match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(1)
-        else:
-            json_str = text
+        json_str = json_match.group(1) if json_match else text
 
         try:
             data = json.loads(json_str)
@@ -147,7 +144,7 @@ class SignalResponseParser:
             if len(tech_lines) > 1:
                 sections.append("\n".join(tech_lines))
 
-        elif "facts" in reasoning_raw and reasoning_raw["facts"]:
+        elif reasoning_raw.get("facts"):
             # facts 기반 지표 표시 (fallback)
             key_facts = []
             for fact in reasoning_raw["facts"][:5]:
@@ -167,12 +164,12 @@ class SignalResponseParser:
                 )
 
         # 4. 핵심 요소 섹션
-        if "key_factors" in reasoning_raw and reasoning_raw["key_factors"]:
+        if reasoning_raw.get("key_factors"):
             factors = reasoning_raw["key_factors"]
             sections.append("⭐ 핵심 요소\n" + "\n".join(f"• {f}" for f in factors))
 
         # 5. 위험 요소 섹션
-        if "risks" in reasoning_raw and reasoning_raw["risks"]:
+        if reasoning_raw.get("risks"):
             risks = reasoning_raw["risks"]
             sections.append("⚠️ 위험 요소\n" + "\n".join(f"• {r}" for r in risks))
 

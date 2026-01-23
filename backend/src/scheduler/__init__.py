@@ -18,9 +18,9 @@ from src.scheduler.scheduler import (
 )
 
 __all__ = [
+    "get_scheduler_status",
     "scheduler",
     "setup_scheduler",
     "start_scheduler",
     "stop_scheduler",
-    "get_scheduler_status",
 ]

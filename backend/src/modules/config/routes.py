@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import DB_OVERRIDABLE_KEYS
-from src.utils.database import get_session
 from src.modules.config.schemas import (
     ConfigBatchUpdateRequest,
     ConfigBatchUpdateResponse,
@@ -20,6 +19,7 @@ from src.modules.config.schemas import (
     TradingStatusResponse,
 )
 from src.modules.config.service import ConfigService
+from src.utils.database import get_session
 
 router = APIRouter(prefix="/config", tags=["config"])
 

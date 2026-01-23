@@ -235,7 +235,7 @@
 - [X] T084 Update all import paths across the codebase (models → entities, services → clients/modules)
 - [X] T085 Delete old directories: backend/src/models/, backend/src/services/ (api/ restructured with router.py)
 - [X] T086 Update pyproject.toml with enhanced Ruff rules in backend/pyproject.toml
-- [ ] T087 Run Ruff lint and fix all issues
+- [X] T087 Run Ruff lint and fix all issues
 - [ ] T088 Verify all API endpoints return same responses (/api/v1/... paths)
 - [ ] T089 Verify all files are 500 lines or less
 - [ ] T090 Update CLAUDE.md with new project structure in CLAUDE.md

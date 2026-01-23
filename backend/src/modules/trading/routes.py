@@ -28,7 +28,6 @@ from src.config.constants import (
     API_PAGINATION_MAX_LIMIT,
     API_PAGINATION_MIN_LIMIT,
 )
-from src.utils.database import get_session
 from src.entities import OrderStatus, Position
 from src.modules.auth import CurrentUser
 from src.modules.trading.schemas import (
@@ -40,6 +39,7 @@ from src.modules.trading.schemas import (
 )
 from src.modules.trading.service import get_trading_service
 from src.utils import UTC
+from src.utils.database import get_session
 
 router = APIRouter(prefix="/trading")
 

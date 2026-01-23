@@ -14,12 +14,12 @@ from src.utils.database import (
 from src.utils.datetime_utils import UTC
 
 __all__ = [
+    # Datetime
+    "UTC",
     # Database
     "async_session_factory",
     "close_db",
     "engine",
     "get_session",
     "init_db",
-    # Datetime
-    "UTC",
 ]

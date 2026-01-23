@@ -22,22 +22,22 @@ from src.clients.ai.gemini_client import GeminiClient, get_gemini_client
 from src.clients.ai.openai_client import OpenAIClient, get_openai_client
 
 __all__ = [
-    # Base
-    "AIClientError",
-    "AIResponse",
-    "BaseAIClient",
     "COST_CONFIG",
     "DEFAULT_TIMEOUT",
     "MAX_RETRIES",
     "RETRY_DELAY",
     "TOKENS_PER_M",
-    # Gemini
-    "GeminiClient",
-    "get_gemini_client",
-    # OpenAI
-    "OpenAIClient",
-    "get_openai_client",
     # Unified Client (with fallback)
     "AIClient",
+    # Base
+    "AIClientError",
+    "AIResponse",
+    "BaseAIClient",
+    # Gemini
+    "GeminiClient",
+    # OpenAI
+    "OpenAIClient",
     "get_ai_client",
+    "get_gemini_client",
+    "get_openai_client",
 ]

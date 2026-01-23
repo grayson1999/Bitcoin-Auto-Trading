@@ -18,7 +18,6 @@ from src.config.constants import (
     API_PAGINATION_MAX_LIMIT,
     API_PAGINATION_MIN_LIMIT,
 )
-from src.utils.database import get_session
 from src.entities import SignalType
 from src.modules.auth import CurrentUser
 from src.modules.signal.schemas import (
@@ -29,6 +28,7 @@ from src.modules.signal.schemas import (
 )
 from src.modules.signal.service import SignalServiceError, get_signal_service
 from src.scheduler.jobs.signal_generation import execute_trading_from_signal_job
+from src.utils.database import get_session
 
 router = APIRouter(prefix="/signals")
 

@@ -19,15 +19,15 @@ from src.scheduler.jobs.signal_generation import (
 )
 
 __all__ = [
-    # 데이터 수집
-    "collect_market_data_job",
+    "check_volatility_job",
     # 데이터 정리
     "cleanup_old_data_job",
+    # 데이터 수집
+    "collect_market_data_job",
+    "evaluate_signal_performance_job",
+    "execute_trading_from_signal_job",
     # 신호 생성
     "generate_trading_signal_job",
-    "execute_trading_from_signal_job",
-    "check_volatility_job",
-    "evaluate_signal_performance_job",
     # 주문 동기화
     "sync_pending_orders_job",
 ]

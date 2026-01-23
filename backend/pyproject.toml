@@ -46,10 +46,16 @@ select = [
 ignore = [
     "E501",  # line too long (handled by formatter)
     "S101",  # allow assert (for tests)
+    "S105",  # false positive: "PASS" is status value, not password
+    "S311",  # random for jitter is acceptable, not crypto
+    "S324",  # md5 for cache key is acceptable, not security
+    "B008",  # FastAPI Depends() in function defaults is standard pattern
+    "RUF001", # unicode characters (×, ℹ) are intentional in Korean text
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
+"**/routes.py" = ["B008"]  # FastAPI pattern
 
 [tool.ruff.format]
 quote-style = "double"

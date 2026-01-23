@@ -127,15 +127,10 @@ class AIClient:
         Returns:
             bool: 연결 정상 여부 (Gemini 또는 OpenAI 중 하나라도 정상이면 True)
         """
-        # Gemini 먼저 확인
-        if await self._gemini_client.health_check():
-            return True
-
-        # Gemini 실패 시 OpenAI 확인
-        if self._openai_client and await self._openai_client.health_check():
-            return True
-
-        return False
+        # Gemini 먼저 확인, 실패 시 OpenAI 확인
+        return await self._gemini_client.health_check() or (
+            self._openai_client is not None and await self._openai_client.health_check()
+        )
 
 
 # === 싱글톤 인스턴스 ===

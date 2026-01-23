@@ -10,6 +10,7 @@ ERROR 레벨 이상의 로그를 자동으로 Slack으로 전송하는 커스텀
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import threading
 from collections import deque
@@ -210,11 +211,9 @@ class SlackLogHandler:
             timestamp=timestamp,
         )
 
-        try:
+        # Slack 전송 실패 시 무시 (로그 기록 시 무한 루프 방지)
+        with contextlib.suppress(Exception):
             await self._notifier.send_slack_message(alert)
-        except Exception:
-            # Slack 전송 실패 시 로그는 기록하지 않음 (무한 루프 방지)
-            pass
 
     def sink(self, message: Record) -> None:
         """

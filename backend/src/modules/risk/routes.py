@@ -18,7 +18,6 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.utils.database import get_session
 from src.entities import RiskEventType
 from src.modules.auth import CurrentUser
 from src.modules.risk.schemas import (
@@ -32,6 +31,7 @@ from src.modules.risk.schemas import (
 )
 from src.modules.risk.service import RiskServiceError, get_risk_service
 from src.utils import UTC
+from src.utils.database import get_session
 
 # === 상수 ===
 MIN_LIMIT = 1  # 최소 조회 개수

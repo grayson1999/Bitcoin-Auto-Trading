@@ -338,7 +338,7 @@ class MultiTimeframeAnalyzer:
             else:  # sideways
                 sideways_count += weight  # 횡보도 카운트에 포함
 
-        total_weight = sum(weights.get(tf, 1.0) for tf in analyses.keys())
+        total_weight = sum(weights.get(tf, 1.0) for tf in analyses)
 
         # 합류 점수 (일치도) - sideways도 "일관된 방향성"으로 간주
         if total_weight > 0:

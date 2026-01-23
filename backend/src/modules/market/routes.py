@@ -29,7 +29,6 @@ from src.config.constants import (
     MARKET_MIN_HOURS,
     MS_TO_SECONDS,
 )
-from src.utils.database import get_session
 from src.entities import MarketData
 from src.modules.auth import CurrentUser
 from src.modules.market.schemas import (
@@ -41,6 +40,7 @@ from src.modules.market.schemas import (
 )
 from src.modules.market.service import get_market_service
 from src.utils import UTC
+from src.utils.database import get_session
 
 router = APIRouter(prefix="/market")
 

@@ -12,6 +12,6 @@ from src.modules.config.routes import router
 from src.modules.config.service import ConfigService
 
 __all__ = [
-    "router",
     "ConfigService",
+    "router",
 ]

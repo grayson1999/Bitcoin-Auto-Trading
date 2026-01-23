@@ -22,13 +22,13 @@ from src.clients.upbit.common import (
     parse_candle,
     parse_ticker,
 )
+from src.config import settings
 from src.config.constants import (
-    DEFAULT_DEFAULT_MAX_RETRIES,
-    DEFAULT_DEFAULT_RETRY_DELAY_SECONDS_SECONDS,
+    DEFAULT_MAX_RETRIES,
+    DEFAULT_RETRY_DELAY_SECONDS,
     HTTP_STATUS_BAD_REQUEST,
     HTTP_STATUS_RATE_LIMIT,
 )
-from src.config import settings
 
 # === Error messages ===
 ERROR_INVALID_TICKER = "Invalid ticker response"
@@ -126,7 +126,9 @@ class UpbitPublicAPI:
 
             except httpx.TimeoutException as e:
                 last_error = e
-                logger.warning(f"Request timeout (attempt {attempt + 1}/{DEFAULT_MAX_RETRIES})")
+                logger.warning(
+                    f"Request timeout (attempt {attempt + 1}/{DEFAULT_MAX_RETRIES})"
+                )
                 await asyncio.sleep(DEFAULT_RETRY_DELAY_SECONDS)
 
             except httpx.RequestError as e:

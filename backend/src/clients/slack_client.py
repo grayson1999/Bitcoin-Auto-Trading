@@ -15,8 +15,8 @@ from enum import Enum
 import httpx
 from loguru import logger
 
-from src.config.constants import DEFAULT_MAX_RETRIES, DEFAULT_RETRY_DELAY_SECONDS
 from src.config import settings
+from src.config.constants import DEFAULT_MAX_RETRIES, DEFAULT_RETRY_DELAY_SECONDS
 from src.utils import UTC
 
 # === 상수 ===

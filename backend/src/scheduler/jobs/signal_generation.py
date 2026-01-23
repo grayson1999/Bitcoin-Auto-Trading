@@ -7,8 +7,8 @@ AI 매매 신호 생성, 자동 매매 실행, 변동성 체크, 신호 성과 �
 from loguru import logger
 from sqlalchemy import select
 
-from src.utils.database import async_session_factory
 from src.entities import SignalType, TradingSignal
+from src.utils.database import async_session_factory
 
 
 async def generate_trading_signal_job() -> None:

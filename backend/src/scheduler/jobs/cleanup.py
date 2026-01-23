@@ -6,8 +6,8 @@
 
 from loguru import logger
 
-from src.utils.database import async_session_factory
 from src.modules.market import get_data_collector
+from src.utils.database import async_session_factory
 
 
 async def cleanup_old_data_job() -> None:

@@ -449,16 +449,15 @@ class TradingService:
 
                 position.quantity = new_quantity
 
-        elif order.is_sell:
+        elif order.is_sell and order.executed_amount:
             # 매도: 수량 감소 (평균 매수가는 유지)
-            if order.executed_amount:
-                position.quantity = max(
-                    Decimal("0"), position.quantity - order.executed_amount
-                )
+            position.quantity = max(
+                Decimal("0"), position.quantity - order.executed_amount
+            )
 
-                # 수량이 0이면 평균 매수가 초기화
-                if position.quantity == 0:
-                    position.avg_buy_price = Decimal("0")
+            # 수량이 0이면 평균 매수가 초기화
+            if position.quantity == 0:
+                position.avg_buy_price = Decimal("0")
 
         # 현재가로 평가금액 업데이트
         try:

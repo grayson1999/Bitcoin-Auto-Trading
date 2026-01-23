@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.config.constants import DATA_RETENTION_DAYS
 from src.entities.market_data import MarketData
 from src.repositories.base import BaseRepository

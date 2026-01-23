@@ -28,7 +28,6 @@ from src.clients.upbit import (
     get_upbit_public_api,
 )
 from src.config import settings
-from src.utils.database import get_session
 from src.entities import (
     DailyStats,
     Order,
@@ -43,6 +42,7 @@ from src.modules.signal import TradingSignalResponse
 from src.modules.trading import BalanceResponse, PositionResponse
 from src.modules.trading.service import get_trading_service
 from src.utils import UTC
+from src.utils.database import get_session
 
 router = APIRouter(prefix="/dashboard")
 

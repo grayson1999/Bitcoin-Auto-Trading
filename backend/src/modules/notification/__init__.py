@@ -13,13 +13,13 @@ from src.modules.notification.slack_handler import (
 )
 
 __all__ = [
+    "AlertLevel",
+    "AlertMessage",
     # Notifier
     "Notifier",
     "NotifierError",
-    "AlertLevel",
-    "AlertMessage",
-    "get_notifier",
     # Slack Log Handler
     "SlackLogHandler",
+    "get_notifier",
     "get_slack_log_handler",
 ]
