@@ -20,7 +20,7 @@ from src.clients.upbit import (
 )
 from src.config import settings
 from src.entities import MarketData
-from src.modules.market.data_collector import (
+from src.modules.market.collector import (
     DataCollector,
     DataCollectorError,
     get_data_collector,

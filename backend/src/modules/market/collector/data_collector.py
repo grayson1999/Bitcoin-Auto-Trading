@@ -5,17 +5,14 @@
 - 실시간 시세 데이터 수집 및 DB 저장
 - 네트워크 장애 시 자동 재연결
 - 수집 통계 및 상태 관리
-- 오래된 데이터 자동 정리
 """
 
 import asyncio
 import random
-from datetime import datetime, timedelta
-from decimal import Decimal
+from datetime import datetime
 from typing import Any
 
 from loguru import logger
-from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.clients.upbit import (
@@ -24,7 +21,7 @@ from src.clients.upbit import (
     get_upbit_public_api,
 )
 from src.config import settings
-from src.config.constants import DATA_RETENTION_DAYS, MS_TO_SECONDS
+from src.config.constants import MS_TO_SECONDS
 from src.entities import MarketData
 from src.utils import UTC
 
@@ -228,166 +225,6 @@ class DataCollector:
                 delay = min(delay * 2, RECONNECT_MAX_DELAY)  # 대기 시간 2배 증가
 
         return None
-
-    async def get_latest(
-        self,
-        session: AsyncSession,
-        limit: int = 1,
-        symbol: str | None = None,
-    ) -> list[MarketData]:
-        """
-        최신 시장 데이터 조회
-
-        가장 최근에 수집된 데이터를 조회합니다.
-
-        Args:
-            session: 데이터베이스 세션
-            limit: 조회할 레코드 수
-            symbol: 마켓 심볼 (기본값: 현재 수집 마켓)
-
-        Returns:
-            list[MarketData]: 최신 시장 데이터 목록 (최신순)
-        """
-        target_symbol = symbol or self._market
-        result = await session.execute(
-            select(MarketData)
-            .where(MarketData.symbol == target_symbol)
-            .order_by(MarketData.timestamp.desc())
-            .limit(limit)
-        )
-        return list(result.scalars().all())
-
-    async def get_data_range(
-        self,
-        session: AsyncSession,
-        start_time: datetime,
-        end_time: datetime | None = None,
-        symbol: str | None = None,
-    ) -> list[MarketData]:
-        """
-        시간 범위 내 시장 데이터 조회
-
-        지정된 시간 범위의 데이터를 시간 순으로 조회합니다.
-
-        Args:
-            session: 데이터베이스 세션
-            start_time: 시작 시간
-            end_time: 종료 시간 (기본값: 현재 시간)
-            symbol: 마켓 심볼 (기본값: 현재 수집 마켓)
-
-        Returns:
-            list[MarketData]: 시간 범위 내 시장 데이터 목록 (오래된 순)
-        """
-        if end_time is None:
-            end_time = datetime.now(UTC)
-
-        target_symbol = symbol or self._market
-        result = await session.execute(
-            select(MarketData)
-            .where(MarketData.symbol == target_symbol)
-            .where(MarketData.timestamp >= start_time)
-            .where(MarketData.timestamp <= end_time)
-            .order_by(MarketData.timestamp.asc())
-        )
-        return list(result.scalars().all())
-
-    async def get_hourly_summary(
-        self,
-        session: AsyncSession,
-        hours: int = 24,
-        symbol: str | None = None,
-    ) -> dict[str, Any]:
-        """
-        시간별 요약 통계 조회
-
-        지정된 시간 동안의 가격 변동 통계를 계산합니다.
-
-        Args:
-            session: 데이터베이스 세션
-            hours: 통계 기간 (시간)
-            symbol: 마켓 심볼 (기본값: 현재 수집 마켓)
-
-        Returns:
-            dict: 요약 통계
-                - count: 데이터 포인트 수
-                - period_hours: 기간 (시간)
-                - latest_price: 최신 가격
-                - high: 최고가
-                - low: 최저가
-                - price_change_pct: 가격 변동률 (%)
-                - first_timestamp: 시작 시간
-                - last_timestamp: 종료 시간
-        """
-        start_time = datetime.now(UTC) - timedelta(hours=hours)
-        data = await self.get_data_range(session, start_time, symbol=symbol)
-
-        # 데이터가 없는 경우
-        if not data:
-            return {
-                "count": 0,
-                "period_hours": hours,
-                "latest_price": None,
-                "high": None,
-                "low": None,
-                "price_change_pct": None,
-            }
-
-        # 가격 목록 추출 및 통계 계산
-        prices = [d.price for d in data]
-        first_price = prices[0]
-        last_price = prices[-1]
-
-        # 가격 변동률 계산 (첫 가격 대비)
-        price_change_pct = (
-            ((last_price - first_price) / first_price * 100)
-            if first_price > 0
-            else Decimal("0")
-        )
-
-        return {
-            "count": len(data),
-            "period_hours": hours,
-            "latest_price": float(last_price),
-            "high": float(max(prices)),
-            "low": float(min(prices)),
-            "price_change_pct": float(price_change_pct),
-            "first_timestamp": data[0].timestamp.isoformat(),
-            "last_timestamp": data[-1].timestamp.isoformat(),
-        }
-
-    async def cleanup_old_data(
-        self,
-        session: AsyncSession,
-        retention_days: int | None = None,
-    ) -> int:
-        """
-        오래된 데이터 정리
-
-        보관 기간이 지난 시장 데이터를 삭제합니다.
-
-        Args:
-            session: 데이터베이스 세션
-            retention_days: 보관 기간 (일) (기본값: 설정에서 로드)
-
-        Returns:
-            int: 삭제된 레코드 수
-        """
-        if retention_days is None:
-            retention_days = DATA_RETENTION_DAYS
-
-        # 삭제 기준 날짜 계산
-        cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
-
-        # 오래된 데이터 삭제
-        result = await session.execute(
-            delete(MarketData).where(MarketData.timestamp < cutoff_date)
-        )
-
-        deleted_count = result.rowcount
-        if deleted_count > 0:
-            logger.info(f"{retention_days}일 이전 데이터 {deleted_count}건 삭제 완료")
-
-        return deleted_count
 
 
 # === 싱글톤 인스턴스 ===

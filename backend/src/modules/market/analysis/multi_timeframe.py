@@ -16,7 +16,7 @@ from src.clients.upbit import (
     get_upbit_public_api,
 )
 from src.config import settings
-from src.modules.market.indicators import (
+from src.modules.market.analysis.indicators import (
     IndicatorResult,
     TechnicalIndicatorCalculator,
     get_technical_calculator,
@@ -289,9 +289,8 @@ class MultiTimeframeAnalyzer:
         # RSI
         if indicators.rsi_signal != "neutral":
             rsi_text = {"oversold": "과매도", "overbought": "과매수"}
-            parts.append(
-                f"RSI {indicators.rsi_14:.1f} ({rsi_text.get(indicators.rsi_signal, '')})"
-            )
+            rsi_label = rsi_text.get(indicators.rsi_signal, "")
+            parts.append(f"RSI {indicators.rsi_14:.1f} ({rsi_label})")
 
         # MACD
         if indicators.macd_signal != "neutral":
@@ -409,9 +408,9 @@ class MultiTimeframeAnalyzer:
                     "일봉과 주봉 모두 하락 추세로 중장기 하락 압력 존재"
                 )
             elif daily.trend != weekly.trend:
-                interpretations.append(
-                    f"일봉({daily.trend})과 주봉({weekly.trend}) 추세 불일치로 단기 변동성 예상"
-                )
+                msg = f"일봉({daily.trend})과 주봉({weekly.trend}) "
+                msg += "추세 불일치로 단기 변동성 예상"
+                interpretations.append(msg)
 
         if "1h" in analyses:
             hourly = analyses["1h"]

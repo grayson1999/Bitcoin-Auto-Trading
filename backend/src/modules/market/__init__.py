@@ -1,20 +1,28 @@
-"""Market module - market data collection, technical analysis, and retrieval."""
+"""
+Market module - market data collection, technical analysis, and retrieval.
 
-from src.modules.market.analyzer import (
+Structure:
+    market/
+    ├── collector/      # 시세 데이터 수집
+    ├── analysis/       # 기술적 분석
+    ├── routes.py       # API 엔드포인트
+    ├── schemas.py      # Pydantic 스키마
+    └── service.py      # 메인 서비스
+"""
+
+from src.modules.market.analysis import (
+    IndicatorResult,
     MultiTimeframeAnalyzer,
     MultiTimeframeResult,
+    TechnicalIndicatorCalculator,
     TimeframeAnalysis,
     get_multi_timeframe_analyzer,
+    get_technical_calculator,
 )
-from src.modules.market.data_collector import (
+from src.modules.market.collector import (
     DataCollector,
     DataCollectorError,
     get_data_collector,
-)
-from src.modules.market.indicators import (
-    IndicatorResult,
-    TechnicalIndicatorCalculator,
-    get_technical_calculator,
 )
 from src.modules.market.routes import router
 from src.modules.market.schemas import (
@@ -33,25 +41,25 @@ from src.modules.market.service import (
 )
 
 __all__ = [
+    # Schemas
     "BalanceResponse",
     "CollectorStatsResponse",
     "CurrentMarketResponse",
-    # Data Collector
+    # Collector
     "DataCollector",
     "DataCollectorError",
+    # Analysis - Indicators
     "IndicatorResult",
     "MarketDataListResponse",
-    # Schemas
     "MarketDataResponse",
     # Service
     "MarketService",
     "MarketServiceError",
     "MarketSummaryResponse",
-    # Multi-Timeframe Analyzer
+    # Analysis - Multi-Timeframe
     "MultiTimeframeAnalyzer",
     "MultiTimeframeResult",
     "PositionResponse",
-    # Technical Indicators
     "TechnicalIndicatorCalculator",
     "TimeframeAnalysis",
     "get_data_collector",

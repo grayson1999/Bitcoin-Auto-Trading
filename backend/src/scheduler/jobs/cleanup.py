@@ -6,7 +6,7 @@
 
 from loguru import logger
 
-from src.modules.market import get_data_collector
+from src.modules.market import get_market_service
 from src.utils.database import async_session_factory
 
 
@@ -17,12 +17,10 @@ async def cleanup_old_data_job() -> None:
     매일 실행되어 보관 기간이 지난 시장 데이터를 삭제합니다.
     DATA_RETENTION_DAYS 상수 값을 기준으로 삭제합니다.
     """
-    collector = get_data_collector()
-
     async with async_session_factory() as session:
         try:
-            deleted_count = await collector.cleanup_old_data(session)
-            await session.commit()
+            service = get_market_service(session)
+            deleted_count = await service.cleanup_old_data()
 
             if deleted_count > 0:
                 logger.info(f"데이터 정리 완료: {deleted_count}건 삭제")
