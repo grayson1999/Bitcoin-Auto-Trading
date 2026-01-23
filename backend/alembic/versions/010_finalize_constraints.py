@@ -141,7 +141,8 @@ def upgrade() -> None:
         ondelete="SET NULL",
     )
     # UNIQUE 제약 변경: symbol -> (user_id, symbol)
-    op.drop_constraint("positions_symbol_key", "positions", type_="unique")
+    # Note: a97d74808344에서 positions_symbol_key 대신 ix_positions_symbol(unique=True)로 변경됨
+    op.drop_index("ix_positions_symbol", "positions")
     op.create_unique_constraint(
         "uq_positions_user_symbol", "positions", ["user_id", "symbol"]
     )
@@ -328,7 +329,8 @@ def downgrade() -> None:
     # positions
     op.drop_index("idx_position_user_symbol", "positions")
     op.drop_constraint("uq_positions_user_symbol", "positions", type_="unique")
-    op.create_unique_constraint("positions_symbol_key", "positions", ["symbol"])
+    # Note: a97d74808344에서 ix_positions_symbol(unique=True)가 사용됨
+    op.create_index("ix_positions_symbol", "positions", ["symbol"], unique=True)
     op.drop_constraint("fk_positions_updated_by", "positions", type_="foreignkey")
     op.drop_constraint("fk_positions_created_by", "positions", type_="foreignkey")
     op.drop_constraint("fk_positions_user_id", "positions", type_="foreignkey")
