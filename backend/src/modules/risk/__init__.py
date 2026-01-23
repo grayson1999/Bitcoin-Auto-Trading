@@ -1,5 +1,6 @@
 """Risk module - risk management and trading controls."""
 
+from src.modules.risk.event_manager import RiskEventManager
 from src.modules.risk.routes import router
 from src.modules.risk.schemas import (
     HaltTradingRequest,
@@ -35,6 +36,8 @@ __all__ = [
     "RiskCheckResultEnum",
     "RiskErrorResponse",
     "RiskEventListResponse",
+    # Event Manager
+    "RiskEventManager",
     "RiskEventResponse",
     # Schemas
     "RiskEventTypeEnum",

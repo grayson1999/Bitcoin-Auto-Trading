@@ -7,6 +7,7 @@ from src.modules.trading.order_validator import (
     OrderValidator,
     ValidationResult,
 )
+from src.modules.trading.position_manager import PositionManager
 from src.modules.trading.routes import router
 from src.modules.trading.schemas import (
     BalanceResponse,
@@ -47,6 +48,8 @@ __all__ = [
     "OrderTypeEnum",
     # Validator
     "OrderValidator",
+    # Position Manager
+    "PositionManager",
     "PositionResponse",
     # Service
     "TradingService",

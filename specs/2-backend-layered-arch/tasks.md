@@ -236,9 +236,9 @@
 - [X] T085 Delete old directories: backend/src/models/, backend/src/services/ (api/ restructured with router.py)
 - [X] T086 Update pyproject.toml with enhanced Ruff rules in backend/pyproject.toml
 - [X] T087 Run Ruff lint and fix all issues
-- [ ] T088 Verify all API endpoints return same responses (/api/v1/... paths)
-- [ ] T089 Verify all files are 500 lines or less
-- [ ] T090 Update CLAUDE.md with new project structure in CLAUDE.md
+- [X] T088 Verify all API endpoints return same responses (/api/v1/... paths)
+- [X] T089 Verify all files are 500 lines or less
+- [X] T090 Update CLAUDE.md with new project structure in CLAUDE.md
 - [X] T090-1 Rewrite CLAUDE.md - 간결하게 재작성, 자주 사용하는 명령어 포함:
   - systemctl 로그 확인: `journalctl -u bitcoin-backend -f`, `journalctl -u bitcoin-frontend -f`
   - 백엔드 재시작: `sudo systemctl restart bitcoin-backend`

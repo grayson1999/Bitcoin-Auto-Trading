@@ -45,6 +45,7 @@ from src.modules.trading.order_validator import (
     OrderBlockedReason,
     OrderValidator,
 )
+from src.modules.trading.position_manager import PositionManager
 from src.utils import UTC
 
 if TYPE_CHECKING:
@@ -109,9 +110,10 @@ class TradingService:
         self._risk_service = risk_service
         self._notifier = notifier
 
-        # 검증기 및 모니터 초기화
+        # 검증기, 모니터, 포지션 관리자 초기화
         self._validator = OrderValidator(private_api, public_api, risk_service)
         self._monitor = OrderMonitor(session, private_api)
+        self._position_manager = PositionManager(session, public_api, self._validator)
 
     async def execute_from_signal(self, signal: TradingSignal) -> OrderResult:
         """
@@ -414,64 +416,8 @@ class TradingService:
         return order
 
     async def _update_position_after_order(self, order: Order) -> None:
-        """
-        주문 체결 후 포지션 업데이트
-
-        Args:
-            order: 체결된 주문
-        """
-        position = await self._get_position()
-
-        if position is None:
-            # 포지션 생성
-            position = Position(
-                symbol=settings.trading_ticker,
-                quantity=Decimal("0"),
-                avg_buy_price=Decimal("0"),
-                current_value=Decimal("0"),
-                unrealized_pnl=Decimal("0"),
-                updated_at=datetime.now(UTC),
-            )
-            self._session.add(position)
-
-        if order.is_buy:
-            # 매수: 수량 증가, 평균 매수가 재계산
-            if order.executed_amount and order.executed_price:
-                # 시장가 매수의 경우 executed_amount는 KRW, 실제 코인 수량 계산 필요
-                coin_quantity = order.executed_amount / order.executed_price
-                new_quantity = position.quantity + coin_quantity
-
-                if new_quantity > 0:
-                    # 가중 평균 매수가 계산
-                    old_cost = position.quantity * position.avg_buy_price
-                    new_cost = order.executed_amount
-                    position.avg_buy_price = (old_cost + new_cost) / new_quantity
-
-                position.quantity = new_quantity
-
-        elif order.is_sell and order.executed_amount:
-            # 매도: 수량 감소 (평균 매수가는 유지)
-            position.quantity = max(
-                Decimal("0"), position.quantity - order.executed_amount
-            )
-
-            # 수량이 0이면 평균 매수가 초기화
-            if position.quantity == 0:
-                position.avg_buy_price = Decimal("0")
-
-        # 현재가로 평가금액 업데이트
-        try:
-            ticker = await self._public_api.get_ticker(settings.trading_ticker)
-            position.update_value(ticker.trade_price)
-        except (UpbitPrivateAPIError, UpbitPublicAPIError):
-            pass
-
-        position.updated_at = datetime.now(UTC)
-
-        logger.info(
-            f"포지션 업데이트: quantity={position.quantity}, "
-            f"avg_price={position.avg_buy_price}, pnl={position.unrealized_pnl}"
-        )
+        """주문 체결 후 포지션 업데이트 (PositionManager에 위임)"""
+        await self._position_manager.update_position_after_order(order)
 
     async def _update_daily_stats(self, order: Order) -> None:
         """
@@ -593,78 +539,12 @@ class TradingService:
         return result.scalar_one_or_none()
 
     async def _get_position(self) -> Position | None:
-        """현재 포지션 조회"""
-        stmt = select(Position).where(Position.symbol == settings.trading_ticker)
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        """현재 포지션 조회 (PositionManager에 위임)"""
+        return await self._position_manager.get_position()
 
     async def sync_position_from_upbit(self) -> Position | None:
-        """
-        Upbit 실제 잔고와 Position 테이블 동기화
-
-        Upbit API에서 실제 코인 잔고를 조회하여 Position 테이블에 반영합니다.
-        외부에서 직접 거래한 내역도 Position에 반영됩니다.
-
-        Returns:
-            Position | None: 동기화된 포지션 (코인이 없으면 None)
-        """
-        try:
-            balance_info = await self._validator.get_balance_info()
-        except (UpbitPrivateAPIError, UpbitPublicAPIError) as e:
-            logger.warning(f"포지션 동기화 실패 - 잔고 조회 오류: {e.message}")
-            return None
-
-        # 코인 보유량이 없으면 포지션 삭제 또는 0으로 설정
-        position = await self._get_position()
-
-        if balance_info.coin_available <= 0 and balance_info.coin_locked <= 0:
-            if position:
-                position.quantity = Decimal("0")
-                position.current_value = Decimal("0")
-                position.unrealized_pnl = Decimal("0")
-                position.updated_at = datetime.now(UTC)
-                logger.info(
-                    f"포지션 동기화: {settings.trading_currency} 보유량 없음 - 포지션 초기화"
-                )
-            return position
-
-        # 포지션이 없으면 새로 생성
-        if position is None:
-            position = Position(
-                symbol=settings.trading_ticker,
-                quantity=Decimal("0"),
-                avg_buy_price=Decimal("0"),
-                current_value=Decimal("0"),
-                unrealized_pnl=Decimal("0"),
-                updated_at=datetime.now(UTC),
-            )
-            self._session.add(position)
-
-        # Upbit 잔고로 포지션 업데이트
-        total_coin = balance_info.coin_available + balance_info.coin_locked
-        position.quantity = total_coin
-        position.avg_buy_price = balance_info.coin_avg_price
-
-        # 현재가로 평가금액 및 손익 계산
-        try:
-            ticker = await self._public_api.get_ticker(settings.trading_ticker)
-            position.update_value(ticker.trade_price)
-        except (UpbitPrivateAPIError, UpbitPublicAPIError):
-            # 현재가 조회 실패 시 평균 매수가로 계산
-            position.current_value = total_coin * balance_info.coin_avg_price
-            position.unrealized_pnl = Decimal("0")
-
-        position.updated_at = datetime.now(UTC)
-        await self._session.flush()
-
-        logger.info(
-            f"포지션 동기화 완료: quantity={position.quantity:.4f} "
-            f"{settings.trading_currency}, "
-            f"avg_price={position.avg_buy_price:,.0f}, "
-            f"unrealized_pnl={position.unrealized_pnl:,.0f}"
-        )
-
-        return position
+        """Upbit 실제 잔고와 Position 테이블 동기화 (PositionManager에 위임)"""
+        return await self._position_manager.sync_position_from_upbit()
 
     async def sync_pending_orders(self) -> int:
         """
@@ -681,13 +561,8 @@ class TradingService:
         return synced_count
 
     async def get_balance_info(self) -> BalanceInfo:
-        """
-        Upbit 계좌 잔고 조회 (public 접근용)
-
-        Returns:
-            BalanceInfo: 잔고 정보
-        """
-        return await self._validator.get_balance_info()
+        """Upbit 계좌 잔고 조회 (PositionManager에 위임)"""
+        return await self._position_manager.get_balance_info()
 
 
 async def get_trading_service(
