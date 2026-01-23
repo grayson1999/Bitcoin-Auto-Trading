@@ -3,6 +3,7 @@
 
 Position 엔티티에 대한 데이터베이스 접근 계층입니다.
 포지션 조회, 업데이트, 종료 등 쿼리를 추상화합니다.
+모든 쿼리에 user_id 필터링이 적용됩니다.
 """
 
 from datetime import datetime
@@ -22,22 +23,31 @@ class PositionRepository(BaseRepository[Position]):
     포지션 Repository
 
     Position 엔티티에 대한 CRUD 및 특화된 쿼리 메서드를 제공합니다.
+    모든 쿼리 메서드에 user_id 필터링이 적용됩니다.
 
     사용 예시:
         async with get_session() as session:
-            repo = PositionRepository(session)
+            repo = PositionRepository(session, user_id=1)
             position = await repo.get_open()
             await repo.close_position(position.symbol)
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, user_id: int | None = None) -> None:
         """
         Repository 초기화
 
         Args:
             session: SQLAlchemy 비동기 세션
+            user_id: 사용자 ID (필터링용, 없으면 전체 조회)
         """
         super().__init__(session, Position)
+        self.user_id = user_id
+
+    def _user_filter(self, query):
+        """user_id 필터 적용"""
+        if self.user_id is not None:
+            return query.where(Position.user_id == self.user_id)
+        return query
 
     async def get_open(self, symbol: str | None = None) -> Position | None:
         """
@@ -52,11 +62,13 @@ class PositionRepository(BaseRepository[Position]):
             열린 포지션 또는 None
         """
         target_symbol = symbol or settings.trading_ticker
-        result = await self.session.execute(
+        query = (
             select(Position)
             .where(Position.symbol == target_symbol)
             .where(Position.quantity > 0)
         )
+        query = self._user_filter(query)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_by_symbol(self, symbol: str | None = None) -> Position | None:
@@ -70,9 +82,9 @@ class PositionRepository(BaseRepository[Position]):
             포지션 또는 None
         """
         target_symbol = symbol or settings.trading_ticker
-        result = await self.session.execute(
-            select(Position).where(Position.symbol == target_symbol)
-        )
+        query = select(Position).where(Position.symbol == target_symbol)
+        query = self._user_filter(query)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_or_create(self, symbol: str | None = None) -> Position:
@@ -80,24 +92,34 @@ class PositionRepository(BaseRepository[Position]):
         포지션 조회 또는 생성
 
         포지션이 없으면 새로 생성합니다.
+        user_id가 설정되어 있어야 합니다.
 
         Args:
             symbol: 마켓 심볼 (기본: settings.trading_ticker)
 
         Returns:
             기존 또는 새로 생성된 포지션
+
+        Raises:
+            ValueError: user_id가 설정되지 않은 경우
         """
+        if self.user_id is None:
+            raise ValueError("user_id is required for get_or_create")
+
         target_symbol = symbol or settings.trading_ticker
         position = await self.get_by_symbol(target_symbol)
 
         if position is None:
+            now = datetime.now(UTC)
             position = Position(
+                user_id=self.user_id,
                 symbol=target_symbol,
                 quantity=Decimal("0"),
                 avg_buy_price=Decimal("0"),
                 current_value=Decimal("0"),
                 unrealized_pnl=Decimal("0"),
-                updated_at=datetime.now(UTC),
+                created_at=now,
+                updated_at=now,
             )
             self.session.add(position)
             await self.session.flush()
@@ -215,11 +237,9 @@ class PositionRepository(BaseRepository[Position]):
         Returns:
             열린 포지션 목록
         """
-        result = await self.session.execute(
-            select(Position)
-            .where(Position.quantity > 0)
-            .order_by(Position.updated_at.desc())
-        )
+        query = select(Position).where(Position.quantity > 0)
+        query = self._user_filter(query)
+        result = await self.session.execute(query.order_by(Position.updated_at.desc()))
         return list(result.scalars().all())
 
     async def save(self, position: Position) -> Position:

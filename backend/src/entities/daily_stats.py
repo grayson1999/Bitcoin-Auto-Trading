@@ -8,16 +8,30 @@
 - 거래 중단 상태
 """
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, Date, Index, Numeric, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Date,
+    DateTime,
+    Index,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.entities.base import Base
+from src.entities.base import AuditMixin, Base, UserOwnedMixin
+
+if TYPE_CHECKING:
+    from src.entities.user import User
 
 
-class DailyStats(Base):
+class DailyStats(Base, UserOwnedMixin, AuditMixin):
     """
     일별 통계 모델
 
@@ -26,6 +40,7 @@ class DailyStats(Base):
 
     Attributes:
         id: 고유 식별자 (자동 증가)
+        user_id: 소유자 사용자 ID (FK)
         date: 거래일
         starting_balance: 시작 잔고 (KRW)
         ending_balance: 종료 잔고 (KRW)
@@ -35,9 +50,16 @@ class DailyStats(Base):
         loss_count: 손실 거래 수
         is_trading_halted: 거래 중단 여부
         halt_reason: 중단 사유
+        created_at: 생성 시간
+        updated_at: 수정 시간
+        created_by: 생성자 사용자 ID
+        updated_by: 수정자 사용자 ID
+
+    제약조건:
+        - UNIQUE(user_id, date): 사용자별 날짜 유일성
 
     인덱스:
-        - idx_daily_stats_date: 날짜별 조회 최적화 (UNIQUE)
+        - idx_daily_stats_user_date: 사용자별 날짜 조회 최적화
     """
 
     __tablename__ = "daily_stats"
@@ -49,11 +71,10 @@ class DailyStats(Base):
         autoincrement=True,
     )
 
-    # 거래일 (UNIQUE)
+    # 거래일 (user_id와 함께 UNIQUE)
     date: Mapped[date] = mapped_column(
         Date,
         nullable=False,
-        unique=True,
         index=True,
         comment="거래일",
     )
@@ -112,8 +133,37 @@ class DailyStats(Base):
         comment="중단 사유",
     )
 
+    # === 메타데이터 ===
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        comment="생성 시간",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="수정 시간",
+    )
+
+    # === 관계 ===
+    user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys="DailyStats.user_id",
+        lazy="selectin",
+    )
+
     # === 테이블 인덱스 정의 ===
     __table_args__ = (
+        # 사용자별 날짜 유일성 제약
+        UniqueConstraint("user_id", "date", name="uq_daily_stats_user_date"),
+        # 사용자별 날짜 조회를 위한 인덱스
+        Index("idx_daily_stats_user_date", "user_id", date.desc()),
         # 날짜 내림차순 조회를 위한 인덱스
         Index("idx_daily_stats_date_desc", date.desc()),
     )

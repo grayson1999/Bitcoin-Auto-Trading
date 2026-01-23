@@ -11,11 +11,15 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Index, Numeric, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import BigInteger, Boolean, DateTime, Index, Numeric, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.entities.base import Base
+from src.entities.base import AuditMixin, Base, UserOwnedMixin
+
+if TYPE_CHECKING:
+    from src.entities.user import User
 
 
 class RiskEventType(str, Enum):
@@ -36,7 +40,7 @@ class RiskEventType(str, Enum):
     SYSTEM_ERROR = "SYSTEM_ERROR"
 
 
-class RiskEvent(Base):
+class RiskEvent(Base, UserOwnedMixin, AuditMixin):
     """
     리스크 이벤트 모델
 
@@ -45,14 +49,19 @@ class RiskEvent(Base):
 
     Attributes:
         id: 고유 식별자 (자동 증가)
+        user_id: 소유자 사용자 ID (FK)
         order_id: 연관 주문 ID (없을 수 있음)
         event_type: 이벤트 유형
         trigger_value: 발동 기준값 (%)
         action_taken: 수행된 조치
         created_at: 발생 시간
+        updated_at: 수정 시간
         notified: 슬랙 알림 전송 여부
+        created_by: 생성자 사용자 ID
+        updated_by: 수정자 사용자 ID
 
     인덱스:
+        - idx_risk_event_user_id: 사용자별 조회 최적화
         - idx_risk_event_created_desc: 최신 이벤트 조회 최적화
         - idx_risk_event_type_created: 이벤트 타입별 조회 최적화
     """
@@ -101,7 +110,18 @@ class RiskEvent(Base):
         DateTime(timezone=True),
         nullable=False,
         index=True,
+        default=func.now(),
+        server_default=func.now(),
         comment="발생 시간",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="수정 시간",
     )
 
     # 슬랙 알림 전송 여부
@@ -112,12 +132,21 @@ class RiskEvent(Base):
         comment="슬랙 알림 전송 여부",
     )
 
+    # === 관계 ===
+    user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys="RiskEvent.user_id",
+        lazy="selectin",
+    )
+
     # === 테이블 인덱스 정의 ===
     __table_args__ = (
         # 최신 이벤트 빠른 조회를 위한 내림차순 인덱스
         Index("idx_risk_event_created_desc", created_at.desc()),
         # 이벤트 타입별 조회를 위한 복합 인덱스
         Index("idx_risk_event_type_created", event_type, created_at.desc()),
+        # 사용자별 최신 이벤트 조회
+        Index("idx_risk_event_user_created", "user_id", created_at.desc()),
     )
 
     def __repr__(self) -> str:

@@ -12,6 +12,10 @@ Phase 5 (User Story 3)에서 추가:
 - SignalRepository
 - OrderRepository
 - PositionRepository
+
+Phase 6 (다중 사용자 지원)에서 추가:
+- UserRepository
+- UserConfigRepository
 """
 
 from src.repositories.base import BaseRepository
@@ -20,6 +24,8 @@ from src.repositories.market_repository import MarketRepository
 from src.repositories.order_repository import OrderRepository
 from src.repositories.position_repository import PositionRepository
 from src.repositories.signal_repository import SignalRepository
+from src.repositories.user_config_repository import UserConfigRepository
+from src.repositories.user_repository import UserRepository
 
 __all__ = [
     "BaseRepository",
@@ -28,4 +34,6 @@ __all__ = [
     "OrderRepository",
     "PositionRepository",
     "SignalRepository",
+    "UserConfigRepository",
+    "UserRepository",
 ]

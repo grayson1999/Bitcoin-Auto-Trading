@@ -3,6 +3,7 @@
 
 TradingSignal 엔티티에 대한 데이터베이스 접근 계층입니다.
 AI 매매 신호 조회, 날짜 범위 조회 등 쿼리를 추상화합니다.
+모든 쿼리에 user_id 필터링이 적용됩니다.
 """
 
 from datetime import datetime, timedelta
@@ -20,22 +21,31 @@ class SignalRepository(BaseRepository[TradingSignal]):
     매매 신호 Repository
 
     TradingSignal 엔티티에 대한 CRUD 및 특화된 쿼리 메서드를 제공합니다.
+    모든 쿼리 메서드에 user_id 필터링이 적용됩니다.
 
     사용 예시:
         async with get_session() as session:
-            repo = SignalRepository(session)
+            repo = SignalRepository(session, user_id=1)
             latest = await repo.get_latest()
             signals = await repo.get_by_date_range(start, end)
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, user_id: int | None = None) -> None:
         """
         Repository 초기화
 
         Args:
             session: SQLAlchemy 비동기 세션
+            user_id: 사용자 ID (필터링용, 없으면 전체 조회)
         """
         super().__init__(session, TradingSignal)
+        self.user_id = user_id
+
+    def _user_filter(self, query):
+        """user_id 필터 적용"""
+        if self.user_id is not None:
+            return query.where(TradingSignal.user_id == self.user_id)
+        return query
 
     async def get_latest(self, limit: int = 1) -> list[TradingSignal]:
         """
@@ -49,8 +59,10 @@ class SignalRepository(BaseRepository[TradingSignal]):
         Returns:
             최신 매매 신호 목록 (최신순)
         """
+        query = select(TradingSignal)
+        query = self._user_filter(query)
         result = await self.session.execute(
-            select(TradingSignal).order_by(TradingSignal.created_at.desc()).limit(limit)
+            query.order_by(TradingSignal.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -84,11 +96,14 @@ class SignalRepository(BaseRepository[TradingSignal]):
         if end_time is None:
             end_time = datetime.now(UTC)
 
-        result = await self.session.execute(
+        query = (
             select(TradingSignal)
             .where(TradingSignal.created_at >= start_time)
             .where(TradingSignal.created_at <= end_time)
-            .order_by(TradingSignal.created_at.asc())
+        )
+        query = self._user_filter(query)
+        result = await self.session.execute(
+            query.order_by(TradingSignal.created_at.asc())
         )
         return list(result.scalars().all())
 
@@ -122,11 +137,12 @@ class SignalRepository(BaseRepository[TradingSignal]):
         Returns:
             해당 타입의 매매 신호 목록 (최신순)
         """
+        query = select(TradingSignal).where(
+            TradingSignal.signal_type == signal_type.value
+        )
+        query = self._user_filter(query)
         result = await self.session.execute(
-            select(TradingSignal)
-            .where(TradingSignal.signal_type == signal_type.value)
-            .order_by(TradingSignal.created_at.desc())
-            .limit(limit)
+            query.order_by(TradingSignal.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -142,11 +158,10 @@ class SignalRepository(BaseRepository[TradingSignal]):
         Returns:
             미평가 매매 신호 목록 (오래된 순)
         """
+        query = select(TradingSignal).where(TradingSignal.outcome_evaluated == False)  # noqa: E712
+        query = self._user_filter(query)
         result = await self.session.execute(
-            select(TradingSignal)
-            .where(TradingSignal.outcome_evaluated == False)  # noqa: E712
-            .order_by(TradingSignal.created_at.asc())
-            .limit(limit)
+            query.order_by(TradingSignal.created_at.asc()).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -162,11 +177,10 @@ class SignalRepository(BaseRepository[TradingSignal]):
         Returns:
             평가 완료 매매 신호 목록 (최신순)
         """
+        query = select(TradingSignal).where(TradingSignal.outcome_evaluated == True)  # noqa: E712
+        query = self._user_filter(query)
         result = await self.session.execute(
-            select(TradingSignal)
-            .where(TradingSignal.outcome_evaluated == True)  # noqa: E712
-            .order_by(TradingSignal.created_at.desc())
-            .limit(limit)
+            query.order_by(TradingSignal.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -182,11 +196,10 @@ class SignalRepository(BaseRepository[TradingSignal]):
         Returns:
             정확한 매매 신호 목록 (최신순)
         """
+        query = select(TradingSignal).where(TradingSignal.outcome_correct == True)  # noqa: E712
+        query = self._user_filter(query)
         result = await self.session.execute(
-            select(TradingSignal)
-            .where(TradingSignal.outcome_correct == True)  # noqa: E712
-            .order_by(TradingSignal.created_at.desc())
-            .limit(limit)
+            query.order_by(TradingSignal.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 

@@ -12,15 +12,25 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Numeric, String, Text
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.config import settings
-from src.entities.base import Base
+from src.entities.base import AuditMixin, Base, UserOwnedMixin
 from src.utils import UTC
 
 if TYPE_CHECKING:
     from src.entities.trading_signal import TradingSignal
+    from src.entities.user import User
 
 
 class OrderType(str, Enum):
@@ -63,7 +73,7 @@ class OrderStatus(str, Enum):
     FAILED = "FAILED"
 
 
-class Order(Base):
+class Order(Base, UserOwnedMixin, AuditMixin):
     """
     주문 모델
 
@@ -72,6 +82,7 @@ class Order(Base):
 
     Attributes:
         id: 고유 식별자 (자동 증가)
+        user_id: 소유자 사용자 ID (FK)
         signal_id: 연관 AI 신호 ID (수동 주문 시 NULL)
         order_type: 주문 타입 (MARKET/LIMIT)
         side: 주문 방향 (BUY/SELL)
@@ -85,9 +96,13 @@ class Order(Base):
         upbit_uuid: Upbit 주문 UUID
         error_message: 실패 시 오류 메시지
         created_at: 주문 생성 시간
+        updated_at: 주문 수정 시간
         executed_at: 체결 시간
+        created_by: 생성자 사용자 ID
+        updated_by: 수정자 사용자 ID
 
     인덱스:
+        - idx_order_user_id: 사용자별 조회 최적화
         - idx_order_status: 상태별 조회 최적화
         - idx_order_created_desc: 최신 주문 조회 최적화
         - idx_order_upbit_uuid: Upbit UUID 조회 최적화
@@ -200,7 +215,18 @@ class Order(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
+        default=func.now(),
+        server_default=func.now(),
         comment="주문 생성 시간",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="주문 수정 시간",
     )
 
     executed_at: Mapped[datetime | None] = mapped_column(
@@ -215,12 +241,21 @@ class Order(Base):
         lazy="selectin",
     )
 
+    user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys="Order.user_id",
+        lazy="selectin",
+    )
+
     # === 테이블 인덱스 정의 ===
     __table_args__ = (
+        # 사용자별 조회를 위한 인덱스 (UserOwnedMixin에서 이미 생성되므로 생략)
         # 상태별 조회를 위한 인덱스
         Index("idx_order_status", status),
         # 최신 주문 빠른 조회를 위한 내림차순 인덱스
         Index("idx_order_created_desc", created_at.desc()),
+        # 사용자별 최신 주문 조회
+        Index("idx_order_user_created", "user_id", created_at.desc()),
         # Upbit UUID 조회용 (unique 제약으로 자동 생성되지만 명시적 추가)
         Index("idx_order_upbit_uuid", upbit_uuid),
     )

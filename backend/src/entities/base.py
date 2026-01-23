@@ -6,8 +6,8 @@
 
 from datetime import datetime
 
-from sqlalchemy import func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import BigInteger, DateTime, ForeignKey, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 
 class Base(DeclarativeBase):
@@ -36,12 +36,71 @@ class TimestampMixin:
     """
 
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         default=func.now(),
         server_default=func.now(),
     )
 
     updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         default=func.now(),
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+
+class AuditMixin:
+    """
+    감사 필드 믹스인
+
+    레코드를 생성/수정한 사용자를 추적합니다.
+    - created_by: 레코드를 생성한 사용자 ID (시스템 작업 시 NULL)
+    - updated_by: 레코드를 마지막으로 수정한 사용자 ID (시스템 작업 시 NULL)
+
+    사용 예시:
+        class MyModel(Base, TimestampMixin, AuditMixin):
+            __tablename__ = "my_table"
+            id: Mapped[int] = mapped_column(primary_key=True)
+    """
+
+    @declared_attr
+    def created_by(cls) -> Mapped[int | None]:
+        return mapped_column(
+            BigInteger,
+            ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+            comment="생성한 사용자 ID",
+        )
+
+    @declared_attr
+    def updated_by(cls) -> Mapped[int | None]:
+        return mapped_column(
+            BigInteger,
+            ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+            comment="수정한 사용자 ID",
+        )
+
+
+class UserOwnedMixin:
+    """
+    사용자 소유 믹스인
+
+    특정 사용자에게 귀속되는 데이터에 사용합니다.
+    - user_id: 레코드 소유자의 사용자 ID (필수)
+
+    사용 예시:
+        class Order(Base, UserOwnedMixin, TimestampMixin, AuditMixin):
+            __tablename__ = "orders"
+            id: Mapped[int] = mapped_column(primary_key=True)
+    """
+
+    @declared_attr
+    def user_id(cls) -> Mapped[int]:
+        return mapped_column(
+            BigInteger,
+            ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+            comment="소유자 사용자 ID",
+        )

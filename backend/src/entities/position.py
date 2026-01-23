@@ -9,31 +9,50 @@
 
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, Index, Numeric, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    Index,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.entities.base import Base
+from src.entities.base import AuditMixin, Base, UserOwnedMixin
+
+if TYPE_CHECKING:
+    from src.entities.user import User
 
 
-class Position(Base):
+class Position(Base, UserOwnedMixin, AuditMixin):
     """
     포지션 모델
 
     현재 보유 포지션 상태를 저장합니다.
-    거래 마켓 전용으로 단일 레코드만 유지됩니다.
+    사용자별 마켓 심볼당 하나의 레코드만 유지됩니다.
 
     Attributes:
         id: 고유 식별자 (자동 증가)
+        user_id: 소유자 사용자 ID (FK)
         symbol: 마켓 심볼 (예: KRW-SOL)
         quantity: 보유 수량
         avg_buy_price: 평균 매수가
         current_value: 현재 평가금액
         unrealized_pnl: 미실현 손익
+        created_at: 생성 시간
         updated_at: 최종 업데이트 시간
+        created_by: 생성자 사용자 ID
+        updated_by: 수정자 사용자 ID
+
+    제약조건:
+        - UNIQUE(user_id, symbol): 사용자별 심볼 유일성
 
     인덱스:
-        - idx_position_symbol: 심볼별 조회 최적화 (UNIQUE)
+        - idx_position_user_symbol: 사용자별 심볼 조회 최적화
     """
 
     __tablename__ = "positions"
@@ -45,11 +64,10 @@ class Position(Base):
         autoincrement=True,
     )
 
-    # 마켓 심볼
+    # 마켓 심볼 (user_id와 함께 UNIQUE)
     symbol: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
-        unique=True,
         index=True,
         comment="마켓 심볼",
     )
@@ -85,15 +103,37 @@ class Position(Base):
     )
 
     # === 메타데이터 ===
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        comment="생성 시간",
+    )
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        onupdate=func.now(),
         comment="최종 업데이트 시간",
+    )
+
+    # === 관계 ===
+    user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys="Position.user_id",
+        lazy="selectin",
     )
 
     # === 테이블 인덱스 정의 ===
     __table_args__ = (
-        # 심볼별 조회를 위한 인덱스 (이미 unique=True로 생성됨)
+        # 사용자별 심볼 유일성 제약
+        UniqueConstraint("user_id", "symbol", name="uq_positions_user_symbol"),
+        # 사용자별 심볼 조회를 위한 인덱스
+        Index("idx_position_user_symbol", "user_id", "symbol"),
+        # 업데이트 시간순 조회
         Index("idx_position_updated", updated_at.desc()),
     )
 

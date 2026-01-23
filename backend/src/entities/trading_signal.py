@@ -22,13 +22,15 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.entities.base import Base
+from src.entities.base import AuditMixin, Base, UserOwnedMixin
 
 if TYPE_CHECKING:
     from src.entities.market_data import MarketData
+    from src.entities.user import User
 
 
 class SignalType(str, Enum):
@@ -46,7 +48,7 @@ class SignalType(str, Enum):
     SELL = "SELL"
 
 
-class TradingSignal(Base):
+class TradingSignal(Base, UserOwnedMixin, AuditMixin):
     """
     AI 매매 신호 모델
 
@@ -55,16 +57,21 @@ class TradingSignal(Base):
 
     Attributes:
         id: 고유 식별자 (자동 증가)
+        user_id: 소유자 사용자 ID (FK)
         market_data_id: 분석 기준 시장 데이터 FK
         signal_type: 신호 타입 (BUY/HOLD/SELL)
         confidence: 신뢰도 점수 (0.00 ~ 1.00)
         reasoning: AI 분석 근거 (한국어)
         created_at: 신호 생성 시간
+        updated_at: 신호 수정 시간
         model_name: 사용된 AI 모델명 (예: gemini-2.5-flash)
         input_tokens: 입력 토큰 수 (비용 추적)
         output_tokens: 출력 토큰 수 (비용 추적)
+        created_by: 생성자 사용자 ID
+        updated_by: 수정자 사용자 ID
 
     인덱스:
+        - idx_signal_user_id: 사용자별 조회 최적화
         - idx_signal_created_desc: 최신 신호 조회 최적화
         - idx_signal_type_created: 신호 타입별 조회 최적화
     """
@@ -113,7 +120,18 @@ class TradingSignal(Base):
         DateTime(timezone=True),
         nullable=False,
         index=True,
+        default=func.now(),
+        server_default=func.now(),
         comment="신호 생성 시간",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="신호 수정 시간",
     )
 
     # AI 모델 정보
@@ -186,12 +204,20 @@ class TradingSignal(Base):
         lazy="selectin",
     )
 
+    user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys="TradingSignal.user_id",
+        lazy="selectin",
+    )
+
     # === 테이블 인덱스 정의 ===
     __table_args__ = (
         # 최신 신호 빠른 조회를 위한 내림차순 인덱스
         Index("idx_signal_created_desc", created_at.desc()),
         # 신호 타입별 조회를 위한 복합 인덱스
         Index("idx_signal_type_created", signal_type, created_at.desc()),
+        # 사용자별 최신 신호 조회
+        Index("idx_signal_user_created", "user_id", created_at.desc()),
     )
 
     def __repr__(self) -> str:

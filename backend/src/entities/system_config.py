@@ -8,11 +8,15 @@
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, Index, String, Text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.entities.base import Base
+
+if TYPE_CHECKING:
+    pass
 
 
 class SystemConfig(Base):
@@ -21,12 +25,16 @@ class SystemConfig(Base):
 
     런타임 설정값을 키-값 형태로 저장합니다.
     설정값은 JSON 문자열로 저장되며, 애플리케이션에서 파싱하여 사용합니다.
+    사용자별 설정은 user_configs 테이블에 저장되며 이 값을 오버라이드합니다.
 
     Attributes:
         id: 고유 식별자 (자동 증가)
         key: 설정 키 (UNIQUE)
         value: 설정 값 (JSON 문자열)
+        created_at: 생성 시간
         updated_at: 최종 수정 시간
+        created_by: 생성자 사용자 ID
+        updated_by: 수정자 사용자 ID
     """
 
     __tablename__ = "system_configs"
@@ -51,10 +59,35 @@ class SystemConfig(Base):
         comment="설정 값 (JSON)",
     )
 
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        comment="생성 시간",
+    )
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+        onupdate=func.now(),
         comment="최종 수정 시간",
+    )
+
+    created_by: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="생성자 사용자 ID",
+    )
+
+    updated_by: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="수정자 사용자 ID",
     )
 
     __table_args__ = (Index("idx_system_config_updated", updated_at.desc()),)

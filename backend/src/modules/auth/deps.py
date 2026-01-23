@@ -9,8 +9,12 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.database import get_session
 
 from src.clients import AuthError, AuthUser, get_auth_client
+from src.entities.user import User
+from src.repositories.user_repository import UserRepository
 
 # Bearer 토큰 추출을 위한 보안 스키마
 security = HTTPBearer(auto_error=False)
@@ -62,3 +66,33 @@ async def get_current_user(
 
 # 타입 별칭: 엔드포인트에서 인증된 사용자를 주입받을 때 사용
 CurrentUser = Annotated[AuthUser, Depends(get_current_user)]
+
+
+async def resolve_user(
+    auth_user: CurrentUser,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> User:
+    """
+    Auth Server 사용자를 내부 User 엔티티로 변환
+
+    Auth Server에서 인증된 사용자 정보를 내부 DB의 User 엔티티로 매핑합니다.
+    최초 접근 시 자동으로 User 레코드를 생성합니다.
+
+    Args:
+        auth_user: Auth Server에서 검증된 사용자 정보
+        session: 데이터베이스 세션
+
+    Returns:
+        User: 내부 사용자 엔티티
+    """
+    repo = UserRepository(session)
+    user = await repo.get_or_create(
+        auth_user_id=auth_user.id,
+        email=auth_user.email,
+        name=auth_user.name,
+    )
+    return user
+
+
+# 타입 별칭: 엔드포인트에서 내부 User 엔티티를 주입받을 때 사용
+ResolvedUser = Annotated[User, Depends(resolve_user)]
