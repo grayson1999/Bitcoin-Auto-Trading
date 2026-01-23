@@ -14,10 +14,8 @@ Phase 4 (User Story 2)에서 추가:
 - Position
 - DailyStats
 - RiskEvent, RiskEventType
-- BacktestResult, BacktestStatus
 """
 
-from src.entities.backtest_result import BacktestResult, BacktestStatus
 from src.entities.base import Base, TimestampMixin
 from src.entities.daily_stats import DailyStats
 from src.entities.market_data import MarketData
@@ -51,7 +49,4 @@ __all__ = [
     # Risk
     "RiskEvent",
     "RiskEventType",
-    # Backtest
-    "BacktestResult",
-    "BacktestStatus",
 ]

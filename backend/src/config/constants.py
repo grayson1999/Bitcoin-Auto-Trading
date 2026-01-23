@@ -66,14 +66,6 @@ MARKET_MAX_LIMIT_LATEST = 100  # 최신 데이터 최대 레코드 수
 MARKET_DEFAULT_LIMIT_LATEST = 10  # 최신 데이터 기본 레코드 수
 MS_TO_SECONDS = 1000  # 밀리초 → 초 변환 상수
 
-# === 백테스트 설정 ===
-BACKTEST_TRADING_FEE_PCT = 0.0005  # 백테스트 거래 수수료 (0.05%)
-BACKTEST_SLIPPAGE_PCT = 0.001  # 백테스트 슬리피지 (0.1%)
-BACKTEST_MIN_TRADE_AMOUNT_PCT = 0.02  # 백테스트 최소 거래 비율 (2%)
-BACKTEST_RISK_FREE_RATE = 0.035  # 무위험 수익률 (연 3.5%)
-BACKTEST_DEFAULT_INITIAL_CAPITAL = 1_000_000  # 기본 초기 자본금 (100만원)
-BACKTEST_CANDLE_FETCH_LIMIT = 200  # Upbit 캔들 API 최대 조회 개수
-
 # === 신호 생성 설정 ===
 SIGNAL_MARKET_DATA_HOURS = 168  # 분석에 사용할 시장 데이터 기간 (7일)
 SIGNAL_COOLDOWN_MINUTES = 5  # 수동 신호 생성 쿨다운 (분)
