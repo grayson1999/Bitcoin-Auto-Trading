@@ -11,8 +11,6 @@ from src.modules.trading.position_manager import PositionManager
 from src.modules.trading.routes import router
 from src.modules.trading.schemas import (
     BalanceResponse,
-    ExecuteOrderRequest,
-    ExecuteOrderResponse,
     OrderErrorResponse,
     OrderListResponse,
     OrderResponse,
@@ -32,8 +30,6 @@ from src.modules.trading.service import (
 __all__ = [
     "BalanceInfo",
     "BalanceResponse",
-    "ExecuteOrderRequest",
-    "ExecuteOrderResponse",
     "OrderBlockedReason",
     "OrderErrorResponse",
     "OrderListResponse",

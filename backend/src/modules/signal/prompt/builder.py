@@ -12,8 +12,19 @@ from datetime import datetime
 
 from src.entities import MarketData
 from src.modules.market import MultiTimeframeResult
-from src.modules.signal.performance_tracker import PerformanceSummary
-from src.modules.signal.prompt_templates import PromptConfig, get_analysis_prompt
+from src.modules.signal.prompt.indicator_status import (
+    BB_STATUS_KO,
+    BIAS_STATUS_KO,
+    EMA_STATUS_KO,
+    MACD_STATUS_KO,
+    RSI_STATUS_KO,
+    TIMEFRAME_NAMES_KO,
+    TREND_STATUS_KO,
+    VOLATILITY_STATUS_KO,
+    get_status_ko,
+)
+from src.modules.signal.prompt.templates import PromptConfig, get_analysis_prompt
+from src.modules.signal.tracker.performance_tracker import PerformanceSummary
 from src.utils import UTC
 
 
@@ -165,57 +176,23 @@ class SignalPromptBuilder:
         daily = mtf_result.analyses["1d"]
         ind = daily.indicators
 
-        lines = []
-
-        # RSI
-        rsi_status = {"oversold": "과매도", "overbought": "과매수", "neutral": "중립"}
-        lines.append(
+        lines = [
             f"**RSI (14일):** {ind.rsi_14:.1f} "
-            f"({rsi_status.get(ind.rsi_signal, ind.rsi_signal)})"
-        )
-
-        # MACD
-        macd_status = {
-            "bullish": "매수 신호",
-            "bearish": "매도 신호",
-            "neutral": "중립",
-        }
-        lines.append(
+            f"({get_status_ko(RSI_STATUS_KO, ind.rsi_signal)})",
             f"**MACD (12-26-9):** Line={ind.macd_line:.4f}, "
             f"Signal={ind.signal_line:.4f}, "
             f"Histogram={ind.macd_histogram:.4f} "
-            f"({macd_status.get(ind.macd_signal, ind.macd_signal)})"
-        )
-
-        # 볼린저 밴드
-        bb_status = {
-            "overbought": "상단 돌파",
-            "oversold": "하단 돌파",
-            "upper_zone": "상단 접근",
-            "lower_zone": "하단 접근",
-            "neutral": "중립",
-        }
-        lines.append(
+            f"({get_status_ko(MACD_STATUS_KO, ind.macd_signal)})",
             f"**볼린저 밴드 (20일, 2s):** 상단={ind.bb_upper:,.0f}, "
             f"중단={ind.bb_middle:,.0f}, "
             f"하단={ind.bb_lower:,.0f}, 위치={ind.bb_percent:.1f}% "
-            f"({bb_status.get(ind.bb_signal, ind.bb_signal)})"
-        )
-
-        # EMA
-        ema_status = {"bullish": "정배열", "bearish": "역배열", "mixed": "혼조"}
-        lines.append(
+            f"({get_status_ko(BB_STATUS_KO, ind.bb_signal)})",
             f"**EMA:** 9일={ind.ema_9:,.0f}, 21일={ind.ema_21:,.0f}, "
             f"50일={ind.ema_50:,.0f} "
-            f"({ema_status.get(ind.ema_alignment, ind.ema_alignment)})"
-        )
-
-        # 변동성
-        vol_status = {"low": "낮음", "medium": "보통", "high": "높음"}
-        lines.append(
+            f"({get_status_ko(EMA_STATUS_KO, ind.ema_alignment)})",
             f"**변동성:** ATR(14)={ind.atr_14:.2f}, "
-            f"수준={vol_status.get(ind.volatility_level, ind.volatility_level)}"
-        )
+            f"수준={get_status_ko(VOLATILITY_STATUS_KO, ind.volatility_level)}",
+        ]
 
         return "\n".join(lines)
 
@@ -223,35 +200,24 @@ class SignalPromptBuilder:
         """멀티 타임프레임 분석 문자열 포맷"""
         lines = []
 
-        tf_names = {"1h": "1시간봉", "4h": "4시간봉", "1d": "일봉", "1w": "주봉"}
-        trend_kr = {"bullish": "상승", "bearish": "하락", "sideways": "횡보"}
-
         for tf in ["1h", "4h", "1d", "1w"]:
+            tf_name = get_status_ko(TIMEFRAME_NAMES_KO, tf)
             if tf in mtf_result.analyses:
                 analysis = mtf_result.analyses[tf]
-                trend_text = trend_kr.get(analysis.trend, analysis.trend)
+                trend_text = get_status_ko(TREND_STATUS_KO, analysis.trend)
                 lines.append(
-                    f"- **{tf_names[tf]}:** {trend_text} 추세 (강도 {analysis.strength:.0%})"
+                    f"- **{tf_name}:** {trend_text} 추세 (강도 {analysis.strength:.0%})"
                 )
                 lines.append(f"  - {analysis.key_observation}")
             else:
-                lines.append(f"- **{tf_names[tf]}:** 데이터 없음")
+                lines.append(f"- **{tf_name}:** 데이터 없음")
 
-        # 합류 점수
-        bias_kr = {
-            "strong_buy": "강한 매수",
-            "buy": "매수",
-            "neutral": "중립",
-            "sell": "매도",
-            "strong_sell": "강한 매도",
-        }
         lines.append("")
         lines.append(
             f"**타임프레임 합류 점수:** {mtf_result.confluence_score:.2f}/1.00"
         )
         lines.append(
-            f"**종합 편향:** "
-            f"{bias_kr.get(mtf_result.overall_bias, mtf_result.overall_bias)}"
+            f"**종합 편향:** {get_status_ko(BIAS_STATUS_KO, mtf_result.overall_bias)}"
         )
 
         return "\n".join(lines)

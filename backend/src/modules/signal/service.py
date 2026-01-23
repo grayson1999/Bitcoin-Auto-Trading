@@ -25,23 +25,22 @@ from src.clients.upbit import (
 from src.config import settings
 from src.config.constants import SIGNAL_COOLDOWN_MINUTES, SIGNAL_MARKET_DATA_HOURS
 from src.entities import MarketData, TradingSignal
+from src.entities.trading_signal import SignalType
 from src.modules.market import (
     MultiTimeframeAnalyzer,
     MultiTimeframeResult,
     get_multi_timeframe_analyzer,
 )
-from src.modules.signal.coin_classifier import get_coin_type
-from src.modules.signal.performance_tracker import (
-    PerformanceSummary,
-    SignalPerformanceTracker,
-)
-from src.modules.signal.prompt_builder import SignalPromptBuilder
-from src.modules.signal.prompt_templates import (
+from src.modules.signal.classifier import get_coin_type
+from src.modules.signal.parser import SignalResponseParser
+from src.modules.signal.prompt import (
     PromptConfig,
+    SignalPromptBuilder,
     get_config_for_coin,
     get_system_instruction,
 )
-from src.modules.signal.response_parser import SignalResponseParser
+from src.modules.signal.tracker import PerformanceSummary, SignalPerformanceTracker
+from src.repositories.signal_repository import SignalRepository
 from src.utils import UTC
 
 
@@ -111,6 +110,7 @@ class SignalService:
         # 프롬프트 빌더 및 파서 초기화
         self._prompt_builder = SignalPromptBuilder(self.currency, self.prompt_config)
         self._response_parser = SignalResponseParser()
+        self._signal_repo = SignalRepository(db)
 
         logger.info(
             f"SignalService 초기화: {self.currency} ({self.coin_type.value}), "
@@ -203,7 +203,7 @@ class SignalService:
         # 8. 기술적 지표 스냅샷 생성
         technical_snapshot = self._prompt_builder.create_technical_snapshot(mtf_result)
 
-        # 9. DB에 저장
+        # 9. DB에 저장 (Repository 사용)
         signal = TradingSignal(
             market_data_id=latest_data.id,
             signal_type=parsed.signal_type,
@@ -216,7 +216,7 @@ class SignalService:
             price_at_signal=Decimal(str(current_price)),
             technical_snapshot=technical_snapshot,
         )
-        self.db.add(signal)
+        await self._signal_repo.save(signal)
         await self.db.commit()
         await self.db.refresh(signal)
 
@@ -228,18 +228,13 @@ class SignalService:
         return signal
 
     async def _check_cooldown(self) -> None:
-        """쿨다운 체크"""
+        """쿨다운 체크 (Repository 사용)"""
         cooldown_threshold = datetime.now(UTC) - timedelta(
             minutes=SIGNAL_COOLDOWN_MINUTES
         )
 
-        stmt = select(TradingSignal).where(
-            TradingSignal.created_at > cooldown_threshold
-        )
-        result = await self.db.execute(stmt)
-        recent_signal = result.scalar_one_or_none()
-
-        if recent_signal:
+        recent_signals = await self._signal_repo.get_by_date_range(cooldown_threshold)
+        if recent_signals:
             raise SignalServiceError(
                 f"신호 생성 쿨다운 중입니다. {SIGNAL_COOLDOWN_MINUTES}분 후에 다시 시도하세요."
             )
@@ -319,10 +314,8 @@ class SignalService:
             return None
 
     async def get_latest_signal(self) -> TradingSignal | None:
-        """최신 신호 조회"""
-        stmt = select(TradingSignal).order_by(desc(TradingSignal.created_at)).limit(1)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        """최신 신호 조회 (Repository 사용)"""
+        return await self._signal_repo.get_latest_one()
 
     async def get_signals(
         self,
@@ -330,16 +323,13 @@ class SignalService:
         offset: int = 0,
         signal_type: str | None = None,
     ) -> list[TradingSignal]:
-        """신호 목록 조회"""
-        stmt = select(TradingSignal).order_by(desc(TradingSignal.created_at))
-
+        """신호 목록 조회 (Repository 사용)"""
         if signal_type and signal_type != "all":
-            stmt = stmt.where(TradingSignal.signal_type == signal_type.upper())
+            signal_type_enum = SignalType(signal_type.upper())
+            return await self._signal_repo.get_by_type(signal_type_enum, limit=limit)
 
-        stmt = stmt.offset(offset).limit(limit)
-
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        signals = await self._signal_repo.get_latest(limit=limit + offset)
+        return signals[offset : offset + limit]
 
     async def get_signals_count(self, signal_type: str | None = None) -> int:
         """신호 총 개수 조회"""

@@ -10,7 +10,6 @@
 import asyncio
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import TYPE_CHECKING
 
 from loguru import logger
 from sqlalchemy import select
@@ -24,9 +23,6 @@ from src.config.constants import (
 )
 from src.entities import Order, OrderStatus
 from src.utils import UTC
-
-if TYPE_CHECKING:
-    pass
 
 # 상수를 Decimal로 변환
 _UPBIT_FEE_RATE = Decimal(str(UPBIT_FEE_RATE))

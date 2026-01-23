@@ -127,49 +127,6 @@ class OrderListResponse(BaseModel):
     offset: int = Field(description="요청된 오프셋")
 
 
-class ExecuteOrderRequest(BaseModel):
-    """
-    수동 주문 실행 요청 스키마
-
-    수동으로 주문을 실행할 때 사용합니다.
-
-    Attributes:
-        side: 주문 방향 (BUY/SELL)
-        amount: 주문 금액 (KRW 기준)
-        order_type: 주문 타입 (기본: MARKET)
-        price: 지정가 (LIMIT 주문 시 필수)
-    """
-
-    side: OrderSideEnum = Field(description="주문 방향 (BUY/SELL)")
-    amount: Decimal = Field(gt=0, description="주문 금액 (KRW)")
-    order_type: OrderTypeEnum = Field(
-        default=OrderTypeEnum.MARKET,
-        description="주문 타입 (기본: MARKET)",
-    )
-    price: Decimal | None = Field(
-        default=None,
-        gt=0,
-        description="지정가 (LIMIT 주문 시 필수)",
-    )
-
-
-class ExecuteOrderResponse(BaseModel):
-    """
-    주문 실행 응답 스키마
-
-    주문 실행 결과입니다.
-
-    Attributes:
-        success: 성공 여부
-        order: 생성된 주문 정보 (성공 시)
-        message: 응답 메시지
-    """
-
-    success: bool = Field(description="성공 여부")
-    order: OrderResponse | None = Field(default=None, description="생성된 주문")
-    message: str = Field(description="응답 메시지")
-
-
 class PositionResponse(BaseModel):
     """
     포지션 응답 스키마

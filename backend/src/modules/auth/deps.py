@@ -10,11 +10,11 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.database import get_session
 
 from src.clients import AuthError, AuthUser, get_auth_client
 from src.entities.user import User
 from src.repositories.user_repository import UserRepository
+from src.utils.database import get_session
 
 # Bearer 토큰 추출을 위한 보안 스키마
 security = HTTPBearer(auto_error=False)
