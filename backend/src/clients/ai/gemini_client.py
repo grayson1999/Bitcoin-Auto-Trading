@@ -11,14 +11,14 @@ from google.genai import types
 from loguru import logger
 
 from src.clients.ai.base import (
-    DEFAULT_TIMEOUT,
-    MAX_RETRIES,
-    RETRY_DELAY,
     AIClientError,
     AIResponse,
     BaseAIClient,
 )
 from src.config import settings
+from src.config.constants import DEFAULT_MAX_RETRIES as MAX_RETRIES
+from src.config.constants import DEFAULT_RETRY_DELAY_SECONDS as RETRY_DELAY
+from src.config.constants import DEFAULT_TIMEOUT_SECONDS as DEFAULT_TIMEOUT
 
 
 class GeminiClient(BaseAIClient):

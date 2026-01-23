@@ -52,7 +52,7 @@ class RiskStatus:
     trading_enabled: bool
     daily_loss_pct: float
     daily_loss_limit_pct: float
-    position_size_pct: float
+    position_size_max_pct: float
     stop_loss_pct: float
     volatility_threshold_pct: float
     current_volatility_pct: float
@@ -489,7 +489,7 @@ class RiskService:
         daily_loss_limit_pct = await self._get_config_value(
             "daily_loss_limit_pct", settings.daily_loss_limit_pct
         )
-        position_size_pct = await self._get_config_value(
+        position_size_max_pct = await self._get_config_value(
             "position_size_max_pct", settings.position_size_max_pct
         )
         stop_loss_pct = await self._get_config_value(
@@ -521,7 +521,7 @@ class RiskService:
             trading_enabled=trading_enabled,
             daily_loss_pct=daily_loss_pct,
             daily_loss_limit_pct=daily_loss_limit_pct,
-            position_size_pct=position_size_pct,
+            position_size_max_pct=position_size_max_pct,
             stop_loss_pct=stop_loss_pct,
             volatility_threshold_pct=volatility_threshold_pct,
             current_volatility_pct=current_volatility_pct,

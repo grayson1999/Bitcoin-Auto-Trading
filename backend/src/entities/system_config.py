@@ -69,7 +69,6 @@ class SystemConfig(Base):
 DEFAULT_CONFIGS = {
     "position_size_min_pct": "25.0",
     "position_size_max_pct": "50.0",
-    "position_size_pct": "50.0",  # deprecated
     "stop_loss_pct": "5.0",
     "daily_loss_limit_pct": "5.0",
     "signal_interval_hours": "1",

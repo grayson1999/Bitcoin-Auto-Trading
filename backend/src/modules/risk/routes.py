@@ -132,7 +132,7 @@ async def get_risk_status(
         trading_enabled=status.trading_enabled,
         daily_loss_pct=status.daily_loss_pct,
         daily_loss_limit_pct=status.daily_loss_limit_pct,
-        position_size_pct=status.position_size_pct,
+        position_size_pct=status.position_size_max_pct,
         stop_loss_pct=status.stop_loss_pct,
         volatility_threshold_pct=status.volatility_threshold_pct,
         current_volatility_pct=status.current_volatility_pct,

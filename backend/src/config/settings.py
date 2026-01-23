@@ -78,13 +78,6 @@ class Settings(BaseSettings):
         le=100.0,
         description="최대 포지션 크기 비율 (신뢰도 높을 때) [DB 오버라이드 가능]",
     )
-    # 기존 호환성을 위해 유지 (deprecated)
-    position_size_pct: float = Field(
-        default=2.0,
-        ge=1.0,
-        le=100.0,
-        description="주문당 자본 비율 (deprecated) [DB 오버라이드 가능]",
-    )
     stop_loss_pct: float = Field(
         default=5.0,
         ge=3.0,
@@ -182,7 +175,6 @@ DB_OVERRIDABLE_KEYS = frozenset(
     {
         "position_size_min_pct",
         "position_size_max_pct",
-        "position_size_pct",
         "stop_loss_pct",
         "daily_loss_limit_pct",
         "signal_interval_hours",

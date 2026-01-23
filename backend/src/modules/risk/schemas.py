@@ -82,7 +82,7 @@ class RiskStatusResponse(BaseModel):
         trading_enabled: 거래 가능 여부
         daily_loss_pct: 오늘 손실률 (%)
         daily_loss_limit_pct: 일일 손실 한도 (%)
-        position_size_pct: 포지션 크기 제한 (%)
+        position_size_pct: 최대 포지션 크기 (%, position_size_max_pct 매핑)
         stop_loss_pct: 손절 임계값 (%)
         volatility_threshold_pct: 변동성 임계값 (%)
         current_volatility_pct: 현재 변동성 (%)
@@ -103,7 +103,9 @@ class RiskStatusResponse(BaseModel):
     trading_enabled: bool = Field(description="거래 가능 여부")
     daily_loss_pct: float = Field(description="오늘 손실률 (%)")
     daily_loss_limit_pct: float = Field(description="일일 손실 한도 (%)")
-    position_size_pct: float = Field(description="포지션 크기 제한 (%)")
+    position_size_pct: float = Field(
+        description="최대 포지션 크기 (%, position_size_max_pct 매핑)"
+    )
     stop_loss_pct: float = Field(description="손절 임계값 (%)")
     volatility_threshold_pct: float = Field(description="변동성 임계값 (%)")
     current_volatility_pct: float = Field(description="현재 변동성 (%)")

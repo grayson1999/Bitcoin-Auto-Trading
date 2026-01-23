@@ -9,9 +9,6 @@ AI API clients.
 
 from src.clients.ai.base import (
     COST_CONFIG,
-    DEFAULT_TIMEOUT,
-    MAX_RETRIES,
-    RETRY_DELAY,
     TOKENS_PER_M,
     AIClientError,
     AIResponse,
@@ -20,6 +17,9 @@ from src.clients.ai.base import (
 from src.clients.ai.client import AIClient, get_ai_client
 from src.clients.ai.gemini_client import GeminiClient, get_gemini_client
 from src.clients.ai.openai_client import OpenAIClient, get_openai_client
+from src.config.constants import DEFAULT_MAX_RETRIES as MAX_RETRIES
+from src.config.constants import DEFAULT_RETRY_DELAY_SECONDS as RETRY_DELAY
+from src.config.constants import DEFAULT_TIMEOUT_SECONDS as DEFAULT_TIMEOUT
 
 __all__ = [
     "COST_CONFIG",
