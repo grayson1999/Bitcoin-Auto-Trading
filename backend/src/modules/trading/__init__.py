@@ -1,13 +1,18 @@
-"""Trading module - order execution and management."""
+"""
+Trading module - order execution and management.
 
-from src.modules.trading.order_monitor import OrderMonitor
-from src.modules.trading.order_validator import (
-    BalanceInfo,
-    OrderBlockedReason,
-    OrderValidator,
-    ValidationResult,
-)
-from src.modules.trading.position_manager import PositionManager
+Structure:
+    trading/
+    ├── validator/      # 주문 검증
+    ├── monitor/        # 주문 모니터링
+    ├── position/       # 포지션 관리
+    ├── routes.py       # API 엔드포인트
+    ├── schemas.py      # Pydantic 스키마
+    └── service.py      # 메인 서비스
+"""
+
+from src.modules.trading.monitor import OrderMonitor
+from src.modules.trading.position import PositionManager
 from src.modules.trading.routes import router
 from src.modules.trading.schemas import (
     BalanceResponse,
@@ -26,9 +31,17 @@ from src.modules.trading.service import (
     TradingServiceError,
     get_trading_service,
 )
+from src.modules.trading.validator import (
+    BalanceInfo,
+    OrderBlockedReason,
+    OrderValidator,
+    ValidationResult,
+)
 
 __all__ = [
+    # Validator
     "BalanceInfo",
+    # Schemas
     "BalanceResponse",
     "OrderBlockedReason",
     "OrderErrorResponse",
@@ -36,18 +49,16 @@ __all__ = [
     # Monitor
     "OrderMonitor",
     "OrderResponse",
+    # Service
     "OrderResult",
     "OrderSideEnum",
     "OrderStatusEnum",
     "OrderStatusFilterEnum",
-    # Schemas
     "OrderTypeEnum",
-    # Validator
     "OrderValidator",
-    # Position Manager
+    # Position
     "PositionManager",
     "PositionResponse",
-    # Service
     "TradingService",
     "TradingServiceError",
     "ValidationResult",

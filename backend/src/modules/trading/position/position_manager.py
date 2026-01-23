@@ -19,7 +19,7 @@ from src.clients.upbit import (
 )
 from src.config import settings
 from src.entities import Order, Position
-from src.modules.trading.order_validator import BalanceInfo, OrderValidator
+from src.modules.trading.validator import BalanceInfo, OrderValidator
 from src.utils import UTC
 
 

@@ -39,13 +39,13 @@ from src.entities import (
     TradingSignal,
 )
 from src.modules.risk.service import RiskService
-from src.modules.trading.order_monitor import OrderMonitor
-from src.modules.trading.order_validator import (
+from src.modules.trading.monitor import OrderMonitor
+from src.modules.trading.position import PositionManager
+from src.modules.trading.validator import (
     BalanceInfo,
     OrderBlockedReason,
     OrderValidator,
 )
-from src.modules.trading.position_manager import PositionManager
 from src.utils import UTC
 
 if TYPE_CHECKING:

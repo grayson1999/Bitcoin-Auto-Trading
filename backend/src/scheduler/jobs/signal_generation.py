@@ -37,8 +37,7 @@ async def generate_trading_signal_job() -> None:
     """
     # 순환 참조 방지를 위한 지연 임포트
     from src.modules.signal.service import SignalService, SignalServiceError
-    from src.modules.trading.order_validator import OrderBlockedReason
-    from src.modules.trading.service import get_trading_service
+    from src.modules.trading import OrderBlockedReason, get_trading_service
 
     async with async_session_factory() as session:
         try:
@@ -121,8 +120,7 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
         signal_id: 실행할 신호 ID
     """
     # 순환 참조 방지를 위한 지연 임포트
-    from src.modules.trading.order_validator import OrderBlockedReason
-    from src.modules.trading.service import get_trading_service
+    from src.modules.trading import OrderBlockedReason, get_trading_service
 
     async with async_session_factory() as session:
         try:
