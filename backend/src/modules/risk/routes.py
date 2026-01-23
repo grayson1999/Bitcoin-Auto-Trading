@@ -18,7 +18,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.database import get_session
+from src.utils.database import get_session
 from src.entities import RiskEventType
 from src.modules.auth import CurrentUser
 from src.modules.risk.schemas import (

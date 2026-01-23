@@ -28,7 +28,7 @@ from src.config.constants import (
     API_PAGINATION_MAX_LIMIT,
     API_PAGINATION_MIN_LIMIT,
 )
-from src.database import get_session
+from src.utils.database import get_session
 from src.entities import OrderStatus, Position
 from src.modules.auth import CurrentUser
 from src.modules.trading.schemas import (

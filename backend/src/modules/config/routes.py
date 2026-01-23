@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import DB_OVERRIDABLE_KEYS
-from src.database import get_session
+from src.utils.database import get_session
 from src.modules.config.schemas import (
     ConfigBatchUpdateRequest,
     ConfigBatchUpdateResponse,

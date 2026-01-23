@@ -6,7 +6,7 @@
 
 from loguru import logger
 
-from src.database import async_session_factory
+from src.utils.database import async_session_factory
 from src.modules.market import get_data_collector
 
 

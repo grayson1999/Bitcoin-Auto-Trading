@@ -6,7 +6,7 @@ PENDING 상태의 주문을 Upbit와 동기화하는 작업을 정의합니다.
 
 from loguru import logger
 
-from src.database import async_session_factory
+from src.utils.database import async_session_factory
 from src.modules.trading.service import get_trading_service
 
 

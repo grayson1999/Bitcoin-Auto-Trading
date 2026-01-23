@@ -28,7 +28,7 @@ from src.clients.upbit import (
     get_upbit_public_api,
 )
 from src.config import settings
-from src.database import get_session
+from src.utils.database import get_session
 from src.entities import (
     DailyStats,
     Order,
