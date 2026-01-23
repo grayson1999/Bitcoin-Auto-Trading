@@ -24,6 +24,7 @@ from src.clients.upbit import (
     get_upbit_public_api,
 )
 from src.config import settings
+from src.config.constants import DATA_RETENTION_DAYS, MS_TO_SECONDS
 from src.entities import MarketData
 from src.utils import UTC
 
@@ -32,7 +33,6 @@ from src.utils import UTC
 RECONNECT_BASE_DELAY = 1.0  # 재연결 기본 대기 시간 (초)
 RECONNECT_MAX_DELAY = 60.0  # 재연결 최대 대기 시간 (초)
 RECONNECT_MAX_ATTEMPTS = 10  # 최대 재시도 횟수
-MS_TO_SECONDS = 1000  # 밀리초 → 초 변환 상수
 
 
 class DataCollectorError(Exception):
@@ -373,7 +373,7 @@ class DataCollector:
             int: 삭제된 레코드 수
         """
         if retention_days is None:
-            retention_days = settings.data_retention_days
+            retention_days = DATA_RETENTION_DAYS
 
         # 삭제 기준 날짜 계산
         cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)

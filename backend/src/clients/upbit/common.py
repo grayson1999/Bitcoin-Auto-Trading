@@ -9,13 +9,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from src.clients.common import (
-    HTTP_BAD_REQUEST,
-    HTTP_RATE_LIMIT,
-    MAX_RETRIES,
-    RETRY_DELAY,
-)
-
 # === Upbit API constants ===
 UPBIT_API_URL = "https://api.upbit.com/v1"
 REQUEST_TIMEOUT = 10.0  # seconds
@@ -26,9 +19,6 @@ HASH_ALGORITHM = "SHA512"
 
 # === Response index constants ===
 FIRST_ITEM = 0
-
-# Re-export for backward compatibility
-__all__ = ["HTTP_BAD_REQUEST", "HTTP_RATE_LIMIT", "MAX_RETRIES", "RETRY_DELAY"]
 
 
 def to_decimal(value: str | int | float | None) -> Decimal | None:

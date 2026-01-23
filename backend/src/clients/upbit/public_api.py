@@ -15,16 +15,18 @@ from loguru import logger
 
 from src.clients.upbit.common import (
     FIRST_ITEM,
-    HTTP_BAD_REQUEST,
-    HTTP_RATE_LIMIT,
-    MAX_RETRIES,
     REQUEST_TIMEOUT,
-    RETRY_DELAY,
     UPBIT_API_URL,
     UpbitCandleData,
     UpbitTickerData,
     parse_candle,
     parse_ticker,
+)
+from src.config.constants import (
+    DEFAULT_DEFAULT_MAX_RETRIES,
+    DEFAULT_DEFAULT_RETRY_DELAY_SECONDS_SECONDS,
+    HTTP_STATUS_BAD_REQUEST,
+    HTTP_STATUS_RATE_LIMIT,
 )
 from src.config import settings
 
@@ -96,7 +98,7 @@ class UpbitPublicAPI:
         client = await self._get_client()
         last_error: Exception | None = None
 
-        for attempt in range(MAX_RETRIES):
+        for attempt in range(DEFAULT_MAX_RETRIES):
             try:
                 response = await client.request(
                     method=method,
@@ -104,13 +106,13 @@ class UpbitPublicAPI:
                     params=params,
                 )
 
-                if response.status_code == HTTP_RATE_LIMIT:
-                    wait_time = RETRY_DELAY * (2**attempt)
+                if response.status_code == HTTP_STATUS_RATE_LIMIT:
+                    wait_time = DEFAULT_RETRY_DELAY_SECONDS * (2**attempt)
                     logger.warning(f"Rate limit hit, retrying in {wait_time}s")
                     await asyncio.sleep(wait_time)
                     continue
 
-                if response.status_code >= HTTP_BAD_REQUEST:
+                if response.status_code >= HTTP_STATUS_BAD_REQUEST:
                     error_data = response.json() if response.content else {}
                     error_msg = error_data.get("error", {}).get(
                         "message", response.text
@@ -124,18 +126,18 @@ class UpbitPublicAPI:
 
             except httpx.TimeoutException as e:
                 last_error = e
-                logger.warning(f"Request timeout (attempt {attempt + 1}/{MAX_RETRIES})")
-                await asyncio.sleep(RETRY_DELAY)
+                logger.warning(f"Request timeout (attempt {attempt + 1}/{DEFAULT_MAX_RETRIES})")
+                await asyncio.sleep(DEFAULT_RETRY_DELAY_SECONDS)
 
             except httpx.RequestError as e:
                 last_error = e
                 logger.warning(
-                    f"Request error (attempt {attempt + 1}/{MAX_RETRIES}): {e}"
+                    f"Request error (attempt {attempt + 1}/{DEFAULT_MAX_RETRIES}): {e}"
                 )
-                await asyncio.sleep(RETRY_DELAY)
+                await asyncio.sleep(DEFAULT_RETRY_DELAY_SECONDS)
 
         raise UpbitPublicAPIError(
-            f"Request failed after {MAX_RETRIES} retries: {last_error}"
+            f"Request failed after {DEFAULT_MAX_RETRIES} retries: {last_error}"
         )
 
     async def get_ticker(self, market: str | None = None) -> UpbitTickerData:

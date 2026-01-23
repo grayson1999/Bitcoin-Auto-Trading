@@ -12,7 +12,7 @@ from typing import Any
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config import settings
+from src.config.constants import DATA_RETENTION_DAYS
 from src.entities.market_data import MarketData
 from src.repositories.base import BaseRepository
 from src.utils import UTC
@@ -196,13 +196,13 @@ class MarketRepository(BaseRepository[MarketData]):
         보관 기간이 지난 시장 데이터를 삭제합니다.
 
         Args:
-            retention_days: 보관 기간 (일) (기본: settings.data_retention_days)
+            retention_days: 보관 기간 (일) (기본: DATA_RETENTION_DAYS)
 
         Returns:
             삭제된 레코드 수
         """
         if retention_days is None:
-            retention_days = settings.data_retention_days
+            retention_days = DATA_RETENTION_DAYS
 
         cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
 

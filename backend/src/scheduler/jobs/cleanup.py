@@ -15,7 +15,7 @@ async def cleanup_old_data_job() -> None:
     오래된 데이터 정리 작업
 
     매일 실행되어 보관 기간이 지난 시장 데이터를 삭제합니다.
-    설정의 data_retention_days 값을 기준으로 삭제합니다.
+    DATA_RETENTION_DAYS 상수 값을 기준으로 삭제합니다.
     """
     collector = get_data_collector()
 

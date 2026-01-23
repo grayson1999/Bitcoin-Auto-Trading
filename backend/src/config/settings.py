@@ -110,11 +110,6 @@ class Settings(BaseSettings):
         description="거래 중단 변동성 임계값 (1-10%) [DB 오버라이드 가능]",
     )
 
-    # === 데이터 보관 설정 ===
-    data_retention_days: int = Field(
-        default=365, description="시장 데이터 보관 기간 (일)"
-    )
-
     # === 환경 설정 ===
     debug: bool = Field(default=False, description="디버그 모드 활성화")
 

@@ -15,7 +15,7 @@ from enum import Enum
 import httpx
 from loguru import logger
 
-from src.clients.common import MAX_RETRIES, RETRY_DELAY
+from src.config.constants import DEFAULT_MAX_RETRIES, DEFAULT_RETRY_DELAY_SECONDS
 from src.config import settings
 from src.utils import UTC
 
@@ -150,7 +150,7 @@ class SlackClient:
         payload = self._build_slack_payload(alert)
         client = await self._get_client()
 
-        for attempt in range(MAX_RETRIES):
+        for attempt in range(DEFAULT_MAX_RETRIES):
             try:
                 response = await client.post(
                     self._webhook_url,
@@ -162,16 +162,16 @@ class SlackClient:
 
             except httpx.HTTPStatusError as e:
                 logger.warning(
-                    f"Slack API 오류 (시도 {attempt + 1}/{MAX_RETRIES}): "
+                    f"Slack API 오류 (시도 {attempt + 1}/{DEFAULT_MAX_RETRIES}): "
                     f"{e.response.status_code}"
                 )
             except httpx.RequestError as e:
                 logger.warning(
-                    f"Slack 요청 오류 (시도 {attempt + 1}/{MAX_RETRIES}): {e}"
+                    f"Slack 요청 오류 (시도 {attempt + 1}/{DEFAULT_MAX_RETRIES}): {e}"
                 )
 
-            if attempt < MAX_RETRIES - 1:
-                await asyncio.sleep(RETRY_DELAY)
+            if attempt < DEFAULT_MAX_RETRIES - 1:
+                await asyncio.sleep(DEFAULT_RETRY_DELAY_SECONDS)
 
         logger.error(f"Slack 알림 전송 실패: {alert.title}")
         return False

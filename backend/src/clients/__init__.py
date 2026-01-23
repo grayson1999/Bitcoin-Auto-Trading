@@ -8,7 +8,6 @@ Clients for external service communication.
 - Auth: Authentication server client
 """
 
-# Common constants
 # AI clients
 from src.clients.ai import (
     AIClient,
@@ -29,16 +28,6 @@ from src.clients.auth_client import (
     AuthUser,
     close_auth_client,
     get_auth_client,
-)
-from src.clients.common import (
-    DEFAULT_TIMEOUT,
-    HTTP_BAD_REQUEST,
-    HTTP_OK,
-    HTTP_RATE_LIMIT,
-    HTTP_SERVICE_UNAVAILABLE,
-    HTTP_UNAUTHORIZED,
-    MAX_RETRIES,
-    RETRY_DELAY,
 )
 
 # Slack client
@@ -69,15 +58,6 @@ from src.clients.upbit import (
 )
 
 __all__ = [
-    # Common constants
-    "DEFAULT_TIMEOUT",
-    "HTTP_BAD_REQUEST",
-    "HTTP_OK",
-    "HTTP_RATE_LIMIT",
-    "HTTP_SERVICE_UNAVAILABLE",
-    "HTTP_UNAUTHORIZED",
-    "MAX_RETRIES",
-    "RETRY_DELAY",
     # Upbit - Public API
     "UpbitPublicAPI",
     "UpbitPublicAPIError",

@@ -7,10 +7,7 @@ AI 클라이언트 기본 인터페이스
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from src.clients.common import DEFAULT_TIMEOUT, MAX_RETRIES, RETRY_DELAY
-
-# Re-export for backward compatibility
-__all__ = ["DEFAULT_TIMEOUT", "MAX_RETRIES", "RETRY_DELAY"]
+from src.config.constants import DEFAULT_TIMEOUT_SECONDS
 
 # === 모델별 토큰 비용 ($ per 1M tokens) ===
 COST_CONFIG = {
@@ -71,7 +68,7 @@ class BaseAIClient(ABC):
     모든 AI 클라이언트(Gemini, OpenAI 등)가 구현해야 하는 인터페이스를 정의합니다.
     """
 
-    def __init__(self, model: str, timeout: float = DEFAULT_TIMEOUT):
+    def __init__(self, model: str, timeout: float = DEFAULT_TIMEOUT_SECONDS):
         """
         AI 클라이언트 초기화
 
