@@ -3,7 +3,7 @@ import type { Position, Balance, Order, OrderListResponse, OrderStatus } from '@
 
 interface OrderListParams {
   status?: OrderStatus | 'all'
-  page?: number
+  offset?: number
   limit?: number
 }
 
@@ -21,11 +21,12 @@ export async function fetchBalance(): Promise<Balance> {
 
 /** Fetch order list with pagination */
 export async function fetchOrders(params: OrderListParams = {}): Promise<OrderListResponse> {
-  const { status = 'all', page = 1, limit = 20 } = params
+  const { status = 'all', offset = 0, limit = 20 } = params
   const response = await apiClient.get<OrderListResponse>('/trading/orders', {
     params: {
-      status: status === 'all' ? undefined : status,
-      page,
+      // Backend expects lowercase filter values (pending, executed, etc.)
+      status: status === 'all' ? undefined : status.toLowerCase(),
+      offset,
       limit,
     },
   })

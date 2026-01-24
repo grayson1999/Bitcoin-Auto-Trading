@@ -54,8 +54,11 @@ class OrderMonitor:
         """
         체결가 계산 헬퍼
 
-        시장가 주문(매수/매도 모두)은 avg_price 또는 executed_funds/executed_volume 사용,
-        지정가 주문은 price 사용.
+        우선순위:
+        1. avg_price (평균 체결가)
+        2. executed_funds / executed_volume (총 체결금액 / 총 체결수량)
+        3. trades 배열에서 가중 평균 계산
+        4. price 필드 (지정가 주문)
 
         Args:
             order: 주문 객체
@@ -64,22 +67,38 @@ class OrderMonitor:
         Returns:
             Decimal: 계산된 체결가
         """
-        # 시장가 주문 (매수/매도 모두): avg_price 우선 사용
-        # - 시장가 매수: ord_type='price' (KRW 금액 지정)
-        # - 시장가 매도: ord_type='market' (수량 지정)
-        if upbit_response.avg_price:
+        # 1. avg_price 우선 사용 (0보다 커야 유효)
+        if upbit_response.avg_price and upbit_response.avg_price > 0:
             return upbit_response.avg_price
-        elif upbit_response.executed_funds and upbit_response.executed_volume:
+
+        # 2. executed_funds / executed_volume 계산
+        if (
+            upbit_response.executed_funds
+            and upbit_response.executed_volume
+            and upbit_response.executed_volume > 0
+        ):
             return upbit_response.executed_funds / upbit_response.executed_volume
 
-        # fallback: price 필드 (지정가 주문에서 사용)
-        if upbit_response.price:
+        # 3. trades 배열에서 가중 평균 계산
+        if upbit_response.trades:
+            total_funds = sum(t.funds for t in upbit_response.trades)
+            total_volume = sum(t.volume for t in upbit_response.trades)
+            if total_volume > 0:
+                avg_price = total_funds / total_volume
+                logger.info(
+                    f"[체결가 계산] trades에서 계산: order_id={order.id}, "
+                    f"avg_price={avg_price}"
+                )
+                return avg_price
+
+        # 4. fallback: price 필드 (지정가 주문에서 사용)
+        if upbit_response.price and upbit_response.price > 0:
             return upbit_response.price
 
         # 모든 방법 실패 시 경고
         logger.warning(
-            f"[체결가 계산] avg_price/executed_funds/price 모두 없음, "
-            f"order_id={order.id}"
+            f"[체결가 계산] avg_price/executed_funds/trades/price 모두 없음, "
+            f"order_id={order.id}, trades_count={len(upbit_response.trades)}"
         )
         return Decimal("0")
 

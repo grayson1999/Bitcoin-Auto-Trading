@@ -23,12 +23,12 @@ export interface PaginatedResponse<T> {
 // Enums
 // ============================================================================
 
-/** Order status */
+/** Order status - matches backend OrderStatusEnum (uppercase) */
 export const OrderStatus = {
-  PENDING: 'pending',
-  EXECUTED: 'executed',
-  CANCELLED: 'cancelled',
-  FAILED: 'failed',
+  PENDING: 'PENDING',
+  EXECUTED: 'EXECUTED',
+  CANCELLED: 'CANCELLED',
+  FAILED: 'FAILED',
 } as const
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
 
@@ -122,16 +122,23 @@ export interface Balance {
   total_krw: number
 }
 
-/** Trading order */
+/** Trading order - matches backend OrderResponse schema */
 export interface Order {
-  id: string
-  symbol: string
+  id: number
+  signal_id: number | null
+  order_type: string
   side: OrderSide
-  quantity: number
-  price: number
+  market: string
+  amount: number
+  price: number | null
   status: OrderStatus
+  executed_price: number | null
+  executed_amount: number | null
+  fee: number | null
+  upbit_uuid: string | null
+  error_message: string | null
   created_at: ISOTimestamp
-  executed_at?: ISOTimestamp
+  executed_at: ISOTimestamp | null
 }
 
 export interface OrderListResponse extends PaginatedResponse<Order> {}

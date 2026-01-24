@@ -200,17 +200,17 @@
 
 ### US4용 주문 컴포넌트
 
-- [ ] T076 [P] [US4] `frontend/src/components/trading/OrderTable.tsx`에 OrderTable 컴포넌트 생성 (ID, 타입, 가격, 수량, 상태, 시간 컬럼)
-- [ ] T077 [P] [US4] `frontend/src/components/trading/OrderStatusFilter.tsx`에 OrderStatusFilter 컴포넌트 생성
-- [ ] T078 [P] [US4] `frontend/src/components/trading/OrderStatusBadge.tsx`에 OrderStatusBadge 컴포넌트 생성
-- [ ] T079 [P] [US4] `frontend/src/core/components/Pagination.tsx`에 Pagination 컴포넌트 생성
+- [X] T076 [P] [US4] `frontend/src/components/trading/OrderTable.tsx`에 OrderTable 컴포넌트 생성 (ID, 타입, 가격, 수량, 상태, 시간 컬럼)
+- [X] T077 [P] [US4] `frontend/src/components/trading/OrderStatusFilter.tsx`에 OrderStatusFilter 컴포넌트 생성
+- [X] T078 [P] [US4] `frontend/src/components/trading/OrderStatusBadge.tsx`에 OrderStatusBadge 컴포넌트 생성
+- [X] T079 [P] [US4] `frontend/src/core/components/Pagination.tsx`에 Pagination 컴포넌트 생성
 
 ### US4용 주문 뷰
 
-- [ ] T080 [US4] `frontend/src/views/OrdersView.tsx`에 테이블과 필터가 포함된 OrdersView 페이지 생성
-- [ ] T081 [US4] 상태 필터링 구현 (전체/대기/체결/취소/실패)
-- [ ] T082 [US4] 페이지네이션 구현 (페이지당 20개 항목)
-- [ ] T083 [US4] 로딩 및 빈 상태 추가
+- [X] T080 [US4] `frontend/src/views/OrdersView.tsx`에 테이블과 필터가 포함된 OrdersView 페이지 생성
+- [X] T081 [US4] 상태 필터링 구현 (전체/대기/체결/취소/실패)
+- [X] T082 [US4] 페이지네이션 구현 (페이지당 20개 항목)
+- [X] T083 [US4] 로딩 및 빈 상태 추가
 
 **체크포인트**: 사용자 스토리 4 완료 - 필터링과 페이지네이션이 포함된 주문 페이지 동작
 
@@ -248,7 +248,7 @@
 
 **목표**: 스케줄러 상태, DB 상태, 시스템 리소스, 디스크 사용량이 포함된 관리자 전용 페이지
 
-**독립 테스트**: 관리자는 시스템 메트릭을 볼 수 있고, 일반 사용자는 차단되어 리다이렉트됨
+**독립 테스트**: 관리자는 시스템 메트릭을 볼 수 있고, 일반 사용자는 차단되어 리다이렉트됨(일반 사용자는 메뉴 자체에서도 접근할 수 없음)
 
 **참고**: 백엔드 API `GET /api/v1/admin/system` 필요 - 사용 불가 시 초기에는 mock 데이터 사용
 

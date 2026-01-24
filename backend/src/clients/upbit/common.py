@@ -70,6 +70,17 @@ class UpbitBalance(BaseModel):
     avg_buy_price: Decimal
 
 
+class UpbitTrade(BaseModel):
+    """Upbit individual trade model."""
+
+    market: str
+    uuid: str
+    price: Decimal
+    volume: Decimal
+    funds: Decimal
+    side: str
+
+
 class UpbitOrderResponse(BaseModel):
     """Upbit order response model."""
 
@@ -85,6 +96,7 @@ class UpbitOrderResponse(BaseModel):
     avg_price: Decimal | None = None
     executed_funds: Decimal | None = None
     trades_count: int = 0
+    trades: list[UpbitTrade] = []
 
 
 def parse_candle(candle: dict[str, Any]) -> UpbitCandleData:
@@ -148,6 +160,26 @@ def parse_balance(acc: dict[str, Any]) -> UpbitBalance:
     )
 
 
+def parse_trade(trade: dict[str, Any]) -> UpbitTrade:
+    """
+    Parse individual trade from API response.
+
+    Args:
+        trade: Raw trade data from API
+
+    Returns:
+        UpbitTrade: Parsed trade
+    """
+    return UpbitTrade(
+        market=trade["market"],
+        uuid=trade["uuid"],
+        price=to_decimal(trade["price"]) or Decimal("0"),
+        volume=to_decimal(trade["volume"]) or Decimal("0"),
+        funds=to_decimal(trade["funds"]) or Decimal("0"),
+        side=trade["side"],
+    )
+
+
 def parse_order_response(response: dict[str, Any]) -> UpbitOrderResponse:
     """
     Parse order response from API.
@@ -158,6 +190,10 @@ def parse_order_response(response: dict[str, Any]) -> UpbitOrderResponse:
     Returns:
         UpbitOrderResponse: Parsed order response
     """
+    # Parse trades if present
+    trades_raw = response.get("trades", [])
+    trades = [parse_trade(t) for t in trades_raw] if trades_raw else []
+
     return UpbitOrderResponse(
         uuid=response["uuid"],
         side=response["side"],
@@ -171,4 +207,5 @@ def parse_order_response(response: dict[str, Any]) -> UpbitOrderResponse:
         avg_price=to_decimal(response.get("avg_price")),
         executed_funds=to_decimal(response.get("executed_funds")),
         trades_count=response.get("trades_count", 0),
+        trades=trades,
     )
