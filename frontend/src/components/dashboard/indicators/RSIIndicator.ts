@@ -73,10 +73,6 @@ export function createRSIPane(chart: IChartApi): ISeriesApi<'Line'> {
 
   // Configure RSI price scale
   chart.priceScale('rsi').applyOptions({
-    scaleMargins: {
-      top: 0.8,
-      bottom: 0,
-    },
     borderVisible: false,
   })
 

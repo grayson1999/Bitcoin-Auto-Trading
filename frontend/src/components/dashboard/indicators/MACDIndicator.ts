@@ -113,10 +113,6 @@ export function createMACDPane(chart: IChartApi): MACDSeries {
 
   // Configure MACD price scale
   chart.priceScale('macd').applyOptions({
-    scaleMargins: {
-      top: 0.85,
-      bottom: 0,
-    },
     borderVisible: false,
   })
 

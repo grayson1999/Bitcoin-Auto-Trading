@@ -115,7 +115,7 @@ export function DashboardView() {
             showMA200={chartSettings.showMA200}
             showRSI={chartSettings.showRSI}
             showMACD={chartSettings.showMACD}
-            className="h-[400px] sm:h-[500px]"
+            className=""
           />
         </div>
       </CommonCard>
