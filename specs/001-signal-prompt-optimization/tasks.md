@@ -85,8 +85,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Add sampling statistics logging in backend/src/modules/signal/service.py
-- [ ] T016 [US3] Update _format_market_data method to use sampled structure in backend/src/modules/signal/prompt/builder.py (if exists)
+- [x] T015 [US3] Add sampling statistics logging in backend/src/modules/signal/service.py
+- [x] T016 [US3] Update _format_market_data method to use sampled structure in backend/src/modules/signal/prompt/builder.py (if exists)
 
 **Checkpoint**: 샘플링 통계 로그 출력 확인
 
