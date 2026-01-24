@@ -49,11 +49,11 @@
 
 ### Tests for User Story 1
 
-- [ ] T007 [P] [US1] Create concurrent session test in backend/tests/unit/test_database_pool.py
+- [X] T007 [P] [US1] Create concurrent session test in backend/tests/unit/test_database_pool.py
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Verify pool size change effective by checking engine.pool.size() in backend/src/utils/database.py
+- [X] T008 [US1] Verify pool size change effective by checking engine.pool.size() in backend/src/utils/database.py
 
 **Checkpoint**: 동시 DB 작업 테스트 통과 확인
 
