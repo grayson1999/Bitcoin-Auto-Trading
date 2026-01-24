@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { fetchSignals } from '@/api/signals.api'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchSignals, generateSignal } from '@/api/signals.api'
+import { isAxiosError } from 'axios'
 import { SignalCard } from '@/components/signals/SignalCard'
 import { SignalTimeline } from '@/components/signals/SignalTimeline'
 import { SignalDetailModal } from '@/components/signals/SignalDetailModal'
@@ -12,7 +13,7 @@ import { ErrorMessage } from '@core/components/ErrorMessage'
 import { Button } from '@core/components/ui/button'
 import { Skeleton } from '@core/components/ui/skeleton'
 import type { TradingSignal, SignalType } from '@/core/types'
-import { Activity, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
+import { Activity, ChevronLeft, ChevronRight, RefreshCw, Sparkles, AlertCircle } from 'lucide-react'
 
 const PAGE_SIZE = 20
 
@@ -22,6 +23,9 @@ export function SignalsView() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [filterType, setFilterType] = useState<SignalType | 'all'>('all')
   const [page, setPage] = useState(0)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+
+  const queryClient = useQueryClient()
 
   // Fetch signals with filter and pagination
   const {
@@ -46,6 +50,35 @@ export function SignalsView() {
   const totalPages = Math.ceil(total / PAGE_SIZE)
   const hasNextPage = page < totalPages - 1
   const hasPrevPage = page > 0
+
+  // Generate signal mutation
+  const generateMutation = useMutation({
+    mutationFn: generateSignal,
+    onSuccess: () => {
+      setGenerateError(null)
+      queryClient.invalidateQueries({ queryKey: ['signals'] })
+    },
+    onError: (error) => {
+      if (isAxiosError(error)) {
+        const status = error.response?.status
+        const detail = error.response?.data?.detail
+        if (status === 429) {
+          setGenerateError(detail || '5분 내 재시도 불가합니다.')
+        } else if (status === 503) {
+          setGenerateError(detail || 'AI 서비스 오류가 발생했습니다.')
+        } else {
+          setGenerateError(detail || '신호 생성에 실패했습니다.')
+        }
+      } else {
+        setGenerateError('신호 생성에 실패했습니다.')
+      }
+    },
+  })
+
+  const handleGenerateSignal = () => {
+    setGenerateError(null)
+    generateMutation.mutate()
+  }
 
   // Handle signal click
   const handleSignalClick = (signal: TradingSignal) => {
@@ -144,16 +177,41 @@ export function SignalsView() {
             AI가 생성한 매매 신호를 확인하고 분석합니다
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-          새로고침
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleGenerateSignal}
+            disabled={generateMutation.isPending}
+          >
+            <Sparkles className={`h-4 w-4 mr-2 ${generateMutation.isPending ? 'animate-pulse' : ''}`} />
+            {generateMutation.isPending ? '생성 중...' : '신호 생성'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            새로고침
+          </Button>
+        </div>
       </div>
+
+      {/* Generate Error Message */}
+      {generateError && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{generateError}</span>
+          <button
+            onClick={() => setGenerateError(null)}
+            className="ml-auto text-xs hover:underline"
+          >
+            닫기
+          </button>
+        </div>
+      )}
 
       {/* Filters and View Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

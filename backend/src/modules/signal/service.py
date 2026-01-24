@@ -124,6 +124,7 @@ class SignalService:
     async def generate_signal(
         self,
         force: bool = False,
+        user_id: int | None = None,
     ) -> TradingSignal:
         """
         매매 신호 생성
@@ -236,6 +237,7 @@ class SignalService:
             output_tokens=response.output_tokens,
             price_at_signal=Decimal(str(current_price)),
             technical_snapshot=technical_snapshot,
+            user_id=user_id,
         )
         await self._signal_repo.save(signal)
         await self.db.commit()

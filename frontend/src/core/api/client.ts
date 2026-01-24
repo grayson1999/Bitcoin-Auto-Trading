@@ -11,7 +11,7 @@ const STORAGE_KEYS = {
 /** Main API client for backend requests */
 export const apiClient = axios.create({
   baseURL: `${API_URL}/api/v1`,
-  timeout: 10000,
+  timeout: 60000, // 60 seconds for AI operations
   headers: {
     'Content-Type': 'application/json',
   },

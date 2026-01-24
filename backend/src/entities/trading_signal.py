@@ -26,7 +26,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.entities.base import AuditMixin, Base, UserOwnedMixin
+from src.entities.base import AuditMixin, Base
 
 if TYPE_CHECKING:
     from src.entities.market_data import MarketData
@@ -48,7 +48,7 @@ class SignalType(str, Enum):
     SELL = "SELL"
 
 
-class TradingSignal(Base, UserOwnedMixin, AuditMixin):
+class TradingSignal(Base, AuditMixin):
     """
     AI 매매 신호 모델
 
@@ -83,6 +83,15 @@ class TradingSignal(Base, UserOwnedMixin, AuditMixin):
         BigInteger,
         primary_key=True,
         autoincrement=True,
+    )
+
+    # 소유자 사용자 ID (수동 생성 시에만 설정, 스케줄러 자동 생성은 NULL)
+    user_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="소유자 사용자 ID (수동 생성 시 설정)",
     )
 
     # 분석 기준 시장 데이터 참조

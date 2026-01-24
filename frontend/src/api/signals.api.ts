@@ -36,3 +36,15 @@ export async function fetchSignalDetail(id: string): Promise<TradingSignalDetail
   const response = await apiClient.get<TradingSignalDetail>(`/signals/${id}`)
   return response.data
 }
+
+/** Generate signal response */
+export interface GenerateSignalResponse {
+  signal: TradingSignal
+  message: string
+}
+
+/** Generate a new AI signal manually */
+export async function generateSignal(): Promise<GenerateSignalResponse> {
+  const response = await apiClient.post<GenerateSignalResponse>('/signals/generate')
+  return response.data
+}

@@ -19,7 +19,7 @@ from src.config.constants import (
     API_PAGINATION_MIN_LIMIT,
 )
 from src.entities import SignalType
-from src.modules.auth import CurrentUser
+from src.modules.auth import CurrentUser, ResolvedUser
 from src.modules.signal.schemas import (
     GenerateSignalResponse,
     SignalFilterParams,
@@ -148,6 +148,7 @@ async def get_latest_signal(
 async def generate_signal(
     session: Annotated[AsyncSession, Depends(get_session)],
     current_user: CurrentUser,
+    resolved_user: ResolvedUser,
 ) -> GenerateSignalResponse:
     """
     AI 신호 수동 생성
@@ -169,7 +170,7 @@ async def generate_signal(
     service = get_signal_service(session)
 
     try:
-        signal = await service.generate_signal(force=False)
+        signal = await service.generate_signal(force=False, user_id=resolved_user.id)
 
         logger.info(
             f"수동 신호 생성 완료: {signal.signal_type} (신뢰도: {signal.confidence})"
