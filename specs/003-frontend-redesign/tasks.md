@@ -1,419 +1,419 @@
-# Tasks: Frontend Redesign - Bitcoin Auto Trading Dashboard
+# 태스크: 프론트엔드 재설계 - 비트코인 자동 거래 대시보드
 
-**Input**: Design documents from `/specs/003-frontend-redesign/`
-**Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/ ✅, quickstart.md ✅
+**입력**: `/specs/003-frontend-redesign/` 설계 문서
+**사전 요구사항**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/ ✅, quickstart.md ✅
 
-**Tests**: Not explicitly requested - test tasks omitted (development tests only where needed)
+**테스트**: 명시적 요청 없음 - 테스트 태스크 생략 (필요시 개발 테스트만)
 
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+**구성**: 태스크는 사용자 스토리별로 그룹화되어 각 스토리를 독립적으로 구현하고 테스트할 수 있음
 
-## Format: `[ID] [P?] [Story] Description`
+## 형식: `[ID] [P?] [Story] 설명`
 
-- **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
-- Include exact file paths in descriptions
+- **[P]**: 병렬 실행 가능 (다른 파일, 의존성 없음)
+- **[Story]**: 해당 태스크가 속한 사용자 스토리 (예: US1, US2, US3)
+- 설명에 정확한 파일 경로 포함
 
-## Path Conventions
+## 경로 규칙
 
-- **Web app (frontend only)**: `frontend/src/`
-- All paths are relative to repository root `/home/ubuntu/Bitcoin-Auto-Trading/`
-
----
-
-## Phase 1: Setup (Project Initialization)
-
-**Purpose**: Delete existing frontend and initialize new project with required dependencies
-
-- [ ] T001 Backup existing frontend directory to `frontend_backup_YYYYMMDD`
-- [ ] T002 Initialize new Vite + React + TypeScript project in `frontend/`
-- [ ] T003 Install core dependencies (react-router-dom, @tanstack/react-query, axios, lightweight-charts)
-- [ ] T004 [P] Install shadcn/ui dependencies (clsx, tailwind-merge, class-variance-authority, lucide-react)
-- [ ] T005 [P] Install dev dependencies (vitest, @testing-library/react, @types/node)
-- [ ] T006 Configure Tailwind CSS with custom theme colors in `frontend/tailwind.config.js`
-- [ ] T007 [P] Configure path aliases in `frontend/tsconfig.json` and `frontend/vite.config.ts`
-- [ ] T008 Initialize shadcn/ui and install components (button, card, dialog, table, tabs, select, input, badge, skeleton, alert, tooltip, dropdown-menu, progress, slider, switch)
-- [ ] T009 Create folder structure per plan.md in `frontend/src/` (core/, api/, stores/, components/, views/, router/, assets/)
-- [ ] T010 [P] Create environment files `.env` and `.env.production` in `frontend/`
+- **웹 앱 (프론트엔드만)**: `frontend/src/`
+- 모든 경로는 저장소 루트 `/home/ubuntu/Bitcoin-Auto-Trading/` 기준 상대 경로
 
 ---
 
-## Phase 2: Foundational (Core Infrastructure)
+## Phase 1: 셋업 (프로젝트 초기화)
 
-**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
+**목적**: 기존 프론트엔드 삭제 및 필수 의존성과 함께 새 프로젝트 초기화
 
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
-
-### Core Layer
-
-- [ ] T011 Create TypeScript types and enums in `frontend/src/core/types/index.ts` (from data-model.md)
-- [ ] T012 Create API client with auth interceptors in `frontend/src/core/api/client.ts`
-- [ ] T013 [P] Create ApiError class in `frontend/src/core/errors/ApiError.ts`
-- [ ] T014 [P] Create utility formatters (currency, date, percentage) in `frontend/src/core/utils/formatters.ts`
-- [ ] T015 [P] Create cn() utility for Tailwind classes in `frontend/src/core/utils/cn.ts`
-- [ ] T016 [P] Create useDebounce hook in `frontend/src/core/composables/useDebounce.ts`
-- [ ] T017 [P] Create useToggle hook in `frontend/src/core/composables/useToggle.ts`
-
-### Auth Infrastructure
-
-- [ ] T018 Create AuthContext and AuthProvider in `frontend/src/stores/auth.store.ts`
-- [ ] T019 Create auth API functions (login, logout, refresh) in `frontend/src/api/auth.api.ts`
-- [ ] T020 Create ProtectedRoute component in `frontend/src/router/ProtectedRoute.tsx`
-- [ ] T021 Create AdminRoute component in `frontend/src/router/AdminRoute.tsx`
-
-### Layout Components
-
-- [ ] T022 Create MainLayout with sidebar navigation in `frontend/src/core/layouts/MainLayout.tsx`
-- [ ] T023 [P] Create AuthLayout for login page in `frontend/src/core/layouts/AuthLayout.tsx`
-- [ ] T024 Create responsive sidebar component in `frontend/src/core/components/Sidebar.tsx`
-
-### Common Components
-
-- [ ] T025 [P] Create CommonButton wrapper in `frontend/src/core/components/CommonButton.tsx`
-- [ ] T026 [P] Create CommonCard wrapper in `frontend/src/core/components/CommonCard.tsx`
-- [ ] T027 [P] Create CommonModal wrapper in `frontend/src/core/components/CommonModal.tsx`
-- [ ] T028 [P] Create LoadingSpinner component in `frontend/src/core/components/LoadingSpinner.tsx`
-- [ ] T029 [P] Create ErrorMessage component in `frontend/src/core/components/ErrorMessage.tsx`
-- [ ] T030 [P] Create EmptyState component in `frontend/src/core/components/EmptyState.tsx`
-
-### Routing Setup
-
-- [ ] T031 Create route definitions in `frontend/src/router/routes.tsx`
-- [ ] T032 Create router index with providers in `frontend/src/router/index.tsx`
-- [ ] T033 Update main.tsx with QueryClient, BrowserRouter, AuthProvider in `frontend/src/main.tsx`
-- [ ] T034 Create LoginView page in `frontend/src/views/LoginView.tsx`
-
-### Global Styles
-
-- [ ] T035 Update global CSS with dark theme base styles in `frontend/src/assets/styles/index.css`
-- [ ] T036 Update App.tsx to render router in `frontend/src/App.tsx`
-
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+- [ ] T001 기존 프론트엔드 디렉토리를 `frontend_backup_YYYYMMDD`로 백업
+- [ ] T002 `frontend/`에 새 Vite + React + TypeScript 프로젝트 초기화
+- [ ] T003 핵심 의존성 설치 (react-router-dom, @tanstack/react-query, axios, lightweight-charts)
+- [ ] T004 [P] shadcn/ui 의존성 설치 (clsx, tailwind-merge, class-variance-authority, lucide-react)
+- [ ] T005 [P] 개발 의존성 설치 (vitest, @testing-library/react, @types/node)
+- [ ] T006 `frontend/tailwind.config.js`에 커스텀 테마 색상으로 Tailwind CSS 구성
+- [ ] T007 [P] `frontend/tsconfig.json`과 `frontend/vite.config.ts`에 경로 별칭 구성
+- [ ] T008 shadcn/ui 초기화 및 컴포넌트 설치 (button, card, dialog, table, tabs, select, input, badge, skeleton, alert, tooltip, dropdown-menu, progress, slider, switch)
+- [ ] T009 plan.md 기준으로 `frontend/src/`에 폴더 구조 생성 (core/, api/, stores/, components/, views/, router/, assets/)
+- [ ] T010 [P] `frontend/`에 환경 파일 `.env`와 `.env.production` 생성
 
 ---
 
-## Phase 3: User Story 1 - 실시간 시세 및 포지션 모니터링 (Priority: P1) 🎯 MVP
+## Phase 2: 기반 구축 (핵심 인프라)
 
-**Goal**: Dashboard with candlestick chart, technical indicators, position display, balance display, auto-refresh
+**목적**: 모든 사용자 스토리 구현 전에 반드시 완료해야 하는 핵심 인프라
 
-**Independent Test**: User can login, access dashboard, see live BTC chart with indicators, view position and balance
+**⚠️ 중요**: 이 단계가 완료될 때까지 사용자 스토리 작업을 시작할 수 없음
 
-### API Layer for US1
+### 코어 레이어
 
-- [ ] T037 [P] [US1] Create market API functions in `frontend/src/api/market.api.ts`
-- [ ] T038 [P] [US1] Create dashboard API functions in `frontend/src/api/dashboard.api.ts`
-- [ ] T039 [P] [US1] Create trading API functions (position, balance) in `frontend/src/api/trading.api.ts`
-- [ ] T040 [P] [US1] Create risk API functions in `frontend/src/api/risk.api.ts`
+- [ ] T011 `frontend/src/core/types/index.ts`에 TypeScript 타입과 열거형 생성 (data-model.md 기반)
+- [ ] T012 `frontend/src/core/api/client.ts`에 인증 인터셉터가 포함된 API 클라이언트 생성
+- [ ] T013 [P] `frontend/src/core/errors/ApiError.ts`에 ApiError 클래스 생성
+- [ ] T014 [P] `frontend/src/core/utils/formatters.ts`에 유틸리티 포매터 생성 (통화, 날짜, 퍼센트)
+- [ ] T015 [P] `frontend/src/core/utils/cn.ts`에 Tailwind 클래스용 cn() 유틸리티 생성
+- [ ] T016 [P] `frontend/src/core/composables/useDebounce.ts`에 useDebounce 훅 생성
+- [ ] T017 [P] `frontend/src/core/composables/useToggle.ts`에 useToggle 훅 생성
 
-### Chart Components for US1
+### 인증 인프라
 
-- [ ] T041 [US1] Create PriceChart component with TradingView Lightweight Charts in `frontend/src/components/dashboard/PriceChart.tsx`
-- [ ] T042 [US1] Create interval selector (1m/5m/15m/1h) in PriceChart component
-- [ ] T043 [US1] Implement MA indicator overlay (20, 50, 200) in `frontend/src/components/dashboard/indicators/MAIndicator.ts`
-- [ ] T044 [P] [US1] Implement RSI indicator in `frontend/src/components/dashboard/indicators/RSIIndicator.ts`
-- [ ] T045 [P] [US1] Implement MACD indicator in `frontend/src/components/dashboard/indicators/MACDIndicator.ts`
-- [ ] T046 [US1] Create IndicatorControls component (toggle MA/RSI/MACD) in `frontend/src/components/dashboard/IndicatorControls.tsx`
+- [ ] T018 `frontend/src/stores/auth.store.ts`에 AuthContext와 AuthProvider 생성
+- [ ] T019 `frontend/src/api/auth.api.ts`에 인증 API 함수 생성 (login, logout, refresh)
+- [ ] T020 `frontend/src/router/ProtectedRoute.tsx`에 ProtectedRoute 컴포넌트 생성
+- [ ] T021 `frontend/src/router/AdminRoute.tsx`에 AdminRoute 컴포넌트 생성
 
-### Dashboard Components for US1
+### 레이아웃 컴포넌트
 
-- [ ] T047 [P] [US1] Create PositionCard component in `frontend/src/components/dashboard/PositionCard.tsx`
-- [ ] T048 [P] [US1] Create BalanceCard component in `frontend/src/components/dashboard/BalanceCard.tsx`
-- [ ] T049 [P] [US1] Create MetricCards component (price, 24h change, daily P&L) in `frontend/src/components/dashboard/MetricCards.tsx`
-- [ ] T050 [P] [US1] Create LatestSignalCard component in `frontend/src/components/dashboard/LatestSignalCard.tsx`
-- [ ] T051 [P] [US1] Create RiskStatusCard component in `frontend/src/components/dashboard/RiskStatusCard.tsx`
+- [ ] T022 `frontend/src/core/layouts/MainLayout.tsx`에 사이드바 네비게이션 포함 MainLayout 생성
+- [ ] T023 [P] `frontend/src/core/layouts/AuthLayout.tsx`에 로그인 페이지용 AuthLayout 생성
+- [ ] T024 `frontend/src/core/components/Sidebar.tsx`에 반응형 사이드바 컴포넌트 생성
 
-### Dashboard View for US1
+### 공통 컴포넌트
 
-- [ ] T052 [US1] Create DashboardView page composing all dashboard components in `frontend/src/views/DashboardView.tsx`
-- [ ] T053 [US1] Implement 5-second auto-refresh with TanStack Query refetchInterval
-- [ ] T054 [US1] Add loading states with Skeleton components
-- [ ] T055 [US1] Add error handling with retry functionality
+- [ ] T025 [P] `frontend/src/core/components/CommonButton.tsx`에 CommonButton 래퍼 생성
+- [ ] T026 [P] `frontend/src/core/components/CommonCard.tsx`에 CommonCard 래퍼 생성
+- [ ] T027 [P] `frontend/src/core/components/CommonModal.tsx`에 CommonModal 래퍼 생성
+- [ ] T028 [P] `frontend/src/core/components/LoadingSpinner.tsx`에 LoadingSpinner 컴포넌트 생성
+- [ ] T029 [P] `frontend/src/core/components/ErrorMessage.tsx`에 ErrorMessage 컴포넌트 생성
+- [ ] T030 [P] `frontend/src/core/components/EmptyState.tsx`에 EmptyState 컴포넌트 생성
 
-**Checkpoint**: User Story 1 complete - Dashboard with live chart, indicators, position, balance is functional
+### 라우팅 설정
 
----
+- [ ] T031 `frontend/src/router/routes.tsx`에 라우트 정의 생성
+- [ ] T032 `frontend/src/router/index.tsx`에 프로바이더 포함 라우터 인덱스 생성
+- [ ] T033 `frontend/src/main.tsx`에 QueryClient, BrowserRouter, AuthProvider 업데이트
+- [ ] T034 `frontend/src/views/LoginView.tsx`에 LoginView 페이지 생성
 
-## Phase 4: User Story 2 - 포트폴리오 수익 현황 확인 (Priority: P1)
+### 글로벌 스타일
 
-**Goal**: Portfolio page with cumulative return, today's return, win rate, MDD, profit chart
+- [ ] T035 `frontend/src/assets/styles/index.css`에 다크 테마 기본 스타일로 글로벌 CSS 업데이트
+- [ ] T036 `frontend/src/App.tsx`에서 라우터 렌더링하도록 App.tsx 업데이트
 
-**Independent Test**: User can access portfolio page, see accurate return calculations, view 30-day profit chart
-
-**Note**: Requires backend API `GET /api/v1/portfolio/summary` - use mock data initially if not available
-
-### API Layer for US2
-
-- [ ] T056 [P] [US2] Create portfolio API functions in `frontend/src/api/portfolio.api.ts`
-- [ ] T057 [P] [US2] Create mock data fallback for portfolio summary in `frontend/src/api/mocks/portfolio.mock.ts`
-
-### Portfolio Components for US2
-
-- [ ] T058 [P] [US2] Create CumulativeReturnCard component in `frontend/src/components/portfolio/CumulativeReturnCard.tsx`
-- [ ] T059 [P] [US2] Create TodayReturnCard component in `frontend/src/components/portfolio/TodayReturnCard.tsx`
-- [ ] T060 [P] [US2] Create TradeStatsCard component (win rate, avg return, MDD) in `frontend/src/components/portfolio/TradeStatsCard.tsx`
-- [ ] T061 [US2] Create ProfitChart component (30-day line chart) in `frontend/src/components/portfolio/ProfitChart.tsx`
-- [ ] T062 [P] [US2] Create DepositHistoryCard component in `frontend/src/components/portfolio/DepositHistoryCard.tsx`
-
-### Portfolio View for US2
-
-- [ ] T063 [US2] Create PortfolioView page composing all portfolio components in `frontend/src/views/PortfolioView.tsx`
-- [ ] T064 [US2] Implement empty state for users with no trades
-- [ ] T065 [US2] Add loading and error states
-
-**Checkpoint**: User Story 2 complete - Portfolio page with accurate return calculations is functional
+**체크포인트**: 기반 구축 완료 - 사용자 스토리 구현을 병렬로 시작할 수 있음
 
 ---
 
-## Phase 5: User Story 3 - AI 신호 확인 및 분석 (Priority: P2)
+## Phase 3: 사용자 스토리 1 - 실시간 시세 및 포지션 모니터링 (우선순위: P1) 🎯 MVP
 
-**Goal**: Signals page with card grid, timeline view, type filter, detail modal
+**목표**: 캔들스틱 차트, 기술적 지표, 포지션 표시, 잔고 표시, 자동 갱신이 포함된 대시보드
 
-**Independent Test**: User can view AI signals in grid/timeline, filter by type, click to see detail modal
+**독립 테스트**: 사용자가 로그인하고, 대시보드에 접속하여 지표가 포함된 실시간 BTC 차트를 보고, 포지션과 잔고를 확인할 수 있음
 
-### API Layer for US3
+### US1용 API 레이어
 
-- [ ] T066 [P] [US3] Create signal API functions in `frontend/src/api/signal.api.ts`
+- [ ] T037 [P] [US1] `frontend/src/api/market.api.ts`에 시장 API 함수 생성
+- [ ] T038 [P] [US1] `frontend/src/api/dashboard.api.ts`에 대시보드 API 함수 생성
+- [ ] T039 [P] [US1] `frontend/src/api/trading.api.ts`에 거래 API 함수 생성 (포지션, 잔고)
+- [ ] T040 [P] [US1] `frontend/src/api/risk.api.ts`에 리스크 API 함수 생성
 
-### Signal Components for US3
+### US1용 차트 컴포넌트
 
-- [ ] T067 [P] [US3] Create SignalCard component (BUY/SELL/HOLD colors) in `frontend/src/components/signals/SignalCard.tsx`
-- [ ] T068 [P] [US3] Create SignalTimeline component in `frontend/src/components/signals/SignalTimeline.tsx`
-- [ ] T069 [US3] Create SignalDetailModal component in `frontend/src/components/signals/SignalDetailModal.tsx`
-- [ ] T070 [P] [US3] Create SignalTypeFilter component in `frontend/src/components/signals/SignalTypeFilter.tsx`
-- [ ] T071 [P] [US3] Create ViewToggle component (grid/timeline) in `frontend/src/components/signals/ViewToggle.tsx`
+- [ ] T041 [US1] `frontend/src/components/dashboard/PriceChart.tsx`에 TradingView Lightweight Charts로 PriceChart 컴포넌트 생성
+- [ ] T042 [US1] PriceChart 컴포넌트에 시간 간격 선택기 생성 (1분/5분/15분/1시간)
+- [ ] T043 [US1] `frontend/src/components/dashboard/indicators/MAIndicator.ts`에 MA 지표 오버레이 구현 (20, 50, 200)
+- [ ] T044 [P] [US1] `frontend/src/components/dashboard/indicators/RSIIndicator.ts`에 RSI 지표 구현
+- [ ] T045 [P] [US1] `frontend/src/components/dashboard/indicators/MACDIndicator.ts`에 MACD 지표 구현
+- [ ] T046 [US1] `frontend/src/components/dashboard/IndicatorControls.tsx`에 IndicatorControls 컴포넌트 생성 (MA/RSI/MACD 토글)
 
-### Signals View for US3
+### US1용 대시보드 컴포넌트
 
-- [ ] T072 [US3] Create SignalsView page with grid and timeline modes in `frontend/src/views/SignalsView.tsx`
-- [ ] T073 [US3] Implement signal type filtering (BUY/SELL/HOLD/all)
-- [ ] T074 [US3] Implement pagination for signal list
-- [ ] T075 [US3] Add loading and empty states
+- [ ] T047 [P] [US1] `frontend/src/components/dashboard/PositionCard.tsx`에 PositionCard 컴포넌트 생성
+- [ ] T048 [P] [US1] `frontend/src/components/dashboard/BalanceCard.tsx`에 BalanceCard 컴포넌트 생성
+- [ ] T049 [P] [US1] `frontend/src/components/dashboard/MetricCards.tsx`에 MetricCards 컴포넌트 생성 (가격, 24시간 변동, 일일 손익)
+- [ ] T050 [P] [US1] `frontend/src/components/dashboard/LatestSignalCard.tsx`에 LatestSignalCard 컴포넌트 생성
+- [ ] T051 [P] [US1] `frontend/src/components/dashboard/RiskStatusCard.tsx`에 RiskStatusCard 컴포넌트 생성
 
-**Checkpoint**: User Story 3 complete - Signals page with grid/timeline views and filtering is functional
+### US1용 대시보드 뷰
 
----
+- [ ] T052 [US1] `frontend/src/views/DashboardView.tsx`에 모든 대시보드 컴포넌트를 조합한 DashboardView 페이지 생성
+- [ ] T053 [US1] TanStack Query refetchInterval로 5초 자동 갱신 구현
+- [ ] T054 [US1] Skeleton 컴포넌트로 로딩 상태 추가
+- [ ] T055 [US1] 재시도 기능이 포함된 에러 처리 추가
 
-## Phase 6: User Story 4 - 주문 내역 조회 (Priority: P2)
-
-**Goal**: Orders page with table, status filter, pagination
-
-**Independent Test**: User can view order history, filter by status, navigate pages
-
-### Order Components for US4
-
-- [ ] T076 [P] [US4] Create OrderTable component with columns (ID, type, price, qty, status, time) in `frontend/src/components/trading/OrderTable.tsx`
-- [ ] T077 [P] [US4] Create OrderStatusFilter component in `frontend/src/components/trading/OrderStatusFilter.tsx`
-- [ ] T078 [P] [US4] Create OrderStatusBadge component in `frontend/src/components/trading/OrderStatusBadge.tsx`
-- [ ] T079 [P] [US4] Create Pagination component in `frontend/src/core/components/Pagination.tsx`
-
-### Orders View for US4
-
-- [ ] T080 [US4] Create OrdersView page with table and filters in `frontend/src/views/OrdersView.tsx`
-- [ ] T081 [US4] Implement status filtering (all/pending/executed/cancelled/failed)
-- [ ] T082 [US4] Implement pagination (20 items per page)
-- [ ] T083 [US4] Add loading and empty states
-
-**Checkpoint**: User Story 4 complete - Orders page with filtering and pagination is functional
+**체크포인트**: 사용자 스토리 1 완료 - 실시간 차트, 지표, 포지션, 잔고가 포함된 대시보드 동작
 
 ---
 
-## Phase 7: User Story 5 - 시스템 설정 관리 (Priority: P2)
+## Phase 4: 사용자 스토리 2 - 포트폴리오 수익 현황 확인 (우선순위: P1)
 
-**Goal**: Settings page with trading params, AI settings, reset functionality
+**목표**: 누적 수익률, 오늘 수익률, 승률, MDD, 수익 차트가 포함된 포트폴리오 페이지
 
-**Independent Test**: User can view and modify settings, reset to defaults, see success/error messages
+**독립 테스트**: 사용자가 포트폴리오 페이지에 접속하여 정확한 수익률 계산을 보고, 30일 수익 차트를 확인할 수 있음
 
-### API Layer for US5
+**참고**: 백엔드 API `GET /api/v1/portfolio/summary` 필요 - 사용 불가 시 초기에는 mock 데이터 사용
 
-- [ ] T084 [P] [US5] Create config API functions in `frontend/src/api/config.api.ts`
+### US2용 API 레이어
 
-### Settings Components for US5
+- [ ] T056 [P] [US2] `frontend/src/api/portfolio.api.ts`에 포트폴리오 API 함수 생성
+- [ ] T057 [P] [US2] `frontend/src/api/mocks/portfolio.mock.ts`에 포트폴리오 요약 mock 데이터 폴백 생성
 
-- [ ] T085 [P] [US5] Create TradingSettingsForm component (position size, stop loss, daily limit) in `frontend/src/components/settings/TradingSettingsForm.tsx`
-- [ ] T086 [P] [US5] Create AISettingsForm component (model, signal interval) in `frontend/src/components/settings/AISettingsForm.tsx`
-- [ ] T087 [P] [US5] Create ResetSettingsButton component in `frontend/src/components/settings/ResetSettingsButton.tsx`
-- [ ] T088 [P] [US5] Create SettingsSection wrapper component in `frontend/src/components/settings/SettingsSection.tsx`
+### US2용 포트폴리오 컴포넌트
 
-### Settings View for US5
+- [ ] T058 [P] [US2] `frontend/src/components/portfolio/CumulativeReturnCard.tsx`에 CumulativeReturnCard 컴포넌트 생성
+- [ ] T059 [P] [US2] `frontend/src/components/portfolio/TodayReturnCard.tsx`에 TodayReturnCard 컴포넌트 생성
+- [ ] T060 [P] [US2] `frontend/src/components/portfolio/TradeStatsCard.tsx`에 TradeStatsCard 컴포넌트 생성 (승률, 평균 수익률, MDD)
+- [ ] T061 [US2] `frontend/src/components/portfolio/ProfitChart.tsx`에 ProfitChart 컴포넌트 생성 (30일 라인 차트)
+- [ ] T062 [P] [US2] `frontend/src/components/portfolio/DepositHistoryCard.tsx`에 DepositHistoryCard 컴포넌트 생성
 
-- [ ] T089 [US5] Create SettingsView page with all settings forms in `frontend/src/views/SettingsView.tsx`
-- [ ] T090 [US5] Implement form validation for numeric inputs
-- [ ] T091 [US5] Implement save with success/error toast notifications
-- [ ] T092 [US5] Implement reset to defaults with confirmation dialog
+### US2용 포트폴리오 뷰
 
-**Checkpoint**: User Story 5 complete - Settings page with save and reset functionality is functional
+- [ ] T063 [US2] `frontend/src/views/PortfolioView.tsx`에 모든 포트폴리오 컴포넌트를 조합한 PortfolioView 페이지 생성
+- [ ] T064 [US2] 거래 기록이 없는 사용자를 위한 빈 상태 구현
+- [ ] T065 [US2] 로딩 및 에러 상태 추가
 
----
-
-## Phase 8: User Story 6 - 관리자 서버 모니터링 (Priority: P3)
-
-**Goal**: Admin-only page with scheduler status, DB status, system resources, disk usage
-
-**Independent Test**: Admin can view system metrics, regular users are blocked and redirected
-
-**Note**: Requires backend API `GET /api/v1/admin/system` - use mock data initially if not available
-
-### API Layer for US6
-
-- [ ] T093 [P] [US6] Create admin API functions in `frontend/src/api/admin.api.ts`
-- [ ] T094 [P] [US6] Create health API functions in `frontend/src/api/health.api.ts`
-- [ ] T095 [P] [US6] Create mock data fallback for admin system metrics in `frontend/src/api/mocks/admin.mock.ts`
-
-### Admin Components for US6
-
-- [ ] T096 [P] [US6] Create SchedulerStatus component in `frontend/src/components/admin/SchedulerStatus.tsx`
-- [ ] T097 [P] [US6] Create DatabaseStatus component in `frontend/src/components/admin/DatabaseStatus.tsx`
-- [ ] T098 [P] [US6] Create SystemResources component (CPU, memory) in `frontend/src/components/admin/SystemResources.tsx`
-- [ ] T099 [P] [US6] Create DiskUsage component with 70% warning in `frontend/src/components/admin/DiskUsage.tsx`
-- [ ] T100 [P] [US6] Create SystemHealthOverview component in `frontend/src/components/admin/SystemHealthOverview.tsx`
-
-### Admin View for US6
-
-- [ ] T101 [US6] Create AdminView page composing all admin components in `frontend/src/views/AdminView.tsx`
-- [ ] T102 [US6] Implement AdminRoute guard (redirect non-admin to dashboard)
-- [ ] T103 [US6] Implement auto-refresh for system metrics (10 second interval)
-- [ ] T104 [US6] Add loading states with Skeleton components
-
-**Checkpoint**: User Story 6 complete - Admin page with system monitoring is functional (admin-only access)
+**체크포인트**: 사용자 스토리 2 완료 - 정확한 수익률 계산이 포함된 포트폴리오 페이지 동작
 
 ---
 
-## Phase 9: Polish & Cross-Cutting Concerns
+## Phase 5: 사용자 스토리 3 - AI 신호 확인 및 분석 (우선순위: P2)
 
-**Purpose**: Improvements that affect multiple user stories
+**목표**: 카드 그리드, 타임라인 뷰, 타입 필터, 상세 모달이 포함된 신호 페이지
 
-### Responsive Design
+**독립 테스트**: 사용자가 그리드/타임라인에서 AI 신호를 보고, 타입별로 필터링하고, 클릭하여 상세 모달을 확인할 수 있음
 
-- [ ] T105 [P] Ensure mobile responsiveness for MainLayout and Sidebar (640px breakpoint)
-- [ ] T106 [P] Ensure mobile responsiveness for DashboardView (chart height adjustment)
-- [ ] T107 [P] Ensure mobile responsiveness for OrderTable (horizontal scroll)
-- [ ] T108 [P] Test all pages on mobile viewport (640px)
+### US3용 API 레이어
 
-### Error Handling & Edge Cases
+- [ ] T066 [P] [US3] `frontend/src/api/signal.api.ts`에 신호 API 함수 생성
 
-- [ ] T109 [P] Implement network error handling with retry button across all views
-- [ ] T110 [P] Implement loading timeout handling (5s timeout message)
-- [ ] T111 [P] Implement session expiry handling (auto redirect to login)
+### US3용 신호 컴포넌트
 
-### Performance & UX
+- [ ] T067 [P] [US3] `frontend/src/components/signals/SignalCard.tsx`에 SignalCard 컴포넌트 생성 (BUY/SELL/HOLD 색상)
+- [ ] T068 [P] [US3] `frontend/src/components/signals/SignalTimeline.tsx`에 SignalTimeline 컴포넌트 생성
+- [ ] T069 [US3] `frontend/src/components/signals/SignalDetailModal.tsx`에 SignalDetailModal 컴포넌트 생성
+- [ ] T070 [P] [US3] `frontend/src/components/signals/SignalTypeFilter.tsx`에 SignalTypeFilter 컴포넌트 생성
+- [ ] T071 [P] [US3] `frontend/src/components/signals/ViewToggle.tsx`에 ViewToggle 컴포넌트 생성 (그리드/타임라인)
 
-- [ ] T112 [P] Add route-based code splitting with React.lazy
-- [ ] T113 [P] Optimize TanStack Query cache settings for optimal UX
-- [ ] T114 [P] Add page transition animations (optional)
+### US3용 신호 뷰
 
-### Final Validation
+- [ ] T072 [US3] `frontend/src/views/SignalsView.tsx`에 그리드와 타임라인 모드가 포함된 SignalsView 페이지 생성
+- [ ] T073 [US3] 신호 타입 필터링 구현 (BUY/SELL/HOLD/전체)
+- [ ] T074 [US3] 신호 목록 페이지네이션 구현
+- [ ] T075 [US3] 로딩 및 빈 상태 추가
 
-- [ ] T115 Run quickstart.md verification checklist
-- [ ] T116 Verify all user stories work independently
-- [ ] T117 Run production build and verify no errors (`npm run build`)
-- [ ] T118 Update frontend/README.md with setup instructions
+**체크포인트**: 사용자 스토리 3 완료 - 그리드/타임라인 뷰와 필터링이 포함된 신호 페이지 동작
 
 ---
 
-## Dependencies & Execution Order
+## Phase 6: 사용자 스토리 4 - 주문 내역 조회 (우선순위: P2)
 
-### Phase Dependencies
+**목표**: 테이블, 상태 필터, 페이지네이션이 포함된 주문 페이지
 
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3-8)**: All depend on Foundational phase completion
-  - User stories can proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3)
-- **Polish (Phase 9)**: Depends on all desired user stories being complete
+**독립 테스트**: 사용자가 주문 내역을 보고, 상태별로 필터링하고, 페이지를 이동할 수 있음
 
-### User Story Dependencies
+### US4용 주문 컴포넌트
 
-- **User Story 1 (P1)**: Dashboard - No dependencies on other stories
-- **User Story 2 (P1)**: Portfolio - No dependencies on other stories (uses different API)
-- **User Story 3 (P2)**: Signals - No dependencies on other stories
-- **User Story 4 (P2)**: Orders - No dependencies on other stories
-- **User Story 5 (P2)**: Settings - No dependencies on other stories
-- **User Story 6 (P3)**: Admin - No dependencies on other stories (requires admin role)
+- [ ] T076 [P] [US4] `frontend/src/components/trading/OrderTable.tsx`에 OrderTable 컴포넌트 생성 (ID, 타입, 가격, 수량, 상태, 시간 컬럼)
+- [ ] T077 [P] [US4] `frontend/src/components/trading/OrderStatusFilter.tsx`에 OrderStatusFilter 컴포넌트 생성
+- [ ] T078 [P] [US4] `frontend/src/components/trading/OrderStatusBadge.tsx`에 OrderStatusBadge 컴포넌트 생성
+- [ ] T079 [P] [US4] `frontend/src/core/components/Pagination.tsx`에 Pagination 컴포넌트 생성
 
-### Within Each User Story
+### US4용 주문 뷰
 
-- API layer first (enables components)
-- Components can be built in parallel [P]
-- View page composes components (depends on components)
-- Loading/error states after main implementation
+- [ ] T080 [US4] `frontend/src/views/OrdersView.tsx`에 테이블과 필터가 포함된 OrdersView 페이지 생성
+- [ ] T081 [US4] 상태 필터링 구현 (전체/대기/체결/취소/실패)
+- [ ] T082 [US4] 페이지네이션 구현 (페이지당 20개 항목)
+- [ ] T083 [US4] 로딩 및 빈 상태 추가
 
-### Parallel Opportunities
-
-- All Setup tasks marked [P] can run in parallel
-- All Foundational tasks marked [P] can run in parallel
-- **Once Foundational completes, ALL 6 user stories can start in parallel** (different files, no conflicts)
-- All components within a story marked [P] can run in parallel
-- All Polish tasks marked [P] can run in parallel
+**체크포인트**: 사용자 스토리 4 완료 - 필터링과 페이지네이션이 포함된 주문 페이지 동작
 
 ---
 
-## Parallel Example: After Foundational Phase
+## Phase 7: 사용자 스토리 5 - 시스템 설정 관리 (우선순위: P2)
+
+**목표**: 거래 파라미터, AI 설정, 초기화 기능이 포함된 설정 페이지
+
+**독립 테스트**: 사용자가 설정을 보고 수정하고, 기본값으로 초기화하고, 성공/에러 메시지를 확인할 수 있음
+
+### US5용 API 레이어
+
+- [ ] T084 [P] [US5] `frontend/src/api/config.api.ts`에 설정 API 함수 생성
+
+### US5용 설정 컴포넌트
+
+- [ ] T085 [P] [US5] `frontend/src/components/settings/TradingSettingsForm.tsx`에 TradingSettingsForm 컴포넌트 생성 (포지션 크기, 손절매, 일일 한도)
+- [ ] T086 [P] [US5] `frontend/src/components/settings/AISettingsForm.tsx`에 AISettingsForm 컴포넌트 생성 (모델, 신호 주기)
+- [ ] T087 [P] [US5] `frontend/src/components/settings/ResetSettingsButton.tsx`에 ResetSettingsButton 컴포넌트 생성
+- [ ] T088 [P] [US5] `frontend/src/components/settings/SettingsSection.tsx`에 SettingsSection 래퍼 컴포넌트 생성
+
+### US5용 설정 뷰
+
+- [ ] T089 [US5] `frontend/src/views/SettingsView.tsx`에 모든 설정 폼이 포함된 SettingsView 페이지 생성
+- [ ] T090 [US5] 숫자 입력 폼 유효성 검사 구현
+- [ ] T091 [US5] 성공/에러 토스트 알림과 함께 저장 기능 구현
+- [ ] T092 [US5] 확인 다이얼로그와 함께 기본값 초기화 구현
+
+**체크포인트**: 사용자 스토리 5 완료 - 저장 및 초기화 기능이 포함된 설정 페이지 동작
+
+---
+
+## Phase 8: 사용자 스토리 6 - 관리자 서버 모니터링 (우선순위: P3)
+
+**목표**: 스케줄러 상태, DB 상태, 시스템 리소스, 디스크 사용량이 포함된 관리자 전용 페이지
+
+**독립 테스트**: 관리자는 시스템 메트릭을 볼 수 있고, 일반 사용자는 차단되어 리다이렉트됨
+
+**참고**: 백엔드 API `GET /api/v1/admin/system` 필요 - 사용 불가 시 초기에는 mock 데이터 사용
+
+### US6용 API 레이어
+
+- [ ] T093 [P] [US6] `frontend/src/api/admin.api.ts`에 관리자 API 함수 생성
+- [ ] T094 [P] [US6] `frontend/src/api/health.api.ts`에 헬스 API 함수 생성
+- [ ] T095 [P] [US6] `frontend/src/api/mocks/admin.mock.ts`에 관리자 시스템 메트릭 mock 데이터 폴백 생성
+
+### US6용 관리자 컴포넌트
+
+- [ ] T096 [P] [US6] `frontend/src/components/admin/SchedulerStatus.tsx`에 SchedulerStatus 컴포넌트 생성
+- [ ] T097 [P] [US6] `frontend/src/components/admin/DatabaseStatus.tsx`에 DatabaseStatus 컴포넌트 생성
+- [ ] T098 [P] [US6] `frontend/src/components/admin/SystemResources.tsx`에 SystemResources 컴포넌트 생성 (CPU, 메모리)
+- [ ] T099 [P] [US6] `frontend/src/components/admin/DiskUsage.tsx`에 70% 경고가 포함된 DiskUsage 컴포넌트 생성
+- [ ] T100 [P] [US6] `frontend/src/components/admin/SystemHealthOverview.tsx`에 SystemHealthOverview 컴포넌트 생성
+
+### US6용 관리자 뷰
+
+- [ ] T101 [US6] `frontend/src/views/AdminView.tsx`에 모든 관리자 컴포넌트를 조합한 AdminView 페이지 생성
+- [ ] T102 [US6] AdminRoute 가드 구현 (비관리자는 대시보드로 리다이렉트)
+- [ ] T103 [US6] 시스템 메트릭 자동 갱신 구현 (10초 간격)
+- [ ] T104 [US6] Skeleton 컴포넌트로 로딩 상태 추가
+
+**체크포인트**: 사용자 스토리 6 완료 - 시스템 모니터링이 포함된 관리자 페이지 동작 (관리자 전용 접근)
+
+---
+
+## Phase 9: 마무리 및 공통 관심사
+
+**목적**: 여러 사용자 스토리에 영향을 미치는 개선 사항
+
+### 반응형 디자인
+
+- [ ] T105 [P] MainLayout과 Sidebar의 모바일 반응형 확인 (640px 브레이크포인트)
+- [ ] T106 [P] DashboardView의 모바일 반응형 확인 (차트 높이 조정)
+- [ ] T107 [P] OrderTable의 모바일 반응형 확인 (가로 스크롤)
+- [ ] T108 [P] 모바일 뷰포트(640px)에서 모든 페이지 테스트
+
+### 에러 처리 및 엣지 케이스
+
+- [ ] T109 [P] 모든 뷰에 재시도 버튼이 포함된 네트워크 에러 처리 구현
+- [ ] T110 [P] 로딩 타임아웃 처리 구현 (5초 타임아웃 메시지)
+- [ ] T111 [P] 세션 만료 처리 구현 (로그인으로 자동 리다이렉트)
+
+### 성능 및 UX
+
+- [ ] T112 [P] React.lazy로 라우트 기반 코드 분할 추가
+- [ ] T113 [P] 최적의 UX를 위한 TanStack Query 캐시 설정 최적화
+- [ ] T114 [P] 페이지 전환 애니메이션 추가 (선택사항)
+
+### 최종 검증
+
+- [ ] T115 quickstart.md 검증 체크리스트 실행
+- [ ] T116 모든 사용자 스토리가 독립적으로 동작하는지 확인
+- [ ] T117 프로덕션 빌드 실행 및 에러 없음 확인 (`npm run build`)
+- [ ] T118 frontend/README.md에 설정 가이드 업데이트
+
+---
+
+## 의존성 및 실행 순서
+
+### Phase 의존성
+
+- **셋업 (Phase 1)**: 의존성 없음 - 즉시 시작 가능
+- **기반 구축 (Phase 2)**: 셋업 완료에 의존 - 모든 사용자 스토리 차단
+- **사용자 스토리 (Phase 3-8)**: 모두 기반 구축 완료에 의존
+  - 인력이 있으면 사용자 스토리를 병렬로 진행 가능
+  - 또는 우선순위 순서대로 순차 진행 (P1 → P2 → P3)
+- **마무리 (Phase 9)**: 원하는 모든 사용자 스토리 완료에 의존
+
+### 사용자 스토리 의존성
+
+- **사용자 스토리 1 (P1)**: 대시보드 - 다른 스토리에 대한 의존성 없음
+- **사용자 스토리 2 (P1)**: 포트폴리오 - 다른 스토리에 대한 의존성 없음 (다른 API 사용)
+- **사용자 스토리 3 (P2)**: 신호 - 다른 스토리에 대한 의존성 없음
+- **사용자 스토리 4 (P2)**: 주문 - 다른 스토리에 대한 의존성 없음
+- **사용자 스토리 5 (P2)**: 설정 - 다른 스토리에 대한 의존성 없음
+- **사용자 스토리 6 (P3)**: 관리자 - 다른 스토리에 대한 의존성 없음 (관리자 역할 필요)
+
+### 각 사용자 스토리 내부
+
+- API 레이어 먼저 (컴포넌트 활성화)
+- 컴포넌트는 병렬로 빌드 가능 [P]
+- 뷰 페이지는 컴포넌트를 조합 (컴포넌트에 의존)
+- 로딩/에러 상태는 메인 구현 이후
+
+### 병렬 실행 기회
+
+- [P]로 표시된 모든 셋업 태스크는 병렬 실행 가능
+- [P]로 표시된 모든 기반 구축 태스크는 병렬 실행 가능
+- **기반 구축 완료 후, 모든 6개 사용자 스토리를 병렬로 시작 가능** (다른 파일, 충돌 없음)
+- 스토리 내의 [P]로 표시된 모든 컴포넌트는 병렬 실행 가능
+- [P]로 표시된 모든 마무리 태스크는 병렬 실행 가능
+
+---
+
+## 병렬 실행 예시: 기반 구축 Phase 이후
 
 ```bash
-# Developer A: User Story 1 (Dashboard)
-Task: "Create market API functions in frontend/src/api/market.api.ts"
-Task: "Create PriceChart component in frontend/src/components/dashboard/PriceChart.tsx"
+# 개발자 A: 사용자 스토리 1 (대시보드)
+태스크: "frontend/src/api/market.api.ts에 시장 API 함수 생성"
+태스크: "frontend/src/components/dashboard/PriceChart.tsx에 PriceChart 컴포넌트 생성"
 ...
 
-# Developer B: User Story 2 (Portfolio)
-Task: "Create portfolio API functions in frontend/src/api/portfolio.api.ts"
-Task: "Create ProfitChart component in frontend/src/components/portfolio/ProfitChart.tsx"
+# 개발자 B: 사용자 스토리 2 (포트폴리오)
+태스크: "frontend/src/api/portfolio.api.ts에 포트폴리오 API 함수 생성"
+태스크: "frontend/src/components/portfolio/ProfitChart.tsx에 ProfitChart 컴포넌트 생성"
 ...
 
-# Developer C: User Story 3 (Signals)
-Task: "Create signal API functions in frontend/src/api/signal.api.ts"
-Task: "Create SignalCard component in frontend/src/components/signals/SignalCard.tsx"
+# 개발자 C: 사용자 스토리 3 (신호)
+태스크: "frontend/src/api/signal.api.ts에 신호 API 함수 생성"
+태스크: "frontend/src/components/signals/SignalCard.tsx에 SignalCard 컴포넌트 생성"
 ...
 ```
 
 ---
 
-## Parallel Example: Within User Story 1 (Components)
+## 병렬 실행 예시: 사용자 스토리 1 내부 (컴포넌트)
 
 ```bash
-# All these can run in parallel (different files):
-Task: "[US1] Create PositionCard component in frontend/src/components/dashboard/PositionCard.tsx"
-Task: "[US1] Create BalanceCard component in frontend/src/components/dashboard/BalanceCard.tsx"
-Task: "[US1] Create MetricCards component in frontend/src/components/dashboard/MetricCards.tsx"
-Task: "[US1] Create LatestSignalCard component in frontend/src/components/dashboard/LatestSignalCard.tsx"
-Task: "[US1] Create RiskStatusCard component in frontend/src/components/dashboard/RiskStatusCard.tsx"
+# 이 모든 것은 병렬 실행 가능 (다른 파일):
+태스크: "[US1] frontend/src/components/dashboard/PositionCard.tsx에 PositionCard 컴포넌트 생성"
+태스크: "[US1] frontend/src/components/dashboard/BalanceCard.tsx에 BalanceCard 컴포넌트 생성"
+태스크: "[US1] frontend/src/components/dashboard/MetricCards.tsx에 MetricCards 컴포넌트 생성"
+태스크: "[US1] frontend/src/components/dashboard/LatestSignalCard.tsx에 LatestSignalCard 컴포넌트 생성"
+태스크: "[US1] frontend/src/components/dashboard/RiskStatusCard.tsx에 RiskStatusCard 컴포넌트 생성"
 ```
 
 ---
 
-## Implementation Strategy
+## 구현 전략
 
-### MVP First (User Story 1 Only)
+### MVP 먼저 (사용자 스토리 1만)
 
-1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
-3. Complete Phase 3: User Story 1 (Dashboard)
-4. **STOP and VALIDATE**: Test Dashboard independently - user can login, see chart, view position
-5. Deploy/demo if ready - Dashboard alone provides monitoring value
+1. Phase 1: 셋업 완료
+2. Phase 2: 기반 구축 완료 (중요 - 모든 스토리 차단)
+3. Phase 3: 사용자 스토리 1 (대시보드) 완료
+4. **중지 및 검증**: 대시보드 독립적으로 테스트 - 사용자가 로그인하고, 차트를 보고, 포지션 확인 가능
+5. 준비되면 배포/데모 - 대시보드만으로도 모니터링 가치 제공
 
-### Recommended Incremental Delivery
+### 권장 점진적 배포
 
-1. **MVP**: Setup + Foundational + US1 (Dashboard) → Core monitoring
-2. **+Portfolio**: Add US2 → Track investment performance
-3. **+Signals**: Add US3 → Review AI analysis
-4. **+Orders**: Add US4 → Audit trade history
-5. **+Settings**: Add US5 → Customize parameters
-6. **+Admin**: Add US6 → System monitoring (admin only)
+1. **MVP**: 셋업 + 기반 구축 + US1 (대시보드) → 핵심 모니터링
+2. **+포트폴리오**: US2 추가 → 투자 성과 추적
+3. **+신호**: US3 추가 → AI 분석 검토
+4. **+주문**: US4 추가 → 거래 내역 확인
+5. **+설정**: US5 추가 → 파라미터 커스터마이징
+6. **+관리자**: US6 추가 → 시스템 모니터링 (관리자 전용)
 
-### Parallel Team Strategy (3 Developers)
+### 병렬 팀 전략 (3명 개발자)
 
-1. Team completes Setup + Foundational together
-2. Once Foundational is done:
-   - Developer A: User Story 1 (Dashboard) + User Story 4 (Orders)
-   - Developer B: User Story 2 (Portfolio) + User Story 5 (Settings)
-   - Developer C: User Story 3 (Signals) + User Story 6 (Admin)
-3. Stories complete and integrate independently
+1. 팀이 함께 셋업 + 기반 구축 완료
+2. 기반 구축 완료 후:
+   - 개발자 A: 사용자 스토리 1 (대시보드) + 사용자 스토리 4 (주문)
+   - 개발자 B: 사용자 스토리 2 (포트폴리오) + 사용자 스토리 5 (설정)
+   - 개발자 C: 사용자 스토리 3 (신호) + 사용자 스토리 6 (관리자)
+3. 스토리 완료 후 독립적으로 통합
 
 ---
 
-## Backend API Notes
+## 백엔드 API 참고
 
-### Existing APIs (Ready)
-All APIs for US1, US3, US4, US5 are available:
+### 기존 API (준비됨)
+US1, US3, US4, US5용 모든 API 사용 가능:
 - `/api/v1/market`, `/api/v1/market/history`
 - `/api/v1/dashboard/summary`
 - `/api/v1/signals`, `/api/v1/signals/latest`
@@ -422,19 +422,19 @@ All APIs for US1, US3, US4, US5 are available:
 - `/api/v1/risk/status`
 - `/api/v1/health/detail`
 
-### New APIs Required (Backend Work)
+### 새로 필요한 API (백엔드 작업)
 - **US2**: `GET /api/v1/portfolio/summary`, `GET /api/v1/portfolio/deposits`
 - **US6**: `GET /api/v1/admin/system`
 
-Frontend can use mock data while backend implements these APIs.
+백엔드가 이 API를 구현하는 동안 프론트엔드는 mock 데이터 사용 가능
 
 ---
 
-## Notes
+## 참고사항
 
-- [P] tasks = different files, no dependencies
-- [Story] label maps task to specific user story for traceability
-- Each user story should be independently completable and testable
-- Commit after each task or logical group
-- Stop at any checkpoint to validate story independently
-- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
+- [P] 태스크 = 다른 파일, 의존성 없음
+- [Story] 라벨은 태스크를 특정 사용자 스토리에 매핑하여 추적성 확보
+- 각 사용자 스토리는 독립적으로 완료하고 테스트할 수 있어야 함
+- 각 태스크 또는 논리적 그룹 후 커밋
+- 스토리를 독립적으로 검증하려면 체크포인트에서 중지
+- 피해야 할 것: 모호한 태스크, 같은 파일 충돌, 독립성을 깨는 스토리 간 의존성
