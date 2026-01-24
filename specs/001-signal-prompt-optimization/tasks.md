@@ -53,9 +53,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Update IntervalTrigger in backend/src/scheduler/scheduler.py (hours → minutes)
-- [ ] T010 [US1] Update scheduler log message in backend/src/scheduler/scheduler.py
-- [ ] T011 [US1] Verify signal_interval_minutes is loaded from settings in scheduler.py
+- [x] T009 [US1] Update IntervalTrigger in backend/src/scheduler/scheduler.py (hours → minutes)
+- [x] T010 [US1] Update scheduler log message in backend/src/scheduler/scheduler.py
+- [x] T011 [US1] Verify signal_interval_minutes is loaded from settings in scheduler.py
 
 **Checkpoint**: 30분 주기 신호 생성 작동 확인 가능
 

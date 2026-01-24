@@ -43,7 +43,7 @@ def setup_scheduler() -> AsyncIOScheduler:
     등록되는 작업:
         - collect_market_data: DATA_COLLECTION_INTERVAL_SECONDS마다 시세 수집
         - check_volatility: 30초마다 변동성 체크 및 자동 거래 중단
-        - generate_trading_signal: 설정된 주기(기본 1시간)마다 AI 신호 생성
+        - generate_trading_signal: 설정된 주기(기본 30분)마다 AI 신호 생성
           → AI가 모든 기술적 지표 종합 분석하여 판단
           → 신뢰도 기반 포지션 사이징 (0.5=1%, 0.9+=3%)
         - cleanup_old_data: 24시간마다 오래된 데이터 삭제
@@ -78,11 +78,11 @@ def setup_scheduler() -> AsyncIOScheduler:
         coalesce=True,
     )
 
-    # AI 신호 생성 작업 (설정된 간격, 기본 1시간)
-    signal_interval_hours = settings.signal_interval_hours
+    # AI 신호 생성 작업 (설정된 간격, 기본 30분)
+    signal_interval_minutes = settings.signal_interval_minutes
     scheduler.add_job(
         generate_trading_signal_job,
-        trigger=IntervalTrigger(hours=signal_interval_hours),
+        trigger=IntervalTrigger(minutes=signal_interval_minutes),
         id="generate_trading_signal",
         name="AI 매매 신호 생성",
         replace_existing=True,
@@ -138,7 +138,7 @@ def setup_scheduler() -> AsyncIOScheduler:
         f"스케줄러 설정 완료: "
         f"데이터 수집 ({DATA_COLLECTION_INTERVAL_SECONDS}초), "
         f"변동성 체크 ({VOLATILITY_CHECK_INTERVAL_SECONDS}초), "
-        f"AI 신호 생성 ({signal_interval_hours}시간), "
+        f"AI 신호 생성 ({signal_interval_minutes}분), "
         f"성과 평가 ({SIGNAL_PERFORMANCE_EVAL_HOURS}시간), "
         f"PENDING 동기화 ({PENDING_ORDER_SYNC_MINUTES}분), "
         f"데이터 정리 ({DATA_CLEANUP_INTERVAL_HOURS}시간)"
