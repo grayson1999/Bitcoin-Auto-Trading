@@ -161,15 +161,15 @@
 
 ### Tests for User Story 7
 
-- [ ] T029 [P] [US7] Create masking utility tests in backend/tests/unit/test_masking.py
+- [X] T029 [P] [US7] Create masking utility tests in backend/tests/unit/test_masking.py
 
 ### Implementation for User Story 7
 
-- [ ] T030 [US7] Apply mask_sensitive to prompt logging in backend/src/modules/signal/service.py
-- [ ] T031 [US7] Add HTTP client cleanup in lifespan in backend/src/app.py
-- [ ] T032 [US7] Review and add warning logs for silent failures
+- [X] T030 [US7] Apply mask_sensitive to prompt logging in backend/src/modules/signal/service.py
+- [X] T031 [US7] Add HTTP client cleanup in lifespan in backend/src/app.py
+- [X] T032 [US7] Review and add warning logs for silent failures
 
-**Checkpoint**: 민감정보 마스킹 테스트 통과
+**Checkpoint**: 민감정보 마스킹 테스트 통과 ✓ (27개 테스트 통과, HTTP 클라이언트 cleanup 추가)
 
 ---
 

@@ -207,6 +207,9 @@ class UpbitPublicAPI:
         )
 
         if not isinstance(response, list):
+            logger.warning(
+                f"분봉 캔들 조회 실패: 응답이 리스트가 아님 (type={type(response).__name__})"
+            )
             return []
 
         return [parse_candle(candle) for candle in response]
@@ -234,6 +237,9 @@ class UpbitPublicAPI:
         )
 
         if not isinstance(response, list):
+            logger.warning(
+                f"일봉 캔들 조회 실패: 응답이 리스트가 아님 (type={type(response).__name__})"
+            )
             return []
 
         return [parse_candle(candle) for candle in response]
@@ -261,6 +267,9 @@ class UpbitPublicAPI:
         )
 
         if not isinstance(response, list):
+            logger.warning(
+                f"주봉 캔들 조회 실패: 응답이 리스트가 아님 (type={type(response).__name__})"
+            )
             return []
 
         return [parse_candle(candle) for candle in response]
@@ -281,3 +290,15 @@ def get_upbit_public_api() -> UpbitPublicAPI:
     if _public_api is None:
         _public_api = UpbitPublicAPI()
     return _public_api
+
+
+async def close_upbit_public_api() -> None:
+    """
+    Close Upbit Public API singleton.
+
+    애플리케이션 종료 시 호출하여 HTTP 연결을 정리합니다.
+    """
+    global _public_api
+    if _public_api is not None:
+        await _public_api.close()
+        _public_api = None

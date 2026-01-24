@@ -39,6 +39,7 @@ from src.clients.slack_client import (
     NotifierError,
     SlackClient,
     SlackClientError,
+    close_slack_client,
     get_notifier,
     get_slack_client,
 )
@@ -53,6 +54,8 @@ from src.clients.upbit import (
     UpbitPublicAPI,
     UpbitPublicAPIError,
     UpbitTickerData,
+    close_upbit_private_api,
+    close_upbit_public_api,
     get_upbit_private_api,
     get_upbit_public_api,
 )
@@ -90,7 +93,12 @@ __all__ = [
     "UpbitPublicAPI",
     "UpbitPublicAPIError",
     "UpbitTickerData",
+    # Singleton closers
     "close_auth_client",
+    "close_slack_client",
+    "close_upbit_private_api",
+    "close_upbit_public_api",
+    # Singleton getters
     "get_ai_client",
     "get_auth_client",
     "get_gemini_client",

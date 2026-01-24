@@ -25,11 +25,13 @@ from src.clients.upbit.common import (
 from src.clients.upbit.private_api import (
     UpbitPrivateAPI,
     UpbitPrivateAPIError,
+    close_upbit_private_api,
     get_upbit_private_api,
 )
 from src.clients.upbit.public_api import (
     UpbitPublicAPI,
     UpbitPublicAPIError,
+    close_upbit_public_api,
     get_upbit_public_api,
 )
 
@@ -48,6 +50,9 @@ __all__ = [
     "UpbitPublicAPI",
     "UpbitPublicAPIError",
     "UpbitTickerData",
+    # Singleton getters/closers
+    "close_upbit_private_api",
+    "close_upbit_public_api",
     "get_upbit_private_api",
     "get_upbit_public_api",
     # Parsers

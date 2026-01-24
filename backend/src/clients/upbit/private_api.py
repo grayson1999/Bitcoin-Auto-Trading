@@ -346,3 +346,15 @@ def get_upbit_private_api() -> UpbitPrivateAPI:
     if _private_api is None:
         _private_api = UpbitPrivateAPI()
     return _private_api
+
+
+async def close_upbit_private_api() -> None:
+    """
+    Close Upbit Private API singleton.
+
+    애플리케이션 종료 시 호출하여 HTTP 연결을 정리합니다.
+    """
+    global _private_api
+    if _private_api is not None:
+        await _private_api.close()
+        _private_api = None

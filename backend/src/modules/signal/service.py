@@ -25,6 +25,7 @@ from src.clients.upbit import (
 )
 from src.config import settings
 from src.config.constants import SIGNAL_COOLDOWN_MINUTES, SIGNAL_MARKET_DATA_HOURS
+from src.config.logging import mask_sensitive_data
 from src.entities import MarketData, TradingSignal
 from src.entities.trading_signal import SignalType
 from src.modules.market import (
@@ -181,9 +182,9 @@ class SignalService:
             balance_info=balance_info,
         )
 
-        # 디버그: 생성된 프롬프트 로깅
+        # 디버그: 생성된 프롬프트 로깅 (민감 정보 마스킹)
         logger.info(f"AI 프롬프트 생성 완료 (길이: {len(prompt)}자)")
-        logger.debug(f"프롬프트:\n{prompt}")
+        logger.debug(f"프롬프트:\n{mask_sensitive_data(prompt)}")
 
         # 5. AI 호출
         ai_start_time = time.monotonic()

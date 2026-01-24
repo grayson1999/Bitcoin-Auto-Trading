@@ -18,7 +18,13 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from src.api import api_router
-from src.clients import close_auth_client, get_auth_client
+from src.clients import (
+    close_auth_client,
+    close_slack_client,
+    close_upbit_private_api,
+    close_upbit_public_api,
+    get_auth_client,
+)
 from src.config import APP_VERSION, settings, setup_logging
 from src.scheduler import setup_scheduler, start_scheduler, stop_scheduler
 from src.utils.database import close_db, init_db
@@ -91,9 +97,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         get_slack_log_handler().close()
         logger.info("Slack 로그 핸들러 종료됨")
 
-    # Auth Client 종료
+    # HTTP 클라이언트들 정리 (리소스 누수 방지)
     await close_auth_client()
     logger.info("Auth Client 종료됨")
+
+    await close_slack_client()
+    logger.info("Slack Client 종료됨")
+
+    await close_upbit_private_api()
+    await close_upbit_public_api()
+    logger.info("Upbit API 클라이언트 종료됨")
 
     await close_db()
     logger.info("데이터베이스 연결 해제됨")

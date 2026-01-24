@@ -324,6 +324,18 @@ def get_slack_client() -> SlackClient:
     return _slack_client
 
 
+async def close_slack_client() -> None:
+    """
+    SlackClient 싱글톤 인스턴스 종료
+
+    애플리케이션 종료 시 호출하여 HTTP 연결을 정리합니다.
+    """
+    global _slack_client
+    if _slack_client is not None:
+        await _slack_client.close()
+        _slack_client = None
+
+
 # 하위 호환성을 위한 별칭
 Notifier = SlackClient
 NotifierError = SlackClientError
