@@ -33,9 +33,9 @@
 
 **⚠️ CRITICAL**: 이 Phase 완료 후 서비스 재시작 필요
 
-- [ ] T004 Update DB_POOL_SIZE to 10 in backend/src/config/constants.py
-- [ ] T005 Add isolation_level="READ COMMITTED" to engine in backend/src/utils/database.py
-- [ ] T006 Verify existing indexes on Order, TradingSignal, MarketData tables (READ-ONLY verification)
+- [X] T004 Update DB_POOL_SIZE to 10 in backend/src/config/constants.py
+- [X] T005 Add isolation_level="READ COMMITTED" to engine in backend/src/utils/database.py
+- [X] T006 Verify existing indexes on Order, TradingSignal, MarketData tables (READ-ONLY verification)
 
 **Checkpoint**: DB 설정 완료 - 서비스 재시작 후 User Story 구현 시작
 

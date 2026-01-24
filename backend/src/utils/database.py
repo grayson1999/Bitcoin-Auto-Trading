@@ -22,12 +22,14 @@ from src.config import DB_POOL_MAX_OVERFLOW, DB_POOL_SIZE, settings
 # 비동기 SQLAlchemy 엔진 생성
 # - echo: 디버그 모드에서 SQL 쿼리 로깅
 # - pool_pre_ping: 연결 유효성 사전 검사 (끊어진 연결 감지)
+# - isolation_level: 트랜잭션 격리 수준 (데이터 일관성 보장)
 engine = create_async_engine(
     settings.database_url,
     echo=settings.debug,  # SQL 쿼리 로깅 (디버그 모드에서만)
     pool_pre_ping=True,  # 연결 건강 검사
     pool_size=DB_POOL_SIZE,
     max_overflow=DB_POOL_MAX_OVERFLOW,
+    isolation_level="READ COMMITTED",  # 커밋된 데이터만 읽기
 )
 
 # 비동기 세션 팩토리

@@ -10,8 +10,8 @@ APP_VERSION = "0.1.0"
 APP_NAME = "Bitcoin Auto-Trading API"
 
 # === 데이터베이스 풀 설정 ===
-DB_POOL_SIZE = 5  # 기본 풀 크기 (동시 연결 수)
-DB_POOL_MAX_OVERFLOW = 10  # 풀 초과 시 추가 허용 연결 수 (최대 15개)
+DB_POOL_SIZE = 10  # 기본 풀 크기 (동시 연결 수)
+DB_POOL_MAX_OVERFLOW = 10  # 풀 초과 시 추가 허용 연결 수 (최대 20개)
 
 # === 거래소 제한 ===
 UPBIT_FEE_RATE = 0.0005  # 거래 수수료 (0.05%)
@@ -78,16 +78,16 @@ SIGNAL_DEFAULT_CONFIDENCE = 0.5  # 기본 신뢰도 (파싱 실패 시)
 # AI 프롬프트 토큰 절감을 위한 시간대별 샘플링 정책
 SAMPLING_CONFIG = {
     "long_term": {
-        "hours": 336,        # 14일
+        "hours": 336,  # 14일
         "interval_min": 60,  # 1시간 간격 → ~336개
     },
     "mid_term": {
-        "hours": 24,         # 1일
+        "hours": 24,  # 1일
         "interval_min": 15,  # 15분 간격 → ~96개
     },
     "short_term": {
-        "hours": 1,          # 1시간
-        "interval_min": 5,   # 5분 간격 → ~12개
+        "hours": 1,  # 1시간
+        "interval_min": 5,  # 5분 간격 → ~12개
     },
 }
 
