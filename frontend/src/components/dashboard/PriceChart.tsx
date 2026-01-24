@@ -60,10 +60,28 @@ function transformToChartData(data: OHLCVData[]): CandlestickData[] {
   }))
 }
 
-/** Convert trading signals to chart markers */
-function signalsToMarkers(signals: TradingSignal[]): SeriesMarker<Time>[] {
+/** Convert trading signals to chart markers (only within chart time range) */
+function signalsToMarkers(
+  signals: TradingSignal[],
+  chartData: OHLCVData[]
+): SeriesMarker<Time>[] {
+  if (chartData.length === 0) return []
+
+  // Get chart time range (convert to number)
+  const getTimeAsNumber = (time: number | string): number => {
+    return typeof time === 'number' ? time : new Date(time).getTime() / 1000
+  }
+
+  const firstTime = getTimeAsNumber(chartData[0].time)
+  const lastTime = getTimeAsNumber(chartData[chartData.length - 1].time)
+
   return signals
-    .filter((s) => s.signal_type !== 'HOLD') // HOLD는 표시 안함
+    .filter((s) => {
+      if (s.signal_type === 'HOLD') return false // HOLD는 표시 안함
+      const signalTime = new Date(s.created_at).getTime() / 1000
+      // Only include signals within chart time range
+      return signalTime >= firstTime && signalTime <= lastTime
+    })
     .map((signal) => {
       const isBuy = signal.signal_type === 'BUY'
       const time = Math.floor(new Date(signal.created_at).getTime() / 1000) as Time
@@ -336,17 +354,17 @@ export function PriceChart({
     mainChartRef.current?.timeScale().fitContent()
   }, [data, isChartReady])
 
-  // Update Signal Markers
+  // Update Signal Markers (only within chart data range)
   useEffect(() => {
-    if (!markersRef.current || !isChartReady) return
+    if (!markersRef.current || !isChartReady || !data?.items) return
 
     if (signalsData?.items && signalsData.items.length > 0) {
-      const markers = signalsToMarkers(signalsData.items)
+      const markers = signalsToMarkers(signalsData.items, data.items)
       markersRef.current.setMarkers(markers)
     } else {
       markersRef.current.setMarkers([])
     }
-  }, [signalsData, isChartReady])
+  }, [signalsData, data, isChartReady])
 
   // Data Updates - MA Indicators (on Main Chart)
   useEffect(() => {
