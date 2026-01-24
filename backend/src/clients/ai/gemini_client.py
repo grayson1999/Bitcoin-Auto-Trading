@@ -131,6 +131,18 @@ class GeminiClient(BaseAIClient):
                     ) from e
 
                 if "quota" in error_msg or "rate" in error_msg or "429" in error_msg:
+                    # Rate Limit 오류는 지수 백오프 재시도
+                    if attempt < MAX_RETRIES - 1:
+                        backoff_delay = RETRY_DELAY * (
+                            2**attempt
+                        )  # 지수 백오프: 1s, 2s, 4s
+                        logger.warning(
+                            f"Rate Limit 감지, {backoff_delay}초 후 재시도 "
+                            f"(시도 {attempt + 1}/{MAX_RETRIES})"
+                        )
+                        await asyncio.sleep(backoff_delay)
+                        continue
+                    # 최대 재시도 후 예외 발생
                     raise AIClientError(
                         "AI API 요청 한도 초과 (Rate Limit). 잠시 후 다시 시도해주세요.",
                         is_retryable=True,

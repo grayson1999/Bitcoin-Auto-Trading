@@ -2,15 +2,23 @@
 데이터 수집 스케줄러 작업
 
 시장 데이터 수집 작업을 정의합니다.
+지수 백오프 재시도로 일시적 오류를 자동 복구합니다.
 """
 
+import httpx
 from loguru import logger
 
 from src.config.constants import DEFAULT_MAX_RETRIES
 from src.modules.market import get_data_collector
 from src.utils.database import async_session_factory
+from src.utils.retry import with_retry
 
 
+@with_retry(
+    max_attempts=3,
+    base_delay=1.0,
+    exceptions=(httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException),
+)
 async def collect_market_data_job() -> None:
     """
     시장 데이터 수집 작업

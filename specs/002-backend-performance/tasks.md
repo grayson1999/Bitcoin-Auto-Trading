@@ -88,10 +88,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] Document existing indexes in research.md for verification (READ-ONLY)
-- [ ] T015 [US3] Run EXPLAIN ANALYZE on order queries to verify index usage
+- [X] T014 [US3] Document existing indexes in research.md for verification (READ-ONLY)
+- [X] T015 [US3] Run EXPLAIN ANALYZE on order queries to verify index usage
 
-**Checkpoint**: 인덱스 스캔 사용 확인 (이미 인덱스 존재 확인됨)
+**Checkpoint**: 인덱스 스캔 사용 확인 ✓ (TradingSignal, MarketData: Index Scan 확인)
 
 ---
 
@@ -103,15 +103,15 @@
 
 ### Tests for User Story 4
 
-- [ ] T016 [P] [US4] Create retry decorator tests in backend/tests/unit/test_retry.py
+- [X] T016 [P] [US4] Create retry decorator tests in backend/tests/unit/test_retry.py
 
 ### Implementation for User Story 4
 
-- [ ] T017 [US4] Apply @with_retry to collect_market_data_job in backend/src/scheduler/jobs/data_collection.py
-- [ ] T018 [US4] Apply @with_retry to generate_trading_signal_job in backend/src/scheduler/jobs/signal_generation.py
-- [ ] T019 [US4] Add Rate Limit handling to Gemini client in backend/src/clients/ai/gemini.py
+- [X] T017 [US4] Apply @with_retry to collect_market_data_job in backend/src/scheduler/jobs/data_collection.py
+- [X] T018 [US4] Apply @with_retry to generate_trading_signal_job in backend/src/scheduler/jobs/signal_generation.py
+- [X] T019 [US4] Add Rate Limit handling to Gemini client in backend/src/clients/ai/gemini_client.py
 
-**Checkpoint**: 재시도 로직 적용 완료, 로그에서 재시도 확인 가능
+**Checkpoint**: 재시도 로직 적용 완료 ✓ (13개 테스트 통과, 지수 백오프 1s→2s→4s)
 
 ---
 

@@ -2,15 +2,23 @@
 신호 생성 스케줄러 작업
 
 AI 매매 신호 생성, 자동 매매 실행, 변동성 체크, 신호 성과 평가 작업을 정의합니다.
+지수 백오프 재시도로 Rate Limit, 네트워크 오류를 자동 복구합니다.
 """
 
+import httpx
 from loguru import logger
 from sqlalchemy import select
 
 from src.entities import SignalType, TradingSignal
 from src.utils.database import async_session_factory
+from src.utils.retry import with_retry
 
 
+@with_retry(
+    max_attempts=3,
+    base_delay=1.0,
+    exceptions=(httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException),
+)
 async def generate_trading_signal_job() -> None:
     """
     AI 매매 신호 생성 작업
