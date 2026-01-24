@@ -103,6 +103,9 @@ Bitcoin-Auto-Trading/
 │   │   │   └── router.py             # /api/v1 라우터
 │   │   │
 │   │   └── utils/                    # 공통 유틸리티
+│   │       ├── cache.py              # TTL 캐시 (설정값 캐싱)
+│   │       ├── retry.py              # 재시도 데코레이터
+│   │       └── database.py           # DB 엔진 설정
 │   │
 │   ├── tests/                        # pytest 테스트
 │   ├── alembic/                      # DB 마이그레이션
@@ -166,6 +169,7 @@ make db-migrate      # Alembic 마이그레이션 적용
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/health` | 서버 상태 확인 |
+| GET | `/health/detail` | 상세 헬스체크 (6개 구성요소) |
 
 ### Market
 | 메서드 | 경로 | 설명 |
@@ -251,6 +255,8 @@ VITE_API_URL=http://localhost:8000
 | `DAILY_LOSS_LIMIT_PCT` | 5% | 일일 손실 한도 |
 | `SIGNAL_INTERVAL_HOURS` | 1 | AI 신호 생성 주기 |
 | `DATA_COLLECTION_INTERVAL_SECONDS` | 10 | 시세 수집 간격 |
+| `DB_POOL_SIZE` | 10 | DB 커넥션 풀 크기 |
+| `DB_POOL_MAX_OVERFLOW` | 10 | DB 풀 최대 오버플로우 |
 
 ---
 
