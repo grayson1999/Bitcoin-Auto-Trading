@@ -1,26 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
-import { createChart, CandlestickSeries, type IChartApi, type ISeriesApi, type CandlestickData, type Time } from 'lightweight-charts'
+import { useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import type { IChartApi } from 'lightweight-charts'
 import { fetchMarketHistory } from '@/api/market.api'
-import type { ChartInterval, OHLCVData } from '@/core/types'
+import type { ChartInterval } from '@/core/types'
 import { cn } from '@/core/utils/cn'
 import { Skeleton } from '@/core/components/ui/skeleton'
-import {
-  createMAIndicator,
-  updateMAIndicator,
-  removeMAIndicator,
-} from './indicators/MAIndicator'
-import {
-  createRSIPane,
-  updateRSIIndicator,
-  removeRSIIndicator,
-} from './indicators/RSIIndicator'
-import {
-  createMACDPane,
-  updateMACDIndicator,
-  removeMACDIndicator,
-  type MACDSeries,
-} from './indicators/MACDIndicator'
+import { MainCandleChart, RSIChart, MACDChart } from './charts'
+import { useChartSync } from './hooks/useChartSync'
 
 interface PriceChartProps {
   interval: ChartInterval
@@ -32,23 +18,8 @@ interface PriceChartProps {
   className?: string
 }
 
-interface IndicatorRefs {
-  ma20: ISeriesApi<'Line'> | null
-  ma50: ISeriesApi<'Line'> | null
-  ma200: ISeriesApi<'Line'> | null
-  rsi: ISeriesApi<'Line'> | null
-  macd: MACDSeries | null
-}
-
-function transformToChartData(data: OHLCVData[]): CandlestickData[] {
-  return data.map((item) => ({
-    time: (typeof item.time === 'number' ? item.time : new Date(item.time).getTime() / 1000) as Time,
-    open: item.open,
-    high: item.high,
-    low: item.low,
-    close: item.close,
-  }))
-}
+const RSI_HEIGHT = 80
+const MACD_HEIGHT = 100
 
 export function PriceChart({
   interval,
@@ -59,17 +30,7 @@ export function PriceChart({
   showMACD = false,
   className,
 }: PriceChartProps) {
-  const chartContainerRef = useRef<HTMLDivElement>(null)
-  const chartRef = useRef<IChartApi | null>(null)
-  const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
-  const indicatorRefs = useRef<IndicatorRefs>({
-    ma20: null,
-    ma50: null,
-    ma200: null,
-    rsi: null,
-    macd: null,
-  })
-  const [isChartReady, setIsChartReady] = useState(false)
+  const { registerChart, unregisterChart } = useChartSync()
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['marketHistory', interval],
@@ -78,161 +39,51 @@ export function PriceChart({
     staleTime: 4000,
   })
 
-  // Initialize chart
-  useEffect(() => {
-    if (!chartContainerRef.current) return
-
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { color: 'transparent' },
-        textColor: '#9ca3af',
-      },
-      grid: {
-        vertLines: { color: '#1f2937' },
-        horzLines: { color: '#1f2937' },
-      },
-      crosshair: {
-        mode: 1,
-        vertLine: { color: '#6b7280', width: 1, style: 2 },
-        horzLine: { color: '#6b7280', width: 1, style: 2 },
-      },
-      rightPriceScale: {
-        borderColor: '#374151',
-        scaleMargins: { top: 0.1, bottom: 0.2 },
-      },
-      timeScale: {
-        borderColor: '#374151',
-        timeVisible: true,
-        secondsVisible: false,
-      },
-      handleScale: { axisPressedMouseMove: true },
-      handleScroll: { mouseWheel: true, pressedMouseMove: true },
-    })
-
-    const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#22c55e',
-      downColor: '#ef4444',
-      borderUpColor: '#22c55e',
-      borderDownColor: '#ef4444',
-      wickUpColor: '#22c55e',
-      wickDownColor: '#ef4444',
-    })
-
-    chartRef.current = chart
-    candleSeriesRef.current = candleSeries
-    setIsChartReady(true)
-
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-          height: chartContainerRef.current.clientHeight,
-        })
-      }
+  // Calculate heights dynamically
+  const heights = useMemo(() => {
+    const rsiHeight = showRSI ? RSI_HEIGHT : 0
+    const macdHeight = showMACD ? MACD_HEIGHT : 0
+    const totalIndicatorHeight = rsiHeight + macdHeight
+    return {
+      main: `calc(100% - ${totalIndicatorHeight}px)`,
+      rsi: rsiHeight,
+      macd: macdHeight,
     }
+  }, [showRSI, showMACD])
 
-    window.addEventListener('resize', handleResize)
-    handleResize()
+  // Chart callbacks for sync
+  const handleMainChartReady = useCallback(
+    (chart: IChartApi) => {
+      registerChart('main', chart)
+    },
+    [registerChart]
+  )
 
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      chart.remove()
-      chartRef.current = null
-      candleSeriesRef.current = null
-      setIsChartReady(false)
-    }
-  }, [])
+  const handleMainChartDestroy = useCallback(() => {
+    unregisterChart('main')
+  }, [unregisterChart])
 
-  // Update chart data
-  useEffect(() => {
-    if (!data?.items || !candleSeriesRef.current || !isChartReady) return
+  const handleRSIChartReady = useCallback(
+    (chart: IChartApi) => {
+      registerChart('rsi', chart)
+    },
+    [registerChart]
+  )
 
-    const chartData = transformToChartData(data.items)
-    candleSeriesRef.current.setData(chartData)
+  const handleRSIChartDestroy = useCallback(() => {
+    unregisterChart('rsi')
+  }, [unregisterChart])
 
-    // Fit content to view
-    chartRef.current?.timeScale().fitContent()
-  }, [data, isChartReady])
+  const handleMACDChartReady = useCallback(
+    (chart: IChartApi) => {
+      registerChart('macd', chart)
+    },
+    [registerChart]
+  )
 
-  // Handle MA20 indicator
-  useEffect(() => {
-    if (!chartRef.current || !isChartReady) return
-
-    if (showMA20 && !indicatorRefs.current.ma20) {
-      indicatorRefs.current.ma20 = createMAIndicator(chartRef.current, 'MA20')
-    } else if (!showMA20 && indicatorRefs.current.ma20) {
-      removeMAIndicator(chartRef.current, indicatorRefs.current.ma20)
-      indicatorRefs.current.ma20 = null
-    }
-
-    if (indicatorRefs.current.ma20 && data?.items) {
-      updateMAIndicator(indicatorRefs.current.ma20, data.items, 'MA20')
-    }
-  }, [showMA20, data, isChartReady])
-
-  // Handle MA50 indicator
-  useEffect(() => {
-    if (!chartRef.current || !isChartReady) return
-
-    if (showMA50 && !indicatorRefs.current.ma50) {
-      indicatorRefs.current.ma50 = createMAIndicator(chartRef.current, 'MA50')
-    } else if (!showMA50 && indicatorRefs.current.ma50) {
-      removeMAIndicator(chartRef.current, indicatorRefs.current.ma50)
-      indicatorRefs.current.ma50 = null
-    }
-
-    if (indicatorRefs.current.ma50 && data?.items) {
-      updateMAIndicator(indicatorRefs.current.ma50, data.items, 'MA50')
-    }
-  }, [showMA50, data, isChartReady])
-
-  // Handle MA200 indicator
-  useEffect(() => {
-    if (!chartRef.current || !isChartReady) return
-
-    if (showMA200 && !indicatorRefs.current.ma200) {
-      indicatorRefs.current.ma200 = createMAIndicator(chartRef.current, 'MA200')
-    } else if (!showMA200 && indicatorRefs.current.ma200) {
-      removeMAIndicator(chartRef.current, indicatorRefs.current.ma200)
-      indicatorRefs.current.ma200 = null
-    }
-
-    if (indicatorRefs.current.ma200 && data?.items) {
-      updateMAIndicator(indicatorRefs.current.ma200, data.items, 'MA200')
-    }
-  }, [showMA200, data, isChartReady])
-
-  // Handle RSI indicator
-  useEffect(() => {
-    if (!chartRef.current || !isChartReady) return
-
-    if (showRSI && !indicatorRefs.current.rsi) {
-      indicatorRefs.current.rsi = createRSIPane(chartRef.current)
-    } else if (!showRSI && indicatorRefs.current.rsi) {
-      removeRSIIndicator(chartRef.current, indicatorRefs.current.rsi)
-      indicatorRefs.current.rsi = null
-    }
-
-    if (indicatorRefs.current.rsi && data?.items) {
-      updateRSIIndicator(indicatorRefs.current.rsi, data.items)
-    }
-  }, [showRSI, data, isChartReady])
-
-  // Handle MACD indicator
-  useEffect(() => {
-    if (!chartRef.current || !isChartReady) return
-
-    if (showMACD && !indicatorRefs.current.macd) {
-      indicatorRefs.current.macd = createMACDPane(chartRef.current)
-    } else if (!showMACD && indicatorRefs.current.macd) {
-      removeMACDIndicator(chartRef.current, indicatorRefs.current.macd)
-      indicatorRefs.current.macd = null
-    }
-
-    if (indicatorRefs.current.macd && data?.items) {
-      updateMACDIndicator(indicatorRefs.current.macd, data.items)
-    }
-  }, [showMACD, data, isChartReady])
+  const handleMACDChartDestroy = useCallback(() => {
+    unregisterChart('macd')
+  }, [unregisterChart])
 
   if (isLoading && !data) {
     return (
@@ -253,11 +104,41 @@ export function PriceChart({
     )
   }
 
+  const chartData = data?.items ?? []
+
   return (
-    <div
-      ref={chartContainerRef}
-      className={cn('h-[400px] w-full', className)}
-    />
+    <div className={cn('flex h-[400px] w-full flex-col', className)}>
+      {/* Main Candle Chart */}
+      <MainCandleChart
+        data={chartData}
+        showMA20={showMA20}
+        showMA50={showMA50}
+        showMA200={showMA200}
+        onChartReady={handleMainChartReady}
+        onChartDestroy={handleMainChartDestroy}
+        style={{ height: heights.main }}
+      />
+
+      {/* RSI Panel */}
+      {showRSI && (
+        <RSIChart
+          data={chartData}
+          height={heights.rsi}
+          onChartReady={handleRSIChartReady}
+          onChartDestroy={handleRSIChartDestroy}
+        />
+      )}
+
+      {/* MACD Panel */}
+      {showMACD && (
+        <MACDChart
+          data={chartData}
+          height={heights.macd}
+          onChartReady={handleMACDChartReady}
+          onChartDestroy={handleMACDChartDestroy}
+        />
+      )}
+    </div>
   )
 }
 
