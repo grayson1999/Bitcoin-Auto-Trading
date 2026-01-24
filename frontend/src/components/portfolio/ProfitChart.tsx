@@ -133,7 +133,7 @@ export function ProfitChart({ data, isLoading, className }: ProfitChartProps) {
 
   if (isLoading) {
     return (
-      <CommonCard title="수익 추이" className={className}>
+      <CommonCard title="누적 실현 손익" className={className}>
         <Skeleton className="h-[300px] w-full" />
       </CommonCard>
     )
@@ -141,24 +141,21 @@ export function ProfitChart({ data, isLoading, className }: ProfitChartProps) {
 
   if (data.length === 0) {
     return (
-      <CommonCard title="수익 추이" className={className}>
+      <CommonCard title="누적 실현 손익" className={className}>
         <div className="flex h-[300px] items-center justify-center text-gray-400">
-          수익 데이터가 없습니다
+          실현 손익 데이터가 없습니다
         </div>
       </CommonCard>
     )
   }
 
   // Calculate stats for header
-  const startValue = Number(data[0].value)
   const endValue = Number(data[data.length - 1].value)
-  const change = endValue - startValue
-  const changePct = startValue > 0 ? ((change / startValue) * 100).toFixed(2) : '0.00'
-  const isPositive = change >= 0
+  const isPositive = endValue >= 0
 
   return (
     <CommonCard
-      title="수익 추이"
+      title="누적 실현 손익"
       headerAction={
         <div className="text-right">
           <p
@@ -167,7 +164,7 @@ export function ProfitChart({ data, isLoading, className }: ProfitChartProps) {
               isPositive ? 'text-up' : 'text-down'
             )}
           >
-            {isPositive ? '+' : ''}{changePct}%
+            {isPositive ? '+' : ''}{formatCurrency(endValue)}
           </p>
           <p className="text-xs text-gray-400">최근 {data.length}일</p>
         </div>

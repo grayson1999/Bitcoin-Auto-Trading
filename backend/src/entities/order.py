@@ -211,6 +211,13 @@ class Order(Base, UserOwnedMixin, AuditMixin):
         comment="실패 시 오류 메시지",
     )
 
+    # 매도 주문 시 평균 매수가 스냅샷 (손익 계산용)
+    avg_cost_at_order: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True,
+        comment="주문 시점 평균 매수가 (매도 손익 계산용)",
+    )
+
     # === 시간 정보 ===
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

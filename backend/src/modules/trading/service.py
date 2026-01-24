@@ -12,7 +12,7 @@
 import asyncio
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -29,6 +29,8 @@ from src.clients.upbit import (
 from src.config import settings
 from src.config.constants import ORDER_MAX_RETRIES, ORDER_RETRY_DELAY_SECONDS
 from src.entities import (
+    AdjustmentType,
+    BalanceAdjustment,
     DailyStats,
     Order,
     OrderSide,
@@ -393,6 +395,16 @@ class TradingService:
         idempotency_key: str | None = None,
     ) -> Order:
         """주문 레코드 생성"""
+        # 매도 주문 시 현재 평균 매수가 저장 (손익 계산용)
+        avg_cost_at_order: Decimal | None = None
+        if side == OrderSide.SELL:
+            position = await self._get_position()
+            if position and position.avg_buy_price > 0:
+                avg_cost_at_order = position.avg_buy_price
+                logger.info(
+                    f"[매도 주문] 평균 매수가 스냅샷 저장: {avg_cost_at_order:,.2f}"
+                )
+
         order = Order(
             signal_id=signal_id,
             order_type=order_type.value,
@@ -403,6 +415,7 @@ class TradingService:
             status=OrderStatus.PENDING.value,
             created_at=datetime.now(UTC),
             idempotency_key=idempotency_key,
+            avg_cost_at_order=avg_cost_at_order,
         )
         self._session.add(order)
         await self._session.flush()  # ID 생성
@@ -434,10 +447,25 @@ class TradingService:
         if daily_stats is None:
             # 오늘 통계 생성
             balance_info = await self._validator.get_balance_info()
+            current_balance = balance_info.total_krw
+
+            # 전일 DailyStats 조회하여 입금/출금 감지
+            yesterday = today - timedelta(days=1)
+            prev_stmt = select(DailyStats).where(DailyStats.date == yesterday)
+            prev_result = await self._session.execute(prev_stmt)
+            prev_stats = prev_result.scalar_one_or_none()
+
+            if prev_stats:
+                await self._detect_balance_adjustment(
+                    prev_stats.ending_balance,
+                    current_balance,
+                    today,
+                )
+
             daily_stats = DailyStats(
                 date=today,
-                starting_balance=balance_info.total_krw,
-                ending_balance=balance_info.total_krw,
+                starting_balance=current_balance,
+                ending_balance=current_balance,
                 realized_pnl=Decimal("0"),
                 trade_count=0,
                 win_count=0,
@@ -450,20 +478,29 @@ class TradingService:
         # 거래 횟수 증가
         daily_stats.trade_count += 1
 
-        # 매도 완료 시 실현 손익 계산 (간단한 방식)
+        # 매도 완료 시 실현 손익 계산
+        # 주문 생성 시 저장한 avg_cost_at_order 사용 (포지션 변경 전 값)
         if order.is_sell and order.executed_amount and order.executed_price:
-            position = await self._get_position()
-            if position and position.avg_buy_price > 0:
-                # 실현 손익 = (체결가 - 평균매수가) * 체결수량
-                pnl = (
-                    order.executed_price - position.avg_buy_price
-                ) * order.executed_amount
+            avg_cost = order.avg_cost_at_order
+            if avg_cost and avg_cost > 0:
+                # 실현 손익 = (체결가 - 주문시점 평균매수가) * 체결수량
+                pnl = (order.executed_price - avg_cost) * order.executed_amount
                 daily_stats.realized_pnl += pnl
 
                 if pnl >= 0:
                     daily_stats.win_count += 1
                 else:
                     daily_stats.loss_count += 1
+
+                logger.info(
+                    f"실현 손익 계산: 체결가={order.executed_price:,.0f}, "
+                    f"평균매수가={avg_cost:,.0f}, 수량={order.executed_amount}, "
+                    f"손익={pnl:,.0f}"
+                )
+            else:
+                logger.warning(
+                    f"매도 손익 계산 불가: avg_cost_at_order가 없음 (order_id={order.id})"
+                )
 
         # 잔고 업데이트
         try:
@@ -541,6 +578,69 @@ class TradingService:
     async def _get_position(self) -> Position | None:
         """현재 포지션 조회 (PositionManager에 위임)"""
         return await self._position_manager.get_position()
+
+    async def _detect_balance_adjustment(
+        self,
+        prev_ending_balance: Decimal,
+        current_balance: Decimal,
+        target_date: date,
+    ) -> BalanceAdjustment | None:
+        """
+        잔고 변화에서 입금/출금 감지 및 기록
+
+        Args:
+            prev_ending_balance: 전일 종료 잔고
+            current_balance: 현재 잔고
+            target_date: 조정 날짜
+
+        Returns:
+            BalanceAdjustment | None: 감지된 조정 내역 (없으면 None)
+        """
+        # 입금/출금 감지 임계값 (원)
+        ADJUSTMENT_THRESHOLD = Decimal("1000")
+
+        # 잔고 차이 계산
+        diff = current_balance - prev_ending_balance
+
+        # 임계값 미만 차이는 무시
+        if abs(diff) < ADJUSTMENT_THRESHOLD:
+            return None
+
+        # 입금/출금 타입 결정
+        if diff > 0:
+            adj_type = AdjustmentType.DEPOSIT
+            logger.info(f"입금 감지: {diff:,.0f}원 ({target_date})")
+        else:
+            adj_type = AdjustmentType.WITHDRAWAL
+            logger.info(f"출금 감지: {abs(diff):,.0f}원 ({target_date})")
+
+        # 이미 기록된 조정인지 확인
+        existing_stmt = select(BalanceAdjustment).where(
+            BalanceAdjustment.date == target_date,
+            BalanceAdjustment.amount == diff,
+        )
+        existing_result = await self._session.execute(existing_stmt)
+        if existing_result.scalar_one_or_none():
+            logger.debug(f"이미 기록된 조정: {target_date}, {diff:,.0f}원")
+            return None
+
+        # 새 조정 기록
+        adjustment = BalanceAdjustment(
+            date=target_date,
+            amount=diff,
+            adjustment_type=adj_type.value,
+            balance_before=prev_ending_balance,
+            balance_after=current_balance,
+            notes=f"자동 감지 ({adj_type.value})",
+        )
+        self._session.add(adjustment)
+
+        logger.info(
+            f"잔고 조정 기록: {adj_type.value} {diff:,.0f}원 "
+            f"({prev_ending_balance:,.0f} → {current_balance:,.0f})"
+        )
+
+        return adjustment
 
     async def sync_position_from_upbit(self) -> Position | None:
         """Upbit 실제 잔고와 Position 테이블 동기화 (PositionManager에 위임)"""

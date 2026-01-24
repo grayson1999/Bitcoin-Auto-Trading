@@ -18,8 +18,12 @@ Phase 5 (다중 사용자 지원)에서 추가:
 - User
 - UserConfig
 - AuditMixin, UserOwnedMixin
+
+Phase 6 (포트폴리오 개선)에서 추가:
+- BalanceAdjustment, AdjustmentType
 """
 
+from src.entities.balance_adjustment import AdjustmentType, BalanceAdjustment
 from src.entities.base import AuditMixin, Base, TimestampMixin, UserOwnedMixin
 from src.entities.daily_stats import DailyStats
 from src.entities.market_data import MarketData
@@ -42,6 +46,9 @@ __all__ = [
     "UserConfig",
     # Daily Stats
     "DailyStats",
+    # Balance Adjustment (입금/출금)
+    "AdjustmentType",
+    "BalanceAdjustment",
     # Market
     "MarketData",
     # Order
