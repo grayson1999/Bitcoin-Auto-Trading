@@ -100,10 +100,10 @@
 
 ### Implementation for User Story 4
 
-- [ ] T017 [US4] Add confidence calculation formula to system prompt in backend/src/modules/signal/prompt/templates.py
-- [ ] T018 [US4] Update JSON output format to include confidence_breakdown in backend/src/modules/signal/prompt/templates.py
-- [ ] T019 [US4] Compress system prompt (remove duplicate rules) in backend/src/modules/signal/prompt/templates.py
-- [ ] T020 [US4] Add 30-minute aggressive trading strategy description in backend/src/modules/signal/prompt/templates.py
+- [x] T017 [US4] Add confidence calculation formula to system prompt in backend/src/modules/signal/prompt/templates.py
+- [x] T018 [US4] Update JSON output format to include confidence_breakdown in backend/src/modules/signal/prompt/templates.py
+- [x] T019 [US4] Compress system prompt (remove duplicate rules) in backend/src/modules/signal/prompt/templates.py
+- [x] T020 [US4] Add 30-minute aggressive trading strategy description in backend/src/modules/signal/prompt/templates.py
 
 **Checkpoint**: 신뢰도 계산 공식 프롬프트 반영 완료
 
