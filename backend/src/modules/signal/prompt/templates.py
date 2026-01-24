@@ -327,58 +327,33 @@ TF 보너스 (같은 방향 TF 수):
 ```
 """
 
-# === 분석 프롬프트 템플릿 (공통) ===
-ANALYSIS_PROMPT_TEMPLATE = """## {currency}/KRW 매매 신호 분석
+# === 분석 프롬프트 템플릿 (압축 버전) ===
+ANALYSIS_PROMPT_TEMPLATE = """## {currency}/KRW 분석
 
-### 1. 시장 현황
-- 분석 시각: {timestamp}
-- 현재가: {current_price:,.0f} KRW
-- 24시간 변동: {price_change_pct:+.2f}%
+**시각**: {timestamp} | **현재가**: {current_price:,.0f} KRW | **24H**: {price_change_pct:+.2f}%
 
-### 2. 포지션 상태 (최우선 확인!)
+### 포지션
 {asset_status}
 
-### 3. 리스크 체크 (손절 강제 규칙)
+### 리스크 체크
 {risk_check}
 
-**질문: 위 리스크 체크에서 손절 조건이 충족되었습니까?**
-- 충족 -> 즉시 SELL 신호 생성 (기술적 분석 무시)
-- 미충족 -> 아래 분석 진행
+> 손절 조건 충족 시 → 즉시 SELL (기술적 분석 무시)
 
-### 4. 기술적 지표
+### 기술적 지표
 {technical_indicators}
 
-### 5. 멀티 타임프레임 분석
+### MTF 분석
 {multi_timeframe_analysis}
 
-### 6. 의사결정 체크리스트 (순서대로 진행)
+### 결정 로직 (순서대로)
+1. **손절**: 손실 >= {stop_loss_display}% → SELL(0.9)
+2. **익절**: 이익 >= {take_profit_display}% + 하락 신호 → SELL
+3. **매수**: Confluence >= {min_confluence} + RSI < {rsi_overbought} + 2개+ TF 상승 → BUY
+4. **반등**: RSI <= 35 + BB% <= 25% → BUY(0.60-0.75)
+5. **기타**: HOLD
 
-**Step 1: 손절 체크 (최우선)**
-- [ ] 미실현 손실 >= {stop_loss_display}%? -> SELL (신뢰도 0.9)
-- [ ] 현재가 < 이전 손절가? -> SELL (신뢰도 0.9)
-
-**Step 2: 익절 체크**
-- [ ] 미실현 이익 >= {take_profit_display}% AND 하락 신호? -> SELL
-- [ ] 미실현 이익 >= {trailing_stop_display}% AND Confluence <= 0.45? -> SELL
-
-**Step 3: 매수 체크 (순서대로 확인)**
-- [ ] [추세 추종] Confluence >= {min_confluence} AND RSI < {rsi_overbought} AND 2개+ TF 상승? -> BUY
-- [ ] [과매도 반등] RSI <= 35 AND BB% <= 25% AND MACD 반전 조짐? -> BUY (신뢰도 0.60-0.75)
-- [ ] [횡보장 저점] 모든 TF sideways AND RSI < 40 AND BB% < 30%? -> BUY (소량, 신뢰도 0.55-0.65)
-- [ ] 손실 < {noise_threshold}% AND 상승 신호 AND 잔고 충분? -> BUY (물타기)
-
-**Step 4: 홀드**
-- [ ] 위 조건 모두 미충족? -> HOLD
-- [ ] 단, RSI < 35 과매도 시 HOLD 대신 소량 BUY 고려
-
-### 7. 최종 분석 요청
-
-위 체크리스트를 **순서대로** 검토하고 **첫 번째로 충족되는 조건**의 신호를 생성하세요.
-
-**금지사항:**
-- 손절 조건 충족 시 "반등 가능성"을 이유로 HOLD 금지
-- "추가 하락 여력 제한"은 판단 근거가 될 수 없음
-- 불확실하다는 이유만으로 HOLD 금지 (구체적 근거 필요)
+**금지**: 손절 조건 충족 시 반등 기대로 HOLD 금지
 """
 
 
@@ -441,7 +416,7 @@ def get_analysis_prompt(
     multi_timeframe_analysis: str,
 ) -> str:
     """
-    분석 프롬프트 생성
+    분석 프롬프트 생성 (압축 버전)
 
     Args:
         currency: 코인 심볼
@@ -468,10 +443,8 @@ def get_analysis_prompt(
         "multi_timeframe_analysis": multi_timeframe_analysis,
         "stop_loss_display": _format_pct(config.stop_loss_pct),
         "take_profit_display": _format_pct(config.take_profit_pct),
-        "trailing_stop_display": _format_pct(config.trailing_stop_pct),
         "min_confluence": config.min_confluence_buy,
         "rsi_overbought": config.rsi_overbought,
-        "noise_threshold": _format_pct(config.stop_loss_pct * 0.5),
     }
 
     return ANALYSIS_PROMPT_TEMPLATE.format(**format_vars)

@@ -131,13 +131,13 @@
 
 **Purpose**: 통합 검증 및 최종 정리
 
-- [ ] T026 Compress analysis prompt in backend/src/modules/signal/prompt/templates.py (target: 2,500 tokens)
-- [ ] T027 Add token count logging in backend/src/modules/signal/service.py
-- [ ] T028 Run manual signal generation test via API
-- [ ] T029 Verify token count is under 4,000
-- [ ] T030 Verify AI response time is under 4 seconds
-- [ ] T031 Restart backend service via systemctl
-- [ ] T032 Monitor 30-minute signal generation for 1 hour
+- [x] T026 Compress analysis prompt in backend/src/modules/signal/prompt/templates.py (target: 2,500 tokens)
+- [x] T027 Add token count logging in backend/src/modules/signal/service.py
+- [x] T028 Run manual signal generation test via API
+- [x] T029 Verify token count is under 4,000
+- [x] T030 Verify AI response time is under 4 seconds
+- [x] T031 Restart backend service via systemctl
+- [x] T032 Monitor 30-minute signal generation for 1 hour
 
 ---
 

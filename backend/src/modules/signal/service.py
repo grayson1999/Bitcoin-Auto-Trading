@@ -9,6 +9,7 @@ AI 매매 신호 생성 서비스 (동적 코인 지원 버전)
 - 시장 데이터 샘플링 (토큰 절감)
 """
 
+import time
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -185,6 +186,7 @@ class SignalService:
         logger.debug(f"프롬프트:\n{prompt}")
 
         # 5. AI 호출
+        ai_start_time = time.monotonic()
         try:
             response = await self.ai_client.generate(
                 prompt=prompt,
@@ -195,6 +197,22 @@ class SignalService:
         except AIClientError as e:
             logger.error(f"AI 신호 생성 실패: {e}")
             raise SignalServiceError(f"AI API 오류: {e}") from e
+
+        ai_elapsed_time = time.monotonic() - ai_start_time
+
+        # 토큰 사용량 및 응답 시간 로깅
+        logger.info(
+            f"AI 호출 완료: 입력 {response.input_tokens}토큰, "
+            f"출력 {response.output_tokens}토큰, "
+            f"총 {response.input_tokens + response.output_tokens}토큰, "
+            f"응답시간 {ai_elapsed_time:.2f}초"
+        )
+
+        # 토큰 목표 검증 (4,000 이하)
+        if response.input_tokens > 4000:
+            logger.warning(
+                f"입력 토큰이 목표(4,000)를 초과했습니다: {response.input_tokens}"
+            )
 
         # 6. 응답 파싱
         parsed = self._response_parser.parse_response(
