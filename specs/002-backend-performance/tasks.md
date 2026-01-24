@@ -67,14 +67,14 @@
 
 ### Tests for User Story 2
 
-- [ ] T009 [P] [US2] Create TTLCache unit tests in backend/tests/unit/test_cache.py
+- [X] T009 [P] [US2] Create TTLCache unit tests in backend/tests/unit/test_cache.py
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Add TTLCache instance to ConfigRepository in backend/src/repositories/config_repository.py
-- [ ] T011 [US2] Integrate cache in get_value() method in backend/src/repositories/config_repository.py
-- [ ] T012 [US2] Add cache invalidation in set_value() method in backend/src/repositories/config_repository.py
-- [ ] T013 [US2] Update ConfigService to use cached repository in backend/src/modules/config/service.py
+- [X] T010 [US2] Add TTLCache instance to ConfigRepository in backend/src/repositories/config_repository.py
+- [X] T011 [US2] Integrate cache in get_value() method in backend/src/repositories/config_repository.py
+- [X] T012 [US2] Add cache invalidation in set_value() method in backend/src/repositories/config_repository.py
+- [X] T013 [US2] Update ConfigService to use cached repository in backend/src/modules/config/service.py
 
 **Checkpoint**: 설정값 조회 시 캐시 히트율 95%+ 확인
 
