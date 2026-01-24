@@ -99,34 +99,34 @@
 
 ### US1용 API 레이어
 
-- [ ] T037 [P] [US1] `frontend/src/api/market.api.ts`에 시장 API 함수 생성
-- [ ] T038 [P] [US1] `frontend/src/api/dashboard.api.ts`에 대시보드 API 함수 생성
-- [ ] T039 [P] [US1] `frontend/src/api/trading.api.ts`에 거래 API 함수 생성 (포지션, 잔고)
-- [ ] T040 [P] [US1] `frontend/src/api/risk.api.ts`에 리스크 API 함수 생성
+- [X] T037 [P] [US1] `frontend/src/api/market.api.ts`에 시장 API 함수 생성
+- [X] T038 [P] [US1] `frontend/src/api/dashboard.api.ts`에 대시보드 API 함수 생성
+- [X] T039 [P] [US1] `frontend/src/api/trading.api.ts`에 거래 API 함수 생성 (포지션, 잔고)
+- [X] T040 [P] [US1] `frontend/src/api/risk.api.ts`에 리스크 API 함수 생성
 
 ### US1용 차트 컴포넌트
 
-- [ ] T041 [US1] `frontend/src/components/dashboard/PriceChart.tsx`에 TradingView Lightweight Charts로 PriceChart 컴포넌트 생성
-- [ ] T042 [US1] PriceChart 컴포넌트에 시간 간격 선택기 생성 (1분/5분/15분/1시간)
-- [ ] T043 [US1] `frontend/src/components/dashboard/indicators/MAIndicator.ts`에 MA 지표 오버레이 구현 (20, 50, 200)
-- [ ] T044 [P] [US1] `frontend/src/components/dashboard/indicators/RSIIndicator.ts`에 RSI 지표 구현
-- [ ] T045 [P] [US1] `frontend/src/components/dashboard/indicators/MACDIndicator.ts`에 MACD 지표 구현
-- [ ] T046 [US1] `frontend/src/components/dashboard/IndicatorControls.tsx`에 IndicatorControls 컴포넌트 생성 (MA/RSI/MACD 토글)
+- [X] T041 [US1] `frontend/src/components/dashboard/PriceChart.tsx`에 TradingView Lightweight Charts로 PriceChart 컴포넌트 생성
+- [X] T042 [US1] PriceChart 컴포넌트에 시간 간격 선택기 생성 (1분/5분/15분/1시간)
+- [X] T043 [US1] `frontend/src/components/dashboard/indicators/MAIndicator.ts`에 MA 지표 오버레이 구현 (20, 50, 200)
+- [X] T044 [P] [US1] `frontend/src/components/dashboard/indicators/RSIIndicator.ts`에 RSI 지표 구현
+- [X] T045 [P] [US1] `frontend/src/components/dashboard/indicators/MACDIndicator.ts`에 MACD 지표 구현
+- [X] T046 [US1] `frontend/src/components/dashboard/IndicatorControls.tsx`에 IndicatorControls 컴포넌트 생성 (MA/RSI/MACD 토글)
 
 ### US1용 대시보드 컴포넌트
 
-- [ ] T047 [P] [US1] `frontend/src/components/dashboard/PositionCard.tsx`에 PositionCard 컴포넌트 생성
-- [ ] T048 [P] [US1] `frontend/src/components/dashboard/BalanceCard.tsx`에 BalanceCard 컴포넌트 생성
-- [ ] T049 [P] [US1] `frontend/src/components/dashboard/MetricCards.tsx`에 MetricCards 컴포넌트 생성 (가격, 24시간 변동, 일일 손익)
-- [ ] T050 [P] [US1] `frontend/src/components/dashboard/LatestSignalCard.tsx`에 LatestSignalCard 컴포넌트 생성
-- [ ] T051 [P] [US1] `frontend/src/components/dashboard/RiskStatusCard.tsx`에 RiskStatusCard 컴포넌트 생성
+- [X] T047 [P] [US1] `frontend/src/components/dashboard/PositionCard.tsx`에 PositionCard 컴포넌트 생성
+- [X] T048 [P] [US1] `frontend/src/components/dashboard/BalanceCard.tsx`에 BalanceCard 컴포넌트 생성
+- [X] T049 [P] [US1] `frontend/src/components/dashboard/MetricCards.tsx`에 MetricCards 컴포넌트 생성 (가격, 24시간 변동, 일일 손익)
+- [X] T050 [P] [US1] `frontend/src/components/dashboard/LatestSignalCard.tsx`에 LatestSignalCard 컴포넌트 생성
+- [X] T051 [P] [US1] `frontend/src/components/dashboard/RiskStatusCard.tsx`에 RiskStatusCard 컴포넌트 생성
 
 ### US1용 대시보드 뷰
 
-- [ ] T052 [US1] `frontend/src/views/DashboardView.tsx`에 모든 대시보드 컴포넌트를 조합한 DashboardView 페이지 생성
-- [ ] T053 [US1] TanStack Query refetchInterval로 5초 자동 갱신 구현
-- [ ] T054 [US1] Skeleton 컴포넌트로 로딩 상태 추가
-- [ ] T055 [US1] 재시도 기능이 포함된 에러 처리 추가
+- [X] T052 [US1] `frontend/src/views/DashboardView.tsx`에 모든 대시보드 컴포넌트를 조합한 DashboardView 페이지 생성
+- [X] T053 [US1] TanStack Query refetchInterval로 5초 자동 갱신 구현
+- [X] T054 [US1] Skeleton 컴포넌트로 로딩 상태 추가
+- [X] T055 [US1] 재시도 기능이 포함된 에러 처리 추가
 
 **체크포인트**: 사용자 스토리 1 완료 - 실시간 차트, 지표, 포지션, 잔고가 포함된 대시보드 동작
 
