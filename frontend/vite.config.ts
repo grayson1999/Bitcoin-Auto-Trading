@@ -1,18 +1,27 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
-const VITE_DEV_PORT = 5173;
-const API_BASE_URL = "http://localhost:8000";
-
+// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@core': path.resolve(__dirname, './src/core'),
+      '@api': path.resolve(__dirname, './src/api'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@views': path.resolve(__dirname, './src/views'),
+      '@stores': path.resolve(__dirname, './src/stores'),
+    },
+  },
   server: {
-    port: VITE_DEV_PORT,
+    port: 5173,
     proxy: {
-      "/api": {
-        target: API_BASE_URL,
+      '/api': {
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
   },
-});
+})

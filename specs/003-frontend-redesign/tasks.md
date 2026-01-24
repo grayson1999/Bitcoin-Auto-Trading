@@ -24,16 +24,16 @@
 
 **목적**: 기존 프론트엔드 삭제 및 필수 의존성과 함께 새 프로젝트 초기화
 
-- [ ] T001 기존 프론트엔드 디렉토리를 `frontend_backup_YYYYMMDD`로 백업
-- [ ] T002 `frontend/`에 새 Vite + React + TypeScript 프로젝트 초기화
-- [ ] T003 핵심 의존성 설치 (react-router-dom, @tanstack/react-query, axios, lightweight-charts)
-- [ ] T004 [P] shadcn/ui 의존성 설치 (clsx, tailwind-merge, class-variance-authority, lucide-react)
-- [ ] T005 [P] 개발 의존성 설치 (vitest, @testing-library/react, @types/node)
-- [ ] T006 `frontend/tailwind.config.js`에 커스텀 테마 색상으로 Tailwind CSS 구성
-- [ ] T007 [P] `frontend/tsconfig.json`과 `frontend/vite.config.ts`에 경로 별칭 구성
-- [ ] T008 shadcn/ui 초기화 및 컴포넌트 설치 (button, card, dialog, table, tabs, select, input, badge, skeleton, alert, tooltip, dropdown-menu, progress, slider, switch)
-- [ ] T009 plan.md 기준으로 `frontend/src/`에 폴더 구조 생성 (core/, api/, stores/, components/, views/, router/, assets/)
-- [ ] T010 [P] `frontend/`에 환경 파일 `.env`와 `.env.production` 생성
+- [X] T001 기존 프론트엔드 디렉토리를 `frontend_backup_YYYYMMDD`로 백업
+- [X] T002 `frontend/`에 새 Vite + React + TypeScript 프로젝트 초기화
+- [X] T003 핵심 의존성 설치 (react-router-dom, @tanstack/react-query, axios, lightweight-charts)
+- [X] T004 [P] shadcn/ui 의존성 설치 (clsx, tailwind-merge, class-variance-authority, lucide-react)
+- [X] T005 [P] 개발 의존성 설치 (vitest, @testing-library/react, @types/node)
+- [X] T006 `frontend/tailwind.config.js`에 커스텀 테마 색상으로 Tailwind CSS 구성
+- [X] T007 [P] `frontend/tsconfig.json`과 `frontend/vite.config.ts`에 경로 별칭 구성
+- [X] T008 shadcn/ui 초기화 및 컴포넌트 설치 (button, card, dialog, table, tabs, select, input, badge, skeleton, alert, tooltip, dropdown-menu, progress, slider, switch)
+- [X] T009 plan.md 기준으로 `frontend/src/`에 폴더 구조 생성 (core/, api/, stores/, components/, views/, router/, assets/)
+- [X] T010 [P] `frontend/`에 환경 파일 `.env`와 `.env.production` 생성
 
 ---
 
