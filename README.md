@@ -66,6 +66,8 @@ make dev-frontend
 # 전체 서비스 재시작
 sudo systemctl restart trading-stack.target
 
+sudo systemctl restart bitcoin-trading-backend
+
 # 상태 확인
 sudo systemctl status auth-server bitcoin-trading-backend
 

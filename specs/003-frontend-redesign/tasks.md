@@ -45,47 +45,47 @@
 
 ### 코어 레이어
 
-- [ ] T011 `frontend/src/core/types/index.ts`에 TypeScript 타입과 열거형 생성 (data-model.md 기반)
-- [ ] T012 `frontend/src/core/api/client.ts`에 인증 인터셉터가 포함된 API 클라이언트 생성
-- [ ] T013 [P] `frontend/src/core/errors/ApiError.ts`에 ApiError 클래스 생성
-- [ ] T014 [P] `frontend/src/core/utils/formatters.ts`에 유틸리티 포매터 생성 (통화, 날짜, 퍼센트)
-- [ ] T015 [P] `frontend/src/core/utils/cn.ts`에 Tailwind 클래스용 cn() 유틸리티 생성
-- [ ] T016 [P] `frontend/src/core/composables/useDebounce.ts`에 useDebounce 훅 생성
-- [ ] T017 [P] `frontend/src/core/composables/useToggle.ts`에 useToggle 훅 생성
+- [X] T011 `frontend/src/core/types/index.ts`에 TypeScript 타입과 열거형 생성 (data-model.md 기반)
+- [X] T012 `frontend/src/core/api/client.ts`에 인증 인터셉터가 포함된 API 클라이언트 생성
+- [X] T013 [P] `frontend/src/core/errors/ApiError.ts`에 ApiError 클래스 생성
+- [X] T014 [P] `frontend/src/core/utils/formatters.ts`에 유틸리티 포매터 생성 (통화, 날짜, 퍼센트)
+- [X] T015 [P] `frontend/src/core/utils/cn.ts`에 Tailwind 클래스용 cn() 유틸리티 생성
+- [X] T016 [P] `frontend/src/core/composables/useDebounce.ts`에 useDebounce 훅 생성
+- [X] T017 [P] `frontend/src/core/composables/useToggle.ts`에 useToggle 훅 생성
 
 ### 인증 인프라
 
-- [ ] T018 `frontend/src/stores/auth.store.ts`에 AuthContext와 AuthProvider 생성
-- [ ] T019 `frontend/src/api/auth.api.ts`에 인증 API 함수 생성 (login, logout, refresh)
-- [ ] T020 `frontend/src/router/ProtectedRoute.tsx`에 ProtectedRoute 컴포넌트 생성
-- [ ] T021 `frontend/src/router/AdminRoute.tsx`에 AdminRoute 컴포넌트 생성
+- [X] T018 `frontend/src/stores/auth.store.tsx`에 AuthContext와 AuthProvider 생성
+- [X] T019 `frontend/src/api/auth.api.ts`에 인증 API 함수 생성 (login, logout, refresh)
+- [X] T020 `frontend/src/router/ProtectedRoute.tsx`에 ProtectedRoute 컴포넌트 생성
+- [X] T021 `frontend/src/router/AdminRoute.tsx`에 AdminRoute 컴포넌트 생성
 
 ### 레이아웃 컴포넌트
 
-- [ ] T022 `frontend/src/core/layouts/MainLayout.tsx`에 사이드바 네비게이션 포함 MainLayout 생성
-- [ ] T023 [P] `frontend/src/core/layouts/AuthLayout.tsx`에 로그인 페이지용 AuthLayout 생성
-- [ ] T024 `frontend/src/core/components/Sidebar.tsx`에 반응형 사이드바 컴포넌트 생성
+- [X] T022 `frontend/src/core/layouts/MainLayout.tsx`에 사이드바 네비게이션 포함 MainLayout 생성
+- [X] T023 [P] `frontend/src/core/layouts/AuthLayout.tsx`에 로그인 페이지용 AuthLayout 생성
+- [X] T024 `frontend/src/core/components/Sidebar.tsx`에 반응형 사이드바 컴포넌트 생성
 
 ### 공통 컴포넌트
 
-- [ ] T025 [P] `frontend/src/core/components/CommonButton.tsx`에 CommonButton 래퍼 생성
-- [ ] T026 [P] `frontend/src/core/components/CommonCard.tsx`에 CommonCard 래퍼 생성
-- [ ] T027 [P] `frontend/src/core/components/CommonModal.tsx`에 CommonModal 래퍼 생성
-- [ ] T028 [P] `frontend/src/core/components/LoadingSpinner.tsx`에 LoadingSpinner 컴포넌트 생성
-- [ ] T029 [P] `frontend/src/core/components/ErrorMessage.tsx`에 ErrorMessage 컴포넌트 생성
-- [ ] T030 [P] `frontend/src/core/components/EmptyState.tsx`에 EmptyState 컴포넌트 생성
+- [X] T025 [P] `frontend/src/core/components/CommonButton.tsx`에 CommonButton 래퍼 생성
+- [X] T026 [P] `frontend/src/core/components/CommonCard.tsx`에 CommonCard 래퍼 생성
+- [X] T027 [P] `frontend/src/core/components/CommonModal.tsx`에 CommonModal 래퍼 생성
+- [X] T028 [P] `frontend/src/core/components/LoadingSpinner.tsx`에 LoadingSpinner 컴포넌트 생성
+- [X] T029 [P] `frontend/src/core/components/ErrorMessage.tsx`에 ErrorMessage 컴포넌트 생성
+- [X] T030 [P] `frontend/src/core/components/EmptyState.tsx`에 EmptyState 컴포넌트 생성
 
 ### 라우팅 설정
 
-- [ ] T031 `frontend/src/router/routes.tsx`에 라우트 정의 생성
-- [ ] T032 `frontend/src/router/index.tsx`에 프로바이더 포함 라우터 인덱스 생성
-- [ ] T033 `frontend/src/main.tsx`에 QueryClient, BrowserRouter, AuthProvider 업데이트
-- [ ] T034 `frontend/src/views/LoginView.tsx`에 LoginView 페이지 생성
+- [X] T031 `frontend/src/router/routes.tsx`에 라우트 정의 생성
+- [X] T032 `frontend/src/router/index.tsx`에 프로바이더 포함 라우터 인덱스 생성
+- [X] T033 `frontend/src/main.tsx`에 QueryClient, BrowserRouter, AuthProvider 업데이트
+- [X] T034 `frontend/src/views/LoginView.tsx`에 LoginView 페이지 생성
 
 ### 글로벌 스타일
 
-- [ ] T035 `frontend/src/assets/styles/index.css`에 다크 테마 기본 스타일로 글로벌 CSS 업데이트
-- [ ] T036 `frontend/src/App.tsx`에서 라우터 렌더링하도록 App.tsx 업데이트
+- [X] T035 `frontend/src/assets/styles/index.css`에 다크 테마 기본 스타일로 글로벌 CSS 업데이트
+- [X] T036 `frontend/src/App.tsx`에서 라우터 렌더링하도록 App.tsx 업데이트
 
 **체크포인트**: 기반 구축 완료 - 사용자 스토리 구현을 병렬로 시작할 수 있음
 
