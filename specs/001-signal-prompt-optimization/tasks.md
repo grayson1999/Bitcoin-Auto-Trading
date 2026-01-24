@@ -35,11 +35,11 @@
 
 **⚠️ CRITICAL**: 샘플링 모듈이 완성되어야 프롬프트 최적화 진행 가능
 
-- [ ] T004 Create MarketDataSampler class in backend/src/modules/signal/sampler.py
-- [ ] T005 Implement sample_by_interval() method in backend/src/modules/signal/sampler.py
-- [ ] T006 Implement get_sampled_data() method in backend/src/modules/signal/sampler.py
-- [ ] T007 [P] Create unit tests for MarketDataSampler in backend/tests/unit/signal/test_sampler.py
-- [ ] T008 Export MarketDataSampler from backend/src/modules/signal/__init__.py
+- [x] T004 Create MarketDataSampler class in backend/src/modules/signal/sampler.py
+- [x] T005 Implement sample_by_interval() method in backend/src/modules/signal/sampler.py
+- [x] T006 Implement get_sampled_data() method in backend/src/modules/signal/sampler.py
+- [x] T007 [P] Create unit tests for MarketDataSampler in backend/tests/unit/signal/test_sampler.py
+- [x] T008 Export MarketDataSampler from backend/src/modules/signal/__init__.py
 
 **Checkpoint**: 샘플링 모듈 완성 - User Story 구현 시작 가능
 

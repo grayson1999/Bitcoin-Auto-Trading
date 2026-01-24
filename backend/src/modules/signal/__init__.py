@@ -7,6 +7,7 @@ Structure:
     ├── parser/         # AI 응답 파싱
     ├── prompt/         # 프롬프트 생성
     ├── tracker/        # 성과 추적
+    ├── sampler.py      # 시장 데이터 샘플링
     ├── routes.py       # API 엔드포인트
     ├── schemas.py      # Pydantic 스키마
     └── service.py      # 메인 서비스
@@ -16,6 +17,7 @@ from src.modules.signal.classifier import CoinType, get_coin_type
 from src.modules.signal.parser import ParsedSignal, SignalResponseParser
 from src.modules.signal.prompt import PromptConfig, SignalPromptBuilder
 from src.modules.signal.routes import router
+from src.modules.signal.sampler import MarketDataSampler
 from src.modules.signal.schemas import (
     GenerateSignalResponse,
     SignalErrorResponse,
@@ -45,6 +47,8 @@ __all__ = [
     # Prompt
     "PromptConfig",
     "SignalPromptBuilder",
+    # Sampler
+    "MarketDataSampler",
     # Tracker
     "PerformanceSummary",
     "SignalOutcome",
