@@ -43,6 +43,15 @@ SENSITIVE_PATTERNS = [
     (re.compile(r"(Bearer\s+)([A-Za-z0-9\-._~+/]+=*)", re.I), r"\1***"),
     # 일반 API 키 마스킹
     (re.compile(r"(api[_-]?key['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", re.I), r"\1***"),
+    # JWT 토큰 마스킹 (eyJ로 시작하는 3개 세그먼트)
+    (re.compile(r"eyJ[\w\-]+\.eyJ[\w\-]+\.[\w\-]+"), "***JWT***"),
+    # 잔고 관련 마스킹 (JSON 형식)
+    (re.compile(r'("balance"\s*:\s*)"?[\d.,]+"?', re.I), r'\1"***"'),
+    (re.compile(r'("krw"\s*:\s*)"?[\d.,]+"?', re.I), r'\1"***"'),
+    (re.compile(r'("btc"\s*:\s*)"?[\d.,]+"?', re.I), r'\1"***"'),
+    (re.compile(r'("coin_balance"\s*:\s*)"?[\d.,]+"?', re.I), r'\1"***"'),
+    (re.compile(r'("available"\s*:\s*)"?[\d.,]+"?', re.I), r'\1"***"'),
+    (re.compile(r'("locked"\s*:\s*)"?[\d.,]+"?', re.I), r'\1"***"'),
 ]
 
 

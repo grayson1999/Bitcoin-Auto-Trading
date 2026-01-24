@@ -21,9 +21,9 @@
 
 **Purpose**: 공통 유틸리티 모듈 생성
 
-- [ ] T001 [P] Create TTLCache class in backend/src/utils/cache.py
-- [ ] T002 [P] Create retry decorator in backend/src/utils/retry.py
-- [ ] T003 [P] Create masking utility in backend/src/utils/masking.py
+- [X] T001 [P] Create TTLCache class in backend/src/utils/cache.py
+- [X] T002 [P] Create retry decorator in backend/src/utils/retry.py
+- [X] T003 [P] Add balance masking patterns to backend/src/config/logging.py (기존 mask_sensitive_data 확장)
 
 ---
 
