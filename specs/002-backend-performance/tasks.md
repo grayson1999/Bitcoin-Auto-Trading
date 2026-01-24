@@ -123,15 +123,15 @@
 
 ### Tests for User Story 5
 
-- [ ] T020 [P] [US5] Create health detail integration test in backend/tests/integration/test_health_detail.py
+- [X] T020 [P] [US5] Create health detail integration test in backend/tests/integration/test_health_detail.py
 
 ### Implementation for User Story 5
 
-- [ ] T021 [P] [US5] Add ComponentHealth, DetailedHealthResponse schemas in backend/src/modules/health/schemas.py
-- [ ] T022 [US5] Create HealthService with 6 component checks in backend/src/modules/health/service.py
-- [ ] T023 [US5] Add /health/detail endpoint in backend/src/modules/health/routes.py
+- [X] T021 [P] [US5] Add ComponentHealth, DetailedHealthResponse schemas in backend/src/modules/health/schemas.py
+- [X] T022 [US5] Create HealthService with 6 component checks in backend/src/modules/health/service.py
+- [X] T023 [US5] Add /health/detail endpoint in backend/src/modules/health/routes.py
 
-**Checkpoint**: /health/detail API 응답에 6개 구성요소 포함 확인
+**Checkpoint**: /health/detail API 응답에 6개 구성요소 포함 확인 ✓ (11개 테스트 통과)
 
 ---
 
