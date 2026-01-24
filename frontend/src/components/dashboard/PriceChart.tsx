@@ -143,17 +143,21 @@ export function PriceChart({
 
     mainChartRef.current = chart
     candleSeriesRef.current = candleSeries
+
+    // Use ResizeObserver to detect actual container size
+    const resizeObserver = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect
+      if (width > 0 && height > 0) {
+        chart.applyOptions({ width, height })
+        chart.timeScale().fitContent()
+      }
+    })
+    resizeObserver.observe(mainChartContainerRef.current)
+
     setIsChartReady(true)
 
-    // Initial resize
-    if (mainChartContainerRef.current) {
-      chart.applyOptions({
-        width: mainChartContainerRef.current.clientWidth,
-        height: mainChartContainerRef.current.clientHeight,
-      })
-    }
-
     return () => {
+      resizeObserver.disconnect()
       chart.remove()
       mainChartRef.current = null
       candleSeriesRef.current = null
@@ -161,10 +165,15 @@ export function PriceChart({
     }
   }, [])
 
+  // RSI Chart ResizeObserver ref
+  const rsiResizeObserverRef = useRef<ResizeObserver | null>(null)
+
   // Initialize RSI Chart
   useEffect(() => {
     if (!showRSI || !rsiChartContainerRef.current) {
       if (rsiChartRef.current) {
+        rsiResizeObserverRef.current?.disconnect()
+        rsiResizeObserverRef.current = null
         rsiChartRef.current.remove()
         rsiChartRef.current = null
         indicatorRefs.current.rsi = null
@@ -181,18 +190,28 @@ export function PriceChart({
 
       rsiChartRef.current = chart
 
-      // Resize
-      chart.applyOptions({
-        width: rsiChartContainerRef.current.clientWidth,
-        height: rsiChartContainerRef.current.clientHeight,
+      // Use ResizeObserver
+      const resizeObserver = new ResizeObserver((entries) => {
+        const { width, height } = entries[0].contentRect
+        if (width > 0 && height > 0) {
+          chart.applyOptions({ width, height })
+          chart.timeScale().fitContent()
+        }
       })
+      resizeObserver.observe(rsiChartContainerRef.current)
+      rsiResizeObserverRef.current = resizeObserver
     }
   }, [showRSI])
+
+  // MACD Chart ResizeObserver ref
+  const macdResizeObserverRef = useRef<ResizeObserver | null>(null)
 
   // Initialize MACD Chart
   useEffect(() => {
     if (!showMACD || !macdChartContainerRef.current) {
       if (macdChartRef.current) {
+        macdResizeObserverRef.current?.disconnect()
+        macdResizeObserverRef.current = null
         macdChartRef.current.remove()
         macdChartRef.current = null
         indicatorRefs.current.macd = null
@@ -207,40 +226,19 @@ export function PriceChart({
 
       macdChartRef.current = chart
 
-      // Resize
-      chart.applyOptions({
-        width: macdChartContainerRef.current.clientWidth,
-        height: macdChartContainerRef.current.clientHeight,
+      // Use ResizeObserver
+      const resizeObserver = new ResizeObserver((entries) => {
+        const { width, height } = entries[0].contentRect
+        if (width > 0 && height > 0) {
+          chart.applyOptions({ width, height })
+          chart.timeScale().fitContent()
+        }
       })
+      resizeObserver.observe(macdChartContainerRef.current)
+      macdResizeObserverRef.current = resizeObserver
     }
   }, [showMACD])
 
-  // Resize Handler for all charts
-  useEffect(() => {
-    const handleResize = () => {
-      if (mainChartRef.current && mainChartContainerRef.current) {
-        mainChartRef.current.applyOptions({
-          width: mainChartContainerRef.current.clientWidth,
-          height: mainChartContainerRef.current.clientHeight,
-        })
-      }
-      if (rsiChartRef.current && rsiChartContainerRef.current) {
-        rsiChartRef.current.applyOptions({
-          width: rsiChartContainerRef.current.clientWidth,
-          height: rsiChartContainerRef.current.clientHeight,
-        })
-      }
-      if (macdChartRef.current && macdChartContainerRef.current) {
-        macdChartRef.current.applyOptions({
-          width: macdChartContainerRef.current.clientWidth,
-          height: macdChartContainerRef.current.clientHeight,
-        })
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [showRSI, showMACD])
 
   // Synchronization Logic
   useEffect(() => {
@@ -300,8 +298,7 @@ export function PriceChart({
     if (!data?.items || !candleSeriesRef.current || !isChartReady) return
     const chartData = transformToChartData(data.items)
     candleSeriesRef.current.setData(chartData)
-    // Only fit content on first load or manual trigger, not every update to avoid jumping
-    // But for stream updates we might want strictly appending. For now full replace is fine.
+    mainChartRef.current?.timeScale().fitContent()
   }, [data, isChartReady])
 
   // Data Updates - MA Indicators (on Main Chart)
@@ -364,14 +361,6 @@ export function PriceChart({
   }, [showMACD, data])
 
 
-  if (isLoading && !data) {
-    return (
-      <div className={cn('h-[400px] w-full', className)}>
-        <Skeleton className="h-full w-full" />
-      </div>
-    )
-  }
-
   if (isError) {
     return (
       <div className={cn('flex h-[400px] w-full items-center justify-center', className)}>
@@ -385,10 +374,18 @@ export function PriceChart({
 
   return (
     <div className={cn('flex flex-col w-full gap-1', className)}>
-      <div
-        ref={mainChartContainerRef}
-        className={cn("w-full transition-all duration-300 h-[400px] sm:h-[500px]")}
-      />
+      {/* Main Chart - always render container for ref */}
+      <div className="relative w-full h-[400px] sm:h-[500px]">
+        {isLoading && !data && (
+          <div className="absolute inset-0 z-10">
+            <Skeleton className="h-full w-full" />
+          </div>
+        )}
+        <div
+          ref={mainChartContainerRef}
+          className="w-full h-full"
+        />
+      </div>
 
       {showRSI && (
         <div
