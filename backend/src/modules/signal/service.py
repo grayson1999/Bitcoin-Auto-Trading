@@ -6,7 +6,7 @@ AI 매매 신호 생성 서비스 (동적 코인 지원 버전)
 - 코인 유형별 프롬프트 템플릿 (메이저/밈코인/알트코인)
 - 기술적 지표 분석 (RSI, MACD, 볼린저밴드, EMA, ATR)
 - 멀티 타임프레임 분석 (1H, 4H, 1D, 1W)
-- 과거 신호 성과 피드백 (Verbal Feedback)
+- 시장 데이터 샘플링 (토큰 절감)
 """
 
 from datetime import datetime, timedelta
@@ -40,7 +40,6 @@ from src.modules.signal.prompt import (
     get_system_instruction,
 )
 from src.modules.signal.sampler import MarketDataSampler
-from src.modules.signal.tracker import PerformanceSummary, SignalPerformanceTracker
 from src.repositories.signal_repository import SignalRepository
 from src.utils import UTC
 
@@ -63,7 +62,7 @@ class SignalService:
     - 코인 유형별 최적화된 프롬프트 템플릿
     - 기술적 지표 분석 (RSI, MACD, 볼린저밴드, EMA, ATR)
     - 멀티 타임프레임 분석 (1H, 4H, 1D, 1W)
-    - 과거 신호 성과 피드백
+    - 시장 데이터 샘플링 (토큰 절감)
 
     사용 예시:
         service = SignalService(db_session)
@@ -127,7 +126,7 @@ class SignalService:
         """
         매매 신호 생성
 
-        기술적 지표, 멀티 타임프레임 분석, 과거 성과 피드백을 종합하여
+        기술적 지표, 멀티 타임프레임 분석을 종합하여
         AI에게 분석을 요청하고 매매 신호를 생성합니다.
 
         Args:
@@ -168,25 +167,16 @@ class SignalService:
             logger.warning(f"멀티 타임프레임 분석 실패: {e}")
             mtf_result = MultiTimeframeResult()
 
-        # 3. 과거 신호 성과 피드백
-        try:
-            perf_tracker = SignalPerformanceTracker(self.db)
-            perf_summary = await perf_tracker.generate_performance_summary(limit=30)
-        except Exception as e:
-            logger.warning(f"성과 피드백 생성 실패: {e}")
-            perf_summary = PerformanceSummary()
-
-        # 4. 잔고 정보 조회
+        # 3. 잔고 정보 조회
         balance_info = await self._get_balance_info()
 
-        # 5. 프롬프트 생성 (코인 유형별 템플릿 사용, 샘플링된 데이터 사용)
+        # 4. 프롬프트 생성 (코인 유형별 템플릿 사용, 샘플링된 데이터 사용)
         system_instruction = get_system_instruction(
             self.currency, self.coin_type, self.prompt_config
         )
         prompt = self._prompt_builder.build_enhanced_prompt(
             sampled_data=sampled_data,
             mtf_result=mtf_result,
-            perf_summary=perf_summary,
             balance_info=balance_info,
         )
 
@@ -194,7 +184,7 @@ class SignalService:
         logger.info(f"AI 프롬프트 생성 완료 (길이: {len(prompt)}자)")
         logger.debug(f"프롬프트:\n{prompt}")
 
-        # 6. AI 호출
+        # 5. AI 호출
         try:
             response = await self.ai_client.generate(
                 prompt=prompt,
@@ -206,16 +196,16 @@ class SignalService:
             logger.error(f"AI 신호 생성 실패: {e}")
             raise SignalServiceError(f"AI API 오류: {e}") from e
 
-        # 7. 응답 파싱
+        # 6. 응답 파싱
         parsed = self._response_parser.parse_response(
             response.text,
             balance_info=balance_info,
         )
 
-        # 8. 기술적 지표 스냅샷 생성
+        # 7. 기술적 지표 스냅샷 생성
         technical_snapshot = self._prompt_builder.create_technical_snapshot(mtf_result)
 
-        # 9. DB에 저장 (Repository 사용)
+        # 8. DB에 저장 (Repository 사용)
         signal = TradingSignal(
             market_data_id=latest_data.id,
             signal_type=parsed.signal_type,

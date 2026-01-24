@@ -17,14 +17,12 @@ from src.config.constants import (
     DATA_CLEANUP_INTERVAL_HOURS,
     DATA_COLLECTION_INTERVAL_SECONDS,
     PENDING_ORDER_SYNC_MINUTES,
-    SIGNAL_PERFORMANCE_EVAL_HOURS,
     VOLATILITY_CHECK_INTERVAL_SECONDS,
 )
 from src.scheduler.jobs import (
     check_volatility_job,
     cleanup_old_data_job,
     collect_market_data_job,
-    evaluate_signal_performance_job,
     generate_trading_signal_job,
     sync_pending_orders_job,
 )
@@ -112,17 +110,6 @@ def setup_scheduler() -> AsyncIOScheduler:
         coalesce=True,
     )
 
-    # 신호 성과 평가 작업
-    scheduler.add_job(
-        evaluate_signal_performance_job,
-        trigger=IntervalTrigger(hours=SIGNAL_PERFORMANCE_EVAL_HOURS),
-        id="evaluate_signal_performance",
-        name="신호 성과 평가",
-        replace_existing=True,
-        max_instances=1,
-        coalesce=True,
-    )
-
     # PENDING 주문 동기화 작업
     scheduler.add_job(
         sync_pending_orders_job,
@@ -139,7 +126,6 @@ def setup_scheduler() -> AsyncIOScheduler:
         f"데이터 수집 ({DATA_COLLECTION_INTERVAL_SECONDS}초), "
         f"변동성 체크 ({VOLATILITY_CHECK_INTERVAL_SECONDS}초), "
         f"AI 신호 생성 ({signal_interval_minutes}분), "
-        f"성과 평가 ({SIGNAL_PERFORMANCE_EVAL_HOURS}시간), "
         f"PENDING 동기화 ({PENDING_ORDER_SYNC_MINUTES}분), "
         f"데이터 정리 ({DATA_CLEANUP_INTERVAL_HOURS}시간)"
     )

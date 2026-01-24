@@ -5,7 +5,6 @@
 - 시장 데이터 포맷
 - 기술적 지표 포맷
 - 멀티 타임프레임 분석 포맷
-- 성과 피드백 포맷
 """
 
 from datetime import datetime
@@ -24,7 +23,6 @@ from src.modules.signal.prompt.indicator_status import (
     get_status_ko,
 )
 from src.modules.signal.prompt.templates import PromptConfig, get_analysis_prompt
-from src.modules.signal.tracker.performance_tracker import PerformanceSummary
 from src.utils import UTC
 
 
@@ -50,7 +48,6 @@ class SignalPromptBuilder:
         self,
         sampled_data: dict[str, list[MarketData]],
         mtf_result: MultiTimeframeResult,
-        perf_summary: PerformanceSummary,
         balance_info: dict | None = None,
     ) -> str:
         """
@@ -59,7 +56,6 @@ class SignalPromptBuilder:
         Args:
             sampled_data: 샘플링된 시장 데이터 {"long_term": [...], "mid_term": [...], "short_term": [...]}
             mtf_result: 멀티 타임프레임 분석 결과
-            perf_summary: 성과 요약
             balance_info: 잔고 정보
 
         Returns:
@@ -94,7 +90,6 @@ class SignalPromptBuilder:
         risk_check = self._format_risk_check(balance_info)
         technical_indicators = self._format_technical_indicators(mtf_result)
         multi_timeframe_analysis = self._format_multi_timeframe(mtf_result)
-        performance_feedback = self._format_performance_feedback(perf_summary)
 
         return get_analysis_prompt(
             currency=self.currency,
@@ -106,7 +101,6 @@ class SignalPromptBuilder:
             risk_check=risk_check,
             technical_indicators=technical_indicators,
             multi_timeframe_analysis=multi_timeframe_analysis,
-            performance_feedback=performance_feedback,
         )
 
     def _format_asset_status(self, balance_info: dict | None) -> str:
@@ -232,34 +226,6 @@ class SignalPromptBuilder:
         lines.append(
             f"**종합 편향:** {get_status_ko(BIAS_STATUS_KO, mtf_result.overall_bias)}"
         )
-
-        return "\n".join(lines)
-
-    def _format_performance_feedback(self, perf_summary: PerformanceSummary) -> str:
-        """성과 피드백 포맷"""
-        lines = []
-
-        if perf_summary.total_signals == 0:
-            return "- 평가된 신호가 없습니다. 첫 분석입니다."
-
-        lines.append(f"**분석 대상:** 최근 {perf_summary.total_signals}개 신호")
-        lines.append(
-            f"**신호 분포:** 매수 {perf_summary.buy_signals}건, "
-            f"매도 {perf_summary.sell_signals}건, 홀드 {perf_summary.hold_signals}건"
-        )
-        lines.append(f"**매수 정확도:** {perf_summary.buy_accuracy:.1f}%")
-        lines.append(f"**매도 정확도:** {perf_summary.sell_accuracy:.1f}%")
-        lines.append(f"**평균 24시간 수익률:** {perf_summary.avg_pnl_24h:+.2f}%")
-
-        if perf_summary.feedback_summary:
-            lines.append("")
-            lines.append(f"**피드백:** {perf_summary.feedback_summary}")
-
-        if perf_summary.improvement_suggestions:
-            lines.append("")
-            lines.append("**개선 제안:**")
-            for suggestion in perf_summary.improvement_suggestions[:3]:
-                lines.append(f"- {suggestion}")
 
         return "\n".join(lines)
 

@@ -351,10 +351,7 @@ ANALYSIS_PROMPT_TEMPLATE = """## {currency}/KRW 매매 신호 분석
 ### 5. 멀티 타임프레임 분석
 {multi_timeframe_analysis}
 
-### 6. 과거 성과 피드백
-{performance_feedback}
-
-### 7. 의사결정 체크리스트 (순서대로 진행)
+### 6. 의사결정 체크리스트 (순서대로 진행)
 
 **Step 1: 손절 체크 (최우선)**
 - [ ] 미실현 손실 >= {stop_loss_display}%? -> SELL (신뢰도 0.9)
@@ -374,7 +371,7 @@ ANALYSIS_PROMPT_TEMPLATE = """## {currency}/KRW 매매 신호 분석
 - [ ] 위 조건 모두 미충족? -> HOLD
 - [ ] 단, RSI < 35 과매도 시 HOLD 대신 소량 BUY 고려
 
-### 8. 최종 분석 요청
+### 7. 최종 분석 요청
 
 위 체크리스트를 **순서대로** 검토하고 **첫 번째로 충족되는 조건**의 신호를 생성하세요.
 
@@ -442,7 +439,6 @@ def get_analysis_prompt(
     risk_check: str,
     technical_indicators: str,
     multi_timeframe_analysis: str,
-    performance_feedback: str,
 ) -> str:
     """
     분석 프롬프트 생성
@@ -457,7 +453,6 @@ def get_analysis_prompt(
         risk_check: 리스크 체크 문자열
         technical_indicators: 기술적 지표 문자열
         multi_timeframe_analysis: MTF 분석 문자열
-        performance_feedback: 성과 피드백 문자열
 
     Returns:
         str: 포맷팅된 분석 프롬프트
@@ -471,7 +466,6 @@ def get_analysis_prompt(
         "risk_check": risk_check,
         "technical_indicators": technical_indicators,
         "multi_timeframe_analysis": multi_timeframe_analysis,
-        "performance_feedback": performance_feedback,
         "stop_loss_display": _format_pct(config.stop_loss_pct),
         "take_profit_display": _format_pct(config.take_profit_pct),
         "trailing_stop_display": _format_pct(config.trailing_stop_pct),

@@ -117,11 +117,11 @@
 
 ### Implementation for User Story 5
 
-- [ ] T021 [US5] Remove perf_tracker import and call from backend/src/modules/signal/service.py
-- [ ] T022 [US5] Remove performance_feedback parameter from build_enhanced_prompt() in backend/src/modules/signal/prompt/builder.py
-- [ ] T023 [US5] Remove _format_performance_feedback() method from backend/src/modules/signal/prompt/builder.py
-- [ ] T024 [US5] Remove performance feedback section from analysis prompt in backend/src/modules/signal/prompt/templates.py
-- [ ] T025 [US5] (Optional) Remove evaluate_signal_performance_job from backend/src/scheduler/scheduler.py
+- [x] T021 [US5] Remove perf_tracker import and call from backend/src/modules/signal/service.py
+- [x] T022 [US5] Remove performance_feedback parameter from build_enhanced_prompt() in backend/src/modules/signal/prompt/builder.py
+- [x] T023 [US5] Remove _format_performance_feedback() method from backend/src/modules/signal/prompt/builder.py
+- [x] T024 [US5] Remove performance feedback section from analysis prompt in backend/src/modules/signal/prompt/templates.py
+- [x] T025 [US5] (Optional) Remove evaluate_signal_performance_job from backend/src/scheduler/scheduler.py
 
 **Checkpoint**: 성과 피드백 완전 제거 확인
 
