@@ -1,0 +1,901 @@
+openapi: 3.0.3
+info:
+  title: Bitcoin Auto Trading API
+  description: API contracts for Bitcoin Auto Trading Dashboard frontend
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+  - url: https://api.example.com/api/v1
+    description: Production server
+
+paths:
+  # ============================================
+  # MARKET ENDPOINTS
+  # ============================================
+  /market:
+    get:
+      summary: Get current market price
+      description: Returns real-time BTC price from Upbit API
+      tags: [Market]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current market data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketData'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /market/history:
+    get:
+      summary: Get historical market data
+      description: Returns OHLCV data for chart rendering
+      tags: [Market]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: hours
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 168
+            default: 24
+          description: Hours of history to retrieve
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+          description: Maximum number of data points
+        - name: interval
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 60
+          description: Sampling interval in minutes
+      responses:
+        '200':
+          description: Historical market data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketHistoryResponse'
+
+  # ============================================
+  # DASHBOARD ENDPOINTS
+  # ============================================
+  /dashboard/summary:
+    get:
+      summary: Get dashboard summary
+      description: Aggregated data for dashboard view
+      tags: [Dashboard]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard summary data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+
+  # ============================================
+  # SIGNAL ENDPOINTS
+  # ============================================
+  /signals:
+    get:
+      summary: Get AI signals list
+      description: Paginated list of trading signals
+      tags: [Signals]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: signal_type
+          in: query
+          schema:
+            type: string
+            enum: [all, BUY, HOLD, SELL]
+            default: all
+      responses:
+        '200':
+          description: Signal list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalListResponse'
+
+  /signals/latest:
+    get:
+      summary: Get latest signal
+      description: Returns the most recent AI signal
+      tags: [Signals]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Latest signal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingSignal'
+        '404':
+          description: No signals exist
+
+  # ============================================
+  # TRADING ENDPOINTS
+  # ============================================
+  /trading/orders:
+    get:
+      summary: Get order history
+      description: Paginated list of orders
+      tags: [Trading]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, pending, executed, cancelled, failed]
+            default: all
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Order list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+
+  /trading/orders/{order_id}:
+    get:
+      summary: Get order details
+      tags: [Trading]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+
+  /trading/position:
+    get:
+      summary: Get current position
+      tags: [Trading]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current position
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Position'
+
+  /trading/balance:
+    get:
+      summary: Get account balance
+      tags: [Trading]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Account balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  # ============================================
+  # CONFIG ENDPOINTS
+  # ============================================
+  /config:
+    get:
+      summary: Get all configurations
+      tags: [Config]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Configuration list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigListResponse'
+
+    patch:
+      summary: Batch update configurations
+      tags: [Config]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                oneOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+      responses:
+        '200':
+          description: Update result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigBatchUpdateResponse'
+
+  /config/{key}:
+    get:
+      summary: Get single configuration
+      tags: [Config]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Configuration value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemConfig'
+        '400':
+          description: Invalid key
+
+    patch:
+      summary: Update single configuration
+      tags: [Config]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  oneOf:
+                    - type: string
+                    - type: number
+                    - type: boolean
+              required: [value]
+      responses:
+        '200':
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemConfig'
+
+  # ============================================
+  # RISK ENDPOINTS
+  # ============================================
+  /risk/status:
+    get:
+      summary: Get risk management status
+      tags: [Risk]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Risk status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskStatus'
+
+  /risk/halt:
+    post:
+      summary: Halt trading
+      tags: [Risk]
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+              required: [reason]
+      responses:
+        '200':
+          description: Trading halted
+        '400':
+          description: Trading already halted
+
+  /risk/resume:
+    post:
+      summary: Resume trading
+      tags: [Risk]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Trading resumed
+        '400':
+          description: Trading not halted
+
+  # ============================================
+  # HEALTH ENDPOINTS
+  # ============================================
+  /health:
+    get:
+      summary: Basic health check
+      tags: [Health]
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+
+  /health/detail:
+    get:
+      summary: Detailed health check
+      tags: [Health]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Detailed health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthDetail'
+
+  # ============================================
+  # PORTFOLIO ENDPOINTS (NEW - TO BE IMPLEMENTED)
+  # ============================================
+  /portfolio/summary:
+    get:
+      summary: Get portfolio summary
+      description: |
+        Returns investment performance metrics including:
+        - Cumulative return (based on total deposits)
+        - Today's return
+        - Win rate statistics
+        - Maximum drawdown (MDD)
+      tags: [Portfolio]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioSummary'
+
+  /portfolio/deposits:
+    get:
+      summary: Get deposit history
+      description: Returns all deposit records for accurate return calculation
+      tags: [Portfolio]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Deposit history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepositHistoryResponse'
+
+  # ============================================
+  # ADMIN ENDPOINTS (NEW - TO BE IMPLEMENTED)
+  # ============================================
+  /admin/system:
+    get:
+      summary: Get system metrics
+      description: |
+        Returns server resource usage (admin only):
+        - CPU usage
+        - Memory usage
+        - Disk usage
+        - Scheduler job status
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: System metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemMetrics'
+        '403':
+          description: Admin role required
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Invalid authentication credentials
+
+    ServiceUnavailable:
+      description: External service unavailable
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Upbit API temporarily unavailable
+
+  schemas:
+    # ========== MARKET ==========
+    MarketData:
+      type: object
+      properties:
+        market:
+          type: string
+          example: KRW-BTC
+        price:
+          type: number
+          example: 145000000
+        volume_24h:
+          type: number
+        high_24h:
+          type: number
+        low_24h:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        change_24h_pct:
+          type: number
+          example: 2.5
+
+    OHLCVData:
+      type: object
+      properties:
+        time:
+          oneOf:
+            - type: integer
+            - type: string
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        volume:
+          type: number
+
+    MarketHistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OHLCVData'
+        total:
+          type: integer
+
+    # ========== DASHBOARD ==========
+    DashboardSummary:
+      type: object
+      properties:
+        market:
+          type: string
+        current_price:
+          type: number
+        price_change_24h:
+          type: number
+        position:
+          $ref: '#/components/schemas/Position'
+          nullable: true
+        balance:
+          $ref: '#/components/schemas/Balance'
+          nullable: true
+        daily_pnl:
+          type: number
+        daily_pnl_pct:
+          type: number
+        latest_signal:
+          $ref: '#/components/schemas/TradingSignal'
+          nullable: true
+        is_trading_active:
+          type: boolean
+        today_trade_count:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    # ========== SIGNALS ==========
+    TradingSignal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        signal_type:
+          type: string
+          enum: [BUY, SELL, HOLD]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 100
+        rationale:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    SignalListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TradingSignal'
+        total:
+          type: integer
+
+    # ========== TRADING ==========
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+        side:
+          type: string
+          enum: [BUY, SELL]
+        quantity:
+          type: number
+        price:
+          type: number
+        status:
+          type: string
+          enum: [pending, executed, cancelled, failed]
+        created_at:
+          type: string
+          format: date-time
+        executed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    OrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        total:
+          type: integer
+
+    Position:
+      type: object
+      properties:
+        symbol:
+          type: string
+        quantity:
+          type: number
+        avg_buy_price:
+          type: number
+        current_value:
+          type: number
+        unrealized_pnl:
+          type: number
+        unrealized_pnl_pct:
+          type: number
+        updated_at:
+          type: string
+          format: date-time
+
+    Balance:
+      type: object
+      properties:
+        krw:
+          type: number
+        krw_locked:
+          type: number
+        coin:
+          type: number
+        coin_locked:
+          type: number
+        coin_avg_buy_price:
+          type: number
+        total_krw:
+          type: number
+
+    # ========== CONFIG ==========
+    SystemConfig:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+        source:
+          type: string
+          enum: [db, env]
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ConfigListResponse:
+      type: object
+      properties:
+        configs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SystemConfig'
+        count:
+          type: integer
+
+    ConfigBatchUpdateResponse:
+      type: object
+      properties:
+        updated:
+          type: array
+          items:
+            type: string
+        failed:
+          type: array
+          items:
+            type: string
+
+    # ========== RISK ==========
+    RiskStatus:
+      type: object
+      properties:
+        trading_enabled:
+          type: boolean
+        daily_loss_pct:
+          type: number
+        daily_loss_limit_pct:
+          type: number
+        position_size_pct:
+          type: number
+        stop_loss_pct:
+          type: number
+        volatility_threshold_pct:
+          type: number
+        current_volatility_pct:
+          type: number
+        is_halted:
+          type: boolean
+        halt_reason:
+          type: string
+          nullable: true
+        last_check_at:
+          type: string
+          format: date-time
+
+    # ========== HEALTH ==========
+    HealthDetail:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        components:
+          type: object
+          properties:
+            database:
+              $ref: '#/components/schemas/ComponentHealth'
+            upbit_api:
+              $ref: '#/components/schemas/ComponentHealth'
+            gemini_api:
+              $ref: '#/components/schemas/ComponentHealth'
+            scheduler:
+              $ref: '#/components/schemas/ComponentHealth'
+
+    ComponentHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        latency_ms:
+          type: number
+        message:
+          type: string
+
+    # ========== PORTFOLIO (NEW) ==========
+    PortfolioSummary:
+      type: object
+      properties:
+        total_deposit:
+          type: number
+          description: Total deposited amount in KRW
+        current_value:
+          type: number
+          description: Current total value in KRW
+        cumulative_return_pct:
+          type: number
+          description: Cumulative return percentage
+        today_return_pct:
+          type: number
+          description: Today's return percentage
+        today_realized_pnl:
+          type: number
+          description: Today's realized P&L in KRW
+        total_trades:
+          type: integer
+          description: Total number of completed trades
+        win_count:
+          type: integer
+          description: Number of winning trades
+        win_rate:
+          type: number
+          description: Win rate percentage
+        average_return_pct:
+          type: number
+          description: Average return per trade
+        max_drawdown_pct:
+          type: number
+          description: Maximum drawdown percentage (MDD)
+        profit_chart_data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              value:
+                type: number
+
+    DepositHistoryResponse:
+      type: object
+      properties:
+        deposits:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              amount:
+                type: number
+              deposited_at:
+                type: string
+                format: date-time
+        total:
+          type: number
+
+    # ========== ADMIN (NEW) ==========
+    SystemMetrics:
+      type: object
+      properties:
+        cpu_percent:
+          type: number
+        memory_percent:
+          type: number
+        memory_used_mb:
+          type: number
+        memory_total_mb:
+          type: number
+        disk_percent:
+          type: number
+        disk_used_gb:
+          type: number
+        disk_total_gb:
+          type: number
+        scheduler_jobs:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              status:
+                type: string
+                enum: [running, stopped, error]
+              last_run:
+                type: string
+                format: date-time
+                nullable: true
+              next_run:
+                type: string
+                format: date-time
+                nullable: true
