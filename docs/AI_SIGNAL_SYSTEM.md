@@ -1,7 +1,8 @@
 # AI 신호 생성 시스템 분석
 
-> 작성일: 2026-01-24
+> 최종 업데이트: 2026-01-24
 > 대상: Bitcoin-Auto-Trading Backend
+> 브랜치: 001-signal-prompt-optimization
 
 ---
 
@@ -13,13 +14,15 @@
 signal/
 ├── service.py              # 신호 생성 메인 로직
 ├── prompt/
-│   ├── templates.py        # 코인별 시스템 프롬프트
+│   ├── templates.py        # 코인별 시스템 프롬프트 + 신뢰도 공식
 │   ├── builder.py          # 분석 프롬프트 구성
 │   └── indicator_status.py # 지표 상태 한글화
 ├── parser/
 │   └── response_parser.py  # AI 응답 JSON 파싱
+├── sampler/
+│   └── market_data_sampler.py  # 시장 데이터 샘플링 (토큰 절감)
 ├── tracker/
-│   └── performance_tracker.py  # 성과 피드백
+│   └── performance_tracker.py  # 신호 성과 평가 (스케줄러 작업용)
 └── classifier/
     └── coin_classifier.py  # 코인 유형 분류
 ```
@@ -28,21 +31,21 @@ signal/
 
 ```mermaid
 sequenceDiagram
-    participant SCH as 스케줄러 (1시간)
+    participant SCH as 스케줄러 (30분)
     participant SS as SignalService
+    participant SMP as MarketDataSampler
     participant MTF as MultiTimeframe분석
-    participant PT as PerformanceTracker
     participant PB as PromptBuilder
     participant AI as Gemini/OpenAI
     participant RP as ResponseParser
     participant DB as PostgreSQL
 
     SCH->>SS: generate_signal()
-    SS->>DB: 최근 24시간 시세 조회
+    SS->>DB: 최근 14일 시세 조회
+    SS->>SMP: 데이터 샘플링
+    SMP-->>SS: 장기/중기/단기 샘플 (~450개)
     SS->>MTF: 멀티 타임프레임 분석
     MTF-->>SS: confluence_score, overall_bias
-    SS->>PT: 과거 30개 신호 성과
-    PT-->>SS: accuracy, feedback
     SS->>PB: 프롬프트 구성
     PB-->>SS: system_prompt + analysis_prompt
     SS->>AI: generate(prompt)
@@ -80,88 +83,110 @@ sequenceDiagram
 
 ---
 
-## 3. 프롬프트 구조
+## 3. 시장 데이터 샘플링
 
-### 3.1 시스템 프롬프트 (코인 유형별)
+### 3.1 샘플링 정책
 
-```
-당신은 {currency} 트레이딩 전문가 AI입니다.
+| 시간대 | 범위 | 간격 | 예상 개수 |
+|--------|------|------|:--------:|
+| 장기 (long_term) | 14일 | 1시간 | ~336개 |
+| 중기 (mid_term) | 24시간 | 15분 | ~96개 |
+| 단기 (short_term) | 1시간 | 5분 | ~12개 |
+| **총계** | - | - | **~450개** |
 
-## 최우선 원칙: 리스크 관리 (Risk First)
+**효과**: 기존 1,000개 대비 **55% 절감**
 
-### 손절 강제 규칙 (MANDATORY)
-다음 조건 중 하나라도 충족 → 무조건 SELL (신뢰도 0.9):
-1. 현재가 <= 평균매수가 × (1 - 손절비율)
-2. 미실현 손실 >= 손절비율
-3. 현재가 < 이전 손절가
+### 3.2 샘플링 로직
 
-### 포지션 상태별 의사결정
-[포지션 없음]
-├─ Confluence >= 0.45 AND RSI < 65 AND 2개+ TF 상승 → BUY
-├─ [과매도 반등] RSI <= 35 AND BB% <= 25% → BUY
-└─ 그 외 → HOLD
+```python
+SAMPLING_CONFIG = {
+    "long_term": {"hours": 336, "interval_min": 60},
+    "mid_term": {"hours": 24, "interval_min": 15},
+    "short_term": {"hours": 1, "interval_min": 5},
+}
 
-[보유 중 - 수익]
-├─ +익절% 이상 AND 하락 전환 → SELL
-└─ +1% 이상 → 손절가 상향 (본전손절)
-
-[보유 중 - 손실]
-├─ -손절% 이상 → SELL (강제)
-└─ 소폭 손실 AND 상승 신호 → BUY (물타기)
-```
-
-### 3.2 분석 프롬프트 구성
-
-```markdown
-## {currency}/KRW 매매 신호 분석
-
-### 1. 시장 현황
-- 현재가: {price} KRW
-- 24시간 변동: {change}%
-
-### 2. 포지션 상태
-- KRW 잔고: {krw_available}
-- 코인 보유: {coin_available}
-- 평균 매수가: {avg_price}
-- 미실현 손익: {pnl} ({pnl_pct}%)
-
-### 3. 리스크 체크
-- 손절 기준가: {stop_loss}
-- 손절 조건 충족 여부: [YES/NO]
-
-### 4. 기술적 지표
-- RSI (14일): {rsi} ({status})
-- MACD: Line={line}, Signal={signal}, Hist={hist}
-- 볼린저밴드: 상단/중단/하단, 위치={bb_pct}%
-- EMA: 9/21/50일 ({alignment})
-- ATR: {atr}, 변동성={level}
-
-### 5. 멀티 타임프레임 분석
-- 1시간봉: {trend} (강도 {strength}%)
-- 4시간봉: ...
-- 일봉: ...
-- 주봉: ...
-- 합류 점수: {confluence}/1.00
-- 종합 편향: {bias}
-
-### 6. 과거 성과 피드백
-- 매수 정확도: {buy_acc}%
-- 매도 정확도: {sell_acc}%
-- 피드백: {feedback}
-- 개선 제안: {suggestions}
-
-### 7. 의사결정 체크리스트
-Step 1: 손절 체크 (최우선)
-Step 2: 익절 체크
-Step 3: 매수 체크
-Step 4: 홀드
+# 사용 예
+sampled_data = self._sampler.get_sampled_data(raw_market_data)
+# 결과: {"long_term": [...], "mid_term": [...], "short_term": [...]}
 ```
 
 ---
 
-## 4. 기술적 지표
+## 4. 프롬프트 구조
 
-### 4.1 사용 지표
+### 4.1 시스템 프롬프트 (코인 유형별)
+
+```
+당신은 {currency} 단기 트레이딩 AI입니다. **30분 주기**로 신호를 생성합니다.
+
+## 전략 특성
+- 30분 주기 → 빠른 진입/청산 우선, 장기 보유 지양
+- 손절/익절: -{stop_loss}% / +{take_profit}%
+
+## 리스크 규칙 (최우선)
+**손절 조건** (하나라도 충족 → SELL, 신뢰도 0.9):
+- 미실현 손실 >= {stop_loss}%
+- 현재가 <= 평균매수가 × (1 - {stop_loss_pct})
+
+## 신호 결정 기준
+
+### SELL (OR 연산)
+1. 손절 조건 충족 → 신뢰도 0.9
+2. 익절: 이익 >= {take_profit}% AND 하락 신호
+3. 모든 TF 하락 AND 이익 > {breakeven}%
+
+### BUY (OR 연산)
+1. Confluence >= {min_confluence} AND RSI < {rsi_overbought} AND 2개+ TF 상승
+2. 과매도 반등: RSI <= 35 AND BB% <= 25%
+3. 횡보장 저점: 모든 TF sideways AND RSI < 40 AND BB% < 30%
+
+### HOLD
+- 위 조건 모두 미충족
+- 잔고 부족 시
+```
+
+### 4.2 분석 프롬프트 구성
+
+```markdown
+## {currency}/KRW 분석
+
+**시각**: {timestamp} | **현재가**: {price} KRW | **24H**: {change}%
+
+### 포지션
+- KRW 가용 잔고: {krw_available}
+- 코인 보유량: {coin_available}
+- 평균 매수가: {avg_price}
+- 미실현 손익: {pnl} ({pnl_pct}%)
+
+### 리스크 체크
+- 손절 기준가: {stop_loss}
+- 손절 조건 충족 여부: [YES/NO]
+
+### 기술적 지표
+- RSI (14일): {rsi} ({status})
+- MACD: Line/Signal/Hist
+- 볼린저밴드: 위치={bb_pct}%
+- EMA: 9/21/50일
+- ATR: 변동성 수준
+
+### MTF 분석
+- 1H/4H/1D/1W 추세
+- 합류 점수: {confluence}/1.00
+- 종합 편향: {bias}
+
+### 결정 로직
+1. 손절: 손실 >= {stop_loss}% → SELL(0.9)
+2. 익절: 이익 >= {take_profit}% + 하락 → SELL
+3. 매수: Confluence + RSI + TF → BUY
+4. 반등: RSI/BB 과매도 → BUY
+5. 기타: HOLD
+```
+
+---
+
+## 5. 기술적 지표
+
+### 5.1 사용 지표
 
 | 지표 | 설정 | 용도 |
 |------|------|------|
@@ -171,7 +196,7 @@ Step 4: 홀드
 | EMA | 9/21/50일 | 추세 방향, 지지/저항 |
 | ATR | 14일 | 변동성 수준 |
 
-### 4.2 멀티 타임프레임
+### 5.2 멀티 타임프레임
 
 | 타임프레임 | 역할 | 가중치 |
 |-----------|------|:------:|
@@ -188,14 +213,19 @@ Step 4: 홀드
 
 ---
 
-## 5. AI 응답 형식
+## 6. AI 응답 형식
 
-### 5.1 JSON 구조
+### 6.1 JSON 구조
 
 ```json
 {
   "signal": "BUY | HOLD | SELL",
   "confidence": 0.0 ~ 1.0,
+  "confidence_breakdown": {
+    "base": 0.60,
+    "tf_bonus": 0.10,
+    "indicator_bonus": 0.05
+  },
   "reasoning": {
     "risk_assessment": {
       "stop_loss_triggered": false,
@@ -207,38 +237,63 @@ Step 4: 홀드
       "rsi_14": 38.5,
       "trend_1h": "상승",
       "trend_4h": "상승",
-      "trend_1d": "상승"
+      "trend_1d": "상승",
+      "aligned_tf_count": 3
     },
-    "decision_rationale": "판단 근거...",
-    "action_levels": {
-      "stop_loss": "95000",
-      "take_profit": "100000"
-    }
+    "decision_rationale": "판단 근거 (1-2문장)"
   }
 }
 ```
 
-### 5.2 신뢰도 기준
+### 6.2 신뢰도 계산 공식 (MANDATORY)
 
-| 신뢰도 | 조건 |
-|:------:|------|
-| 0.85-1.0 | 손절 강제 OR 모든 TF 일치 + 강한 지표 |
-| 0.70-0.85 | 3개 TF 일치 + 지표 지지 |
-| 0.55-0.70 | 2개 TF 일치 또는 일부 불일치 |
-| 0.40-0.55 | 신호 혼재 → HOLD 권장 |
-| 0.40 미만 | 반대 신호 우세 |
+```
+confidence = base + tf_bonus + indicator_bonus
+
+기본값 (base):
+┌─────────────────┬───────┐
+│ 조건            │ 값    │
+├─────────────────┼───────┤
+│ 손절 조건 충족  │ 0.90  │
+│ 익절 조건 충족  │ 0.85  │
+│ 매수 조건 충족  │ 0.60  │
+│ HOLD           │ 0.50  │
+└─────────────────┴───────┘
+
+TF 보너스 (같은 방향 타임프레임 수):
+┌────────────┬────────┐
+│ TF 일치    │ 보너스 │
+├────────────┼────────┤
+│ 4개 일치   │ +0.15  │
+│ 3개 일치   │ +0.10  │
+│ 2개 일치   │ +0.05  │
+│ 1개 이하   │ +0.00  │
+└────────────┴────────┘
+
+지표 보너스:
+┌──────────────────────────┬────────┐
+│ 조건                      │ 보너스 │
+├──────────────────────────┼────────┤
+│ RSI 극단 (<=25 or >=75)  │ +0.05  │
+│ MACD + BB 신호 일치      │ +0.05  │
+└──────────────────────────┴────────┘
+
+최종값 = min(1.0, confidence)
+```
 
 ---
 
-## 6. 성과 피드백 시스템
+## 7. 성과 피드백 시스템
 
-### 6.1 신호 평가 (4시간/24시간 후)
+### 7.1 개요
+
+- **프롬프트에서 제거됨** (토큰 절감)
+- 스케줄러 작업으로만 별도 실행 (`evaluate_signal_performance_job`)
+- 대시보드에서 성과 데이터 확인 가능
+
+### 7.2 신호 평가 (24시간 후)
 
 ```python
-# 4시간 후
-signal.price_after_4h = current_price
-
-# 24시간 후 최종 평가
 if signal_type == BUY:
     outcome_correct = (price_after_24h > price_at_signal)
 elif signal_type == SELL:
@@ -248,30 +303,11 @@ else:  # HOLD
     outcome_correct = (change < 0.03)  # 3% 미만 변동
 ```
 
-### 6.2 Verbal Feedback 생성
-
-```
-성공한 매수 신호 8건 (평균 수익 2.4%)
-| 실패한 매수 신호 4건 (평균 손실 -1.2%)
-| 성공한 매도 신호 5건
-| 최근 5회 연속 매수 - 과매수 가능성 고려
-```
-
-### 6.3 개선 제안
-
-```
-[
-  "매수 정확도 40%로 낮음. RSI + MACD 조건 강화 권장",
-  "고변동성 구간에서 손실 빈발. ATR 기반 진입 조정 권장",
-  "최근 3회 연속 오류. 보수적 접근 권장"
-]
-```
-
 ---
 
-## 7. 리스크 관리 연동
+## 8. 리스크 관리 연동
 
-### 7.1 프롬프트 단계 (AI 판단)
+### 8.1 프롬프트 단계 (AI 판단)
 
 ```mermaid
 graph TD
@@ -284,7 +320,7 @@ graph TD
     F -->|미충족| H[HOLD]
 ```
 
-### 7.2 실행 단계 (OrderValidator)
+### 8.2 실행 단계 (OrderValidator)
 
 ```
 TradingService.execute_from_signal()
@@ -297,9 +333,9 @@ TradingService.execute_from_signal()
 
 ---
 
-## 8. AI 클라이언트
+## 9. AI 클라이언트
 
-### 8.1 Fallback 전략
+### 9.1 Fallback 전략
 
 ```
 Gemini 2.5 Pro (Primary)
@@ -307,7 +343,7 @@ Gemini 2.5 Pro (Primary)
 OpenAI GPT-4.1-mini (Fallback)
 ```
 
-### 8.2 API 설정
+### 9.2 API 설정
 
 | 설정 | 값 |
 |------|-----|
@@ -317,35 +353,41 @@ OpenAI GPT-4.1-mini (Fallback)
 | 재시도 | 3회 |
 | 재시도 딜레이 | 2초 × 시도횟수 |
 
-### 8.3 비용 추정
+### 9.3 비용 추정 (최적화 후)
 
 | 모델 | 입력 ($/1M) | 출력 ($/1M) |
 |------|:-----------:|:-----------:|
 | Gemini 2.5 Pro | $1.25 | $10.00 |
 | GPT-4.1-mini | $0.40 | $1.60 |
 
-**예상 토큰 사용량:**
-- 입력: 7,500-10,000 토큰
+**예상 토큰 사용량 (최적화 후):**
+- 입력: 3,500-4,000 토큰 (기존 7,500-10,000)
 - 출력: 300-500 토큰
 
 **예상 비용 (Gemini 기준):**
-- 1회: ~$0.015 (₩20)
-- 일일 (24회): ~$0.37 (₩480)
-- 월간: ~$11 (₩14,000)
+- 1회: ~$0.006 (₩8) - 기존 대비 60% 절감
+- 일일 (48회): ~$0.29 (₩380) - 기존 24회 ₩480 대비 20% 절감
+- 월간: ~$9 (₩11,000)
 
 ---
 
-## 9. 주요 상수
+## 10. 주요 상수
 
 ```python
-# 신호 생성
-SIGNAL_COOLDOWN_MINUTES = 15      # 쿨다운
-SIGNAL_MARKET_DATA_HOURS = 24     # 분석 데이터 범위
+# 신호 생성 (최적화 후)
+SIGNAL_COOLDOWN_MINUTES = 5       # 수동 생성 쿨다운
+SIGNAL_MARKET_DATA_HOURS = 336    # 분석 데이터 범위 (14일)
 SIGNAL_DEFAULT_CONFIDENCE = 0.5
 
 # 스케줄러
-SIGNAL_GENERATION_INTERVAL = 60   # 1시간
-PERFORMANCE_EVAL_INTERVAL = 240   # 4시간
+SIGNAL_GENERATION_INTERVAL = 30   # 30분 주기 (기존 60분)
+
+# 샘플링 설정
+SAMPLING_CONFIG = {
+    "long_term": {"hours": 336, "interval_min": 60},
+    "mid_term": {"hours": 24, "interval_min": 15},
+    "short_term": {"hours": 1, "interval_min": 5},
+}
 
 # AI
 DEFAULT_TIMEOUT = 30
@@ -354,48 +396,31 @@ DEFAULT_MAX_RETRIES = 3
 
 ---
 
-## 10. 프롬프트 최적화 포인트
+## 11. 최적화 완료 사항 (2026-01-24)
 
-### 10.1 현재 문제점
-
-| 문제 | 영향 | 우선순위 |
-|------|------|:--------:|
-| 프롬프트 길이 (~10K 토큰) | 비용 증가, 응답 지연 | 높음 |
-| 손절 규칙 중복 강조 | 토큰 낭비 | 중간 |
-| 성과 피드백 상세도 | 불필요한 정보 | 중간 |
-| 체크리스트 형식 | AI 혼란 가능 | 낮음 |
-
-### 10.2 개선 제안
-
-1. **프롬프트 압축**
-   - 시스템 프롬프트: 3,000 → 1,500 토큰
-   - 분석 프롬프트: 6,000 → 3,000 토큰
-   - 예상 절감: 50%
-
-2. **손절 규칙 단순화**
-   - 중복 강조 제거
-   - 조건 1개로 통합
-
-3. **성과 피드백 요약**
-   - 상세 내역 → 핵심 지표만
-   - "매수 정확도 65%, 개선점: RSI 조건 강화"
-
-4. **출력 형식 간소화**
-   - reasoning 필수 필드만
-   - action_levels 선택적
+| 항목 | 개선 내용 | 효과 |
+|------|----------|------|
+| 신호 주기 | 1시간 → 30분 | 빈도 2배 증가 |
+| 토큰 사용량 | 10,000 → 4,000 | 60% 절감 |
+| 데이터 샘플링 | 1,000개 → 450개 | 55% 절감 |
+| 성과 피드백 | 프롬프트에서 제거 | ~500토큰 절감 |
+| 신뢰도 계산 | 명시적 공식 적용 | 일관성 향상 |
+| 응답 시간 | 5-8초 → 2-4초 | 50% 단축 |
 
 ---
 
-## 11. 파일 위치 요약
+## 12. 파일 위치 요약
 
 | 파일 | 역할 |
 |------|------|
-| `signal/service.py` | 신호 생성 메인 |
-| `signal/prompt/templates.py` | 프롬프트 템플릿 |
-| `signal/prompt/builder.py` | 프롬프트 조합 |
+| `signal/service.py` | 신호 생성 메인 + 샘플링 통합 |
+| `signal/prompt/templates.py` | 프롬프트 템플릿 + 신뢰도 공식 |
+| `signal/prompt/builder.py` | 프롬프트 조합 (성과 피드백 제거) |
+| `signal/sampler/market_data_sampler.py` | 시장 데이터 샘플링 |
 | `signal/parser/response_parser.py` | JSON 파싱 |
-| `signal/tracker/performance_tracker.py` | 성과 평가 |
+| `signal/tracker/performance_tracker.py` | 성과 평가 (스케줄러 전용) |
 | `signal/classifier/coin_classifier.py` | 코인 분류 |
 | `clients/ai/client.py` | AI 통합 클라이언트 |
 | `clients/ai/gemini_client.py` | Gemini 구현 |
 | `scheduler/jobs/signal_generation.py` | 스케줄러 작업 |
+| `config/constants.py` | 샘플링 설정 + 상수 |
