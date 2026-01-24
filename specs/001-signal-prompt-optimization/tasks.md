@@ -23,9 +23,9 @@
 
 **Purpose**: 설정값 변경 및 기본 상수 추가
 
-- [ ] T001 [P] Add signal_interval_minutes field to backend/src/config/settings.py (replace signal_interval_hours)
-- [ ] T002 [P] Update DB_OVERRIDABLE_KEYS in backend/src/config/settings.py (replace signal_interval_hours with signal_interval_minutes)
-- [ ] T003 [P] Add SAMPLING_CONFIG constant to backend/src/config/constants.py
+- [x] T001 [P] Add signal_interval_minutes field to backend/src/config/settings.py (replace signal_interval_hours)
+- [x] T002 [P] Update DB_OVERRIDABLE_KEYS in backend/src/config/settings.py (replace signal_interval_hours with signal_interval_minutes)
+- [x] T003 [P] Add SAMPLING_CONFIG constant to backend/src/config/constants.py
 
 ---
 

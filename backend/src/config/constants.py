@@ -69,11 +69,28 @@ MARKET_DEFAULT_LIMIT_LATEST = 10  # 최신 데이터 기본 레코드 수
 MS_TO_SECONDS = 1000  # 밀리초 → 초 변환 상수
 
 # === 신호 생성 설정 ===
-SIGNAL_MARKET_DATA_HOURS = 168  # 분석에 사용할 시장 데이터 기간 (7일)
+SIGNAL_MARKET_DATA_HOURS = 336  # 분석에 사용할 시장 데이터 기간 (14일)
 SIGNAL_COOLDOWN_MINUTES = 5  # 수동 신호 생성 쿨다운 (분)
 SIGNAL_MIN_CONFIDENCE = 0.0  # 최소 신뢰도
 SIGNAL_MAX_CONFIDENCE = 1.0  # 최대 신뢰도
 SIGNAL_DEFAULT_CONFIDENCE = 0.5  # 기본 신뢰도 (파싱 실패 시)
+
+# === 시장 데이터 샘플링 설정 ===
+# AI 프롬프트 토큰 절감을 위한 시간대별 샘플링 정책
+SAMPLING_CONFIG = {
+    "long_term": {
+        "hours": 336,        # 14일
+        "interval_min": 60,  # 1시간 간격 → ~336개
+    },
+    "mid_term": {
+        "hours": 24,         # 1일
+        "interval_min": 15,  # 15분 간격 → ~96개
+    },
+    "short_term": {
+        "hours": 1,          # 1시간
+        "interval_min": 5,   # 5분 간격 → ~12개
+    },
+}
 
 # === 주문 실행 설정 ===
 ORDER_POLL_INTERVAL_SECONDS = 1.0  # 주문 체결 확인 간격 (초)

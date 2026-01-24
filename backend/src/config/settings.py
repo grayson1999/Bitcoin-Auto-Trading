@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     DB 오버라이드 가능 필드 (7개):
         - position_size_min_pct, position_size_max_pct
         - stop_loss_pct, daily_loss_limit_pct
-        - signal_interval_hours, volatility_threshold_pct
+        - signal_interval_minutes, volatility_threshold_pct
         - ai_model
 
     환경변수 전용 (민감 정보):
@@ -90,11 +90,11 @@ class Settings(BaseSettings):
         le=10.0,
         description="일일 손실 한도 (3-10%) [DB 오버라이드 가능]",
     )
-    signal_interval_hours: int = Field(
-        default=1,
-        ge=1,
-        le=4,
-        description="AI 신호 생성 주기 (1-4시간) [DB 오버라이드 가능]",
+    signal_interval_minutes: int = Field(
+        default=30,
+        ge=5,
+        le=120,
+        description="AI 신호 생성 주기 (5-120분) [DB 오버라이드 가능]",
     )
     volatility_threshold_pct: float = Field(
         default=3.0,
@@ -180,7 +180,7 @@ DB_OVERRIDABLE_KEYS = frozenset(
         "position_size_max_pct",
         "stop_loss_pct",
         "daily_loss_limit_pct",
-        "signal_interval_hours",
+        "signal_interval_minutes",
         "volatility_threshold_pct",
         "ai_model",
     }
