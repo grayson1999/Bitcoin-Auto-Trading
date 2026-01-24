@@ -142,22 +142,22 @@
 
 ### US2용 API 레이어
 
-- [ ] T056 [P] [US2] `frontend/src/api/portfolio.api.ts`에 포트폴리오 API 함수 생성
-- [ ] T057 [P] [US2] `frontend/src/api/mocks/portfolio.mock.ts`에 포트폴리오 요약 mock 데이터 폴백 생성
+- [X] T056 [P] [US2] `frontend/src/api/portfolio.api.ts`에 포트폴리오 API 함수 생성
+- [X] T057 [P] [US2] `frontend/src/api/mocks/portfolio.mock.ts`에 포트폴리오 요약 mock 데이터 폴백 생성
 
 ### US2용 포트폴리오 컴포넌트
 
-- [ ] T058 [P] [US2] `frontend/src/components/portfolio/CumulativeReturnCard.tsx`에 CumulativeReturnCard 컴포넌트 생성
-- [ ] T059 [P] [US2] `frontend/src/components/portfolio/TodayReturnCard.tsx`에 TodayReturnCard 컴포넌트 생성
-- [ ] T060 [P] [US2] `frontend/src/components/portfolio/TradeStatsCard.tsx`에 TradeStatsCard 컴포넌트 생성 (승률, 평균 수익률, MDD)
-- [ ] T061 [US2] `frontend/src/components/portfolio/ProfitChart.tsx`에 ProfitChart 컴포넌트 생성 (30일 라인 차트)
-- [ ] T062 [P] [US2] `frontend/src/components/portfolio/DepositHistoryCard.tsx`에 DepositHistoryCard 컴포넌트 생성
+- [X] T058 [P] [US2] `frontend/src/components/portfolio/CumulativeReturnCard.tsx`에 CumulativeReturnCard 컴포넌트 생성
+- [X] T059 [P] [US2] `frontend/src/components/portfolio/TodayReturnCard.tsx`에 TodayReturnCard 컴포넌트 생성
+- [X] T060 [P] [US2] `frontend/src/components/portfolio/TradeStatsCard.tsx`에 TradeStatsCard 컴포넌트 생성 (승률, 평균 수익률, MDD)
+- [X] T061 [US2] `frontend/src/components/portfolio/ProfitChart.tsx`에 ProfitChart 컴포넌트 생성 (30일 라인 차트)
+- [X] T062 [P] [US2] `frontend/src/components/portfolio/DepositHistoryCard.tsx`에 DepositHistoryCard 컴포넌트 생성
 
 ### US2용 포트폴리오 뷰
 
-- [ ] T063 [US2] `frontend/src/views/PortfolioView.tsx`에 모든 포트폴리오 컴포넌트를 조합한 PortfolioView 페이지 생성
-- [ ] T064 [US2] 거래 기록이 없는 사용자를 위한 빈 상태 구현
-- [ ] T065 [US2] 로딩 및 에러 상태 추가
+- [X] T063 [US2] `frontend/src/views/PortfolioView.tsx`에 모든 포트폴리오 컴포넌트를 조합한 PortfolioView 페이지 생성
+- [X] T064 [US2] 거래 기록이 없는 사용자를 위한 빈 상태 구현
+- [X] T065 [US2] 로딩 및 에러 상태 추가
 
 **체크포인트**: 사용자 스토리 2 완료 - 정확한 수익률 계산이 포함된 포트폴리오 페이지 동작
 

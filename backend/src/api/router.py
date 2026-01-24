@@ -10,6 +10,7 @@ from src.modules.config import router as config_router
 from src.modules.dashboard import router as dashboard_router
 from src.modules.health import router as health_router
 from src.modules.market import router as market_router
+from src.modules.portfolio import router as portfolio_router
 from src.modules.risk import router as risk_router
 from src.modules.signal import router as signals_router
 from src.modules.trading import router as trading_router
@@ -29,6 +30,7 @@ def create_api_router() -> APIRouter:
     router.include_router(health_router, tags=["Health"])
     router.include_router(market_router, tags=["Market"])
     router.include_router(dashboard_router, tags=["Dashboard"])
+    router.include_router(portfolio_router, tags=["Portfolio"])
     router.include_router(signals_router, tags=["Signals"])
     router.include_router(risk_router, tags=["Risk"])
     router.include_router(trading_router, tags=["Trading"])
