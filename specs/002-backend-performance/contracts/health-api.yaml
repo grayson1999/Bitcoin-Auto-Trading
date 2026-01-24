@@ -1,0 +1,108 @@
+openapi: 3.1.0
+info:
+  title: Health API - Backend Performance
+  version: 1.0.0
+  description: 상세 헬스체크 API 계약
+
+paths:
+  /api/v1/health/detail:
+    get:
+      summary: 상세 헬스체크
+      description: 6개 구성요소(DB, Upbit API, Gemini API, 스케줄러, 최근 신호, 최근 주문)의 상태를 반환합니다.
+      operationId: getDetailedHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: 헬스체크 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+              example:
+                status: healthy
+                timestamp: "2026-01-24T10:00:00Z"
+                version: "0.1.0"
+                components:
+                  - name: database
+                    status: healthy
+                    latency_ms: 1.2
+                  - name: upbit_api
+                    status: healthy
+                    latency_ms: 45.3
+                  - name: gemini_api
+                    status: healthy
+                    latency_ms: 120.5
+                  - name: scheduler
+                    status: healthy
+                  - name: recent_signal
+                    status: healthy
+                    message: "Last signal 15m ago"
+                  - name: recent_order
+                    status: healthy
+                    message: "No pending orders"
+
+components:
+  schemas:
+    ComponentHealth:
+      type: object
+      required:
+        - name
+        - status
+      properties:
+        name:
+          type: string
+          description: 구성요소 이름
+          enum:
+            - database
+            - upbit_api
+            - gemini_api
+            - scheduler
+            - recent_signal
+            - recent_order
+        status:
+          type: string
+          description: 구성요소 상태
+          enum:
+            - healthy
+            - unhealthy
+            - warning
+        latency_ms:
+          type: number
+          format: float
+          nullable: true
+          description: 응답 시간 (밀리초)
+        message:
+          type: string
+          nullable: true
+          description: 추가 상태 메시지
+
+    DetailedHealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - version
+        - components
+      properties:
+        status:
+          type: string
+          description: 전체 시스템 상태
+          enum:
+            - healthy
+            - unhealthy
+            - degraded
+        timestamp:
+          type: string
+          format: date-time
+          description: 체크 시간 (UTC)
+        version:
+          type: string
+          description: 애플리케이션 버전
+        components:
+          type: array
+          description: 구성요소별 상태 목록
+          items:
+            $ref: '#/components/schemas/ComponentHealth'
+          minItems: 6
+          maxItems: 6

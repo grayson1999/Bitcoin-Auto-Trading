@@ -298,6 +298,7 @@ VITE_API_URL=http://localhost:8000
 ## Active Technologies
 - Python 3.11 + FastAPI, SQLAlchemy 2.0, APScheduler 3.10, google-genai (001-signal-prompt-optimization)
 - PostgreSQL 15 (asyncpg) (001-signal-prompt-optimization)
+- Python 3.11 + FastAPI, SQLAlchemy 2.0 (async), APScheduler 3.10, loguru, httpx (002-backend-performance)
 
 ## Recent Changes
 - 001-signal-prompt-optimization: Added Python 3.11 + FastAPI, SQLAlchemy 2.0, APScheduler 3.10, google-genai
