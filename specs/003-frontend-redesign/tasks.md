@@ -171,22 +171,22 @@
 
 ### US3용 API 레이어
 
-- [ ] T066 [P] [US3] `frontend/src/api/signal.api.ts`에 신호 API 함수 생성
+- [X] T066 [P] [US3] `frontend/src/api/signal.api.ts`에 신호 API 함수 생성
 
 ### US3용 신호 컴포넌트
 
-- [ ] T067 [P] [US3] `frontend/src/components/signals/SignalCard.tsx`에 SignalCard 컴포넌트 생성 (BUY/SELL/HOLD 색상)
-- [ ] T068 [P] [US3] `frontend/src/components/signals/SignalTimeline.tsx`에 SignalTimeline 컴포넌트 생성
-- [ ] T069 [US3] `frontend/src/components/signals/SignalDetailModal.tsx`에 SignalDetailModal 컴포넌트 생성
-- [ ] T070 [P] [US3] `frontend/src/components/signals/SignalTypeFilter.tsx`에 SignalTypeFilter 컴포넌트 생성
-- [ ] T071 [P] [US3] `frontend/src/components/signals/ViewToggle.tsx`에 ViewToggle 컴포넌트 생성 (그리드/타임라인)
+- [X] T067 [P] [US3] `frontend/src/components/signals/SignalCard.tsx`에 SignalCard 컴포넌트 생성 (BUY/SELL/HOLD 색상)
+- [X] T068 [P] [US3] `frontend/src/components/signals/SignalTimeline.tsx`에 SignalTimeline 컴포넌트 생성
+- [X] T069 [US3] `frontend/src/components/signals/SignalDetailModal.tsx`에 SignalDetailModal 컴포넌트 생성
+- [X] T070 [P] [US3] `frontend/src/components/signals/SignalTypeFilter.tsx`에 SignalTypeFilter 컴포넌트 생성
+- [X] T071 [P] [US3] `frontend/src/components/signals/ViewToggle.tsx`에 ViewToggle 컴포넌트 생성 (그리드/타임라인)
 
 ### US3용 신호 뷰
 
-- [ ] T072 [US3] `frontend/src/views/SignalsView.tsx`에 그리드와 타임라인 모드가 포함된 SignalsView 페이지 생성
-- [ ] T073 [US3] 신호 타입 필터링 구현 (BUY/SELL/HOLD/전체)
-- [ ] T074 [US3] 신호 목록 페이지네이션 구현
-- [ ] T075 [US3] 로딩 및 빈 상태 추가
+- [X] T072 [US3] `frontend/src/views/SignalsView.tsx`에 그리드와 타임라인 모드가 포함된 SignalsView 페이지 생성
+- [X] T073 [US3] 신호 타입 필터링 구현 (BUY/SELL/HOLD/전체)
+- [X] T074 [US3] 신호 목록 페이지네이션 구현
+- [X] T075 [US3] 로딩 및 빈 상태 추가
 
 **체크포인트**: 사용자 스토리 3 완료 - 그리드/타임라인 뷰와 필터링이 포함된 신호 페이지 동작
 

@@ -140,31 +140,28 @@ export interface OrderListResponse extends PaginatedResponse<Order> {}
 // Signal Domain
 // ============================================================================
 
-/** AI trading signal */
+/** AI trading signal (matches backend TradingSignalResponse) */
 export interface TradingSignal {
-  id: string
+  id: number
   signal_type: SignalType
-  confidence: number
-  rationale: string
+  confidence: number // 0~1 range (multiply by 100 for percentage display)
+  reasoning: string // AI analysis rationale
   created_at: ISOTimestamp
+  model_name: string
+  input_tokens: number
+  output_tokens: number
+  price_at_signal: number | null
+  price_after_4h: number | null
+  price_after_24h: number | null
+  outcome_evaluated: boolean
+  outcome_correct: boolean | null
+  technical_snapshot: Record<string, unknown> | null
 }
 
 export interface TradingSignalListResponse extends PaginatedResponse<TradingSignal> {}
 
-/** Signal detail with technical snapshot */
-export interface TradingSignalDetail extends TradingSignal {
-  technical_snapshot?: {
-    price: number
-    rsi?: number
-    macd?: {
-      line: number
-      signal: number
-      histogram: number
-    }
-    ma_20?: number
-    ma_50?: number
-  }
-}
+/** Signal detail - same as TradingSignal (backend includes all fields) */
+export type TradingSignalDetail = TradingSignal
 
 // ============================================================================
 // Dashboard Domain

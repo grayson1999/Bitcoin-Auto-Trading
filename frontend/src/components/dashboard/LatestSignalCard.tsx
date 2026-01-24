@@ -128,11 +128,11 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
           </div>
         </div>
 
-        {/* Rationale */}
-        {signal.rationale && (
+        {/* Reasoning */}
+        {signal.reasoning && (
           <div className="rounded-lg bg-gray-800/50 p-3">
             <p className="text-xs text-gray-400 mb-1">분석 근거</p>
-            <p className="text-sm text-gray-300 line-clamp-3">{signal.rationale}</p>
+            <p className="text-sm text-gray-300 line-clamp-3">{signal.reasoning}</p>
           </div>
         )}
       </div>

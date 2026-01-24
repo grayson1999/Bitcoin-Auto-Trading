@@ -1,5 +1,10 @@
 /** Format number as Korean Won currency */
-export function formatCurrency(value: number, options?: { showSign?: boolean }): string {
+export function formatCurrency(value: number | null | undefined, options?: { showSign?: boolean }): string {
+  // Null/undefined/NaN safety check
+  if (value == null || isNaN(value)) {
+    return '-'
+  }
+
   const formatted = new Intl.NumberFormat('ko-KR', {
     style: 'currency',
     currency: 'KRW',
