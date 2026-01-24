@@ -2,15 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import {
   createChart,
   CandlestickSeries,
+  createSeriesMarkers,
   type IChartApi,
   type ISeriesApi,
   type CandlestickData,
   type Time,
   type MouseEventParams,
+  type SeriesMarker,
+  type ISeriesMarkersPluginApi,
 } from 'lightweight-charts'
 import { useQuery } from '@tanstack/react-query'
 import { fetchMarketHistory } from '@/api/market.api'
-import type { ChartInterval, OHLCVData } from '@/core/types'
+import { fetchSignals } from '@/api/signals.api'
+import type { ChartInterval, OHLCVData, TradingSignal } from '@/core/types'
 import { cn } from '@/core/utils/cn'
 import { Skeleton } from '@/core/components/ui/skeleton'
 import {
@@ -56,6 +60,25 @@ function transformToChartData(data: OHLCVData[]): CandlestickData[] {
   }))
 }
 
+/** Convert trading signals to chart markers */
+function signalsToMarkers(signals: TradingSignal[]): SeriesMarker<Time>[] {
+  return signals
+    .filter((s) => s.signal_type !== 'HOLD') // HOLD는 표시 안함
+    .map((signal) => {
+      const isBuy = signal.signal_type === 'BUY'
+      const time = Math.floor(new Date(signal.created_at).getTime() / 1000) as Time
+
+      return {
+        time,
+        position: isBuy ? 'belowBar' : 'aboveBar',
+        color: isBuy ? '#22c55e' : '#ef4444',
+        shape: isBuy ? 'arrowUp' : 'arrowDown',
+        text: `${isBuy ? '매수' : '매도'} ${Math.round(signal.confidence * 100)}%`,
+      } as SeriesMarker<Time>
+    })
+    .sort((a, b) => (a.time as number) - (b.time as number))
+}
+
 export function PriceChart({
   interval,
   showMA20 = false,
@@ -77,6 +100,7 @@ export function PriceChart({
 
   // Series Refs
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
+  const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
   const indicatorRefs = useRef<IndicatorRefs>({
     ma20: null,
     ma50: null,
@@ -92,6 +116,14 @@ export function PriceChart({
     queryFn: () => fetchMarketHistory({ interval, count: 200 }),
     refetchInterval: 5000,
     staleTime: 4000,
+  })
+
+  // Fetch signals for markers
+  const { data: signalsData } = useQuery({
+    queryKey: ['signals', 'forChart'],
+    queryFn: () => fetchSignals({ limit: 50 }),
+    refetchInterval: 30000, // 30초마다 갱신
+    staleTime: 25000,
   })
 
   // Common chart options
@@ -143,6 +175,9 @@ export function PriceChart({
 
     mainChartRef.current = chart
     candleSeriesRef.current = candleSeries
+
+    // Create markers primitive for signals
+    markersRef.current = createSeriesMarkers(candleSeries, [])
 
     // Use ResizeObserver to detect actual container size
     const resizeObserver = new ResizeObserver((entries) => {
@@ -300,6 +335,18 @@ export function PriceChart({
     candleSeriesRef.current.setData(chartData)
     mainChartRef.current?.timeScale().fitContent()
   }, [data, isChartReady])
+
+  // Update Signal Markers
+  useEffect(() => {
+    if (!markersRef.current || !isChartReady) return
+
+    if (signalsData?.items && signalsData.items.length > 0) {
+      const markers = signalsToMarkers(signalsData.items)
+      markersRef.current.setMarkers(markers)
+    } else {
+      markersRef.current.setMarkers([])
+    }
+  }, [signalsData, isChartReady])
 
   // Data Updates - MA Indicators (on Main Chart)
   useEffect(() => {

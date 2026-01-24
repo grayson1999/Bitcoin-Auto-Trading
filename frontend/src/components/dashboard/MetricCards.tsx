@@ -2,6 +2,7 @@ import { TrendingUp, TrendingDown, Activity, BarChart3 } from 'lucide-react'
 import { Skeleton } from '@/core/components/ui/skeleton'
 import { formatCurrency, formatPercent } from '@/core/utils/formatters'
 import { cn } from '@/core/utils/cn'
+import { useTradingConfig } from '@/core/contexts/TradingConfigContext'
 
 interface MetricCardsProps {
   currentPrice: number
@@ -84,13 +85,14 @@ export function MetricCards({
   isLoading,
   className,
 }: MetricCardsProps) {
+  const { currency } = useTradingConfig()
   const priceTrend = priceChange24h >= 0 ? 'up' : 'down'
   const pnlTrend = dailyPnl >= 0 ? 'up' : dailyPnl < 0 ? 'down' : 'neutral'
 
   return (
     <div className={cn('grid grid-cols-2 gap-4 lg:grid-cols-4', className)}>
       <MetricCardItem
-        title="BTC 현재가"
+        title={`${currency} 현재가`}
         value={formatCurrency(currentPrice)}
         subValue={`${priceChange24h >= 0 ? '+' : ''}${formatPercent(priceChange24h)} (24h)`}
         icon={<Activity className="h-4 w-4" />}

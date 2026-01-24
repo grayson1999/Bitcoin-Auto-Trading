@@ -68,6 +68,8 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
 
   const config = SIGNAL_CONFIG[signal.signal_type]
   const Icon = config.icon
+  // confidence는 0~1 범위이므로 100을 곱해서 퍼센트로 표시
+  const confidencePercent = Math.round(signal.confidence * 100)
 
   return (
     <CommonCard title="최신 AI 신호" className={className}>
@@ -96,7 +98,7 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
                 {config.label}
               </Badge>
               <p className="mt-1 text-sm text-gray-400">
-                신뢰도: {signal.confidence}%
+                신뢰도: {confidencePercent}%
               </p>
             </div>
           </div>
@@ -112,7 +114,7 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
             <span className="text-gray-400">신뢰도</span>
-            <span className={config.color}>{signal.confidence}%</span>
+            <span className={config.color}>{confidencePercent}%</span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-gray-700">
             <div
@@ -121,7 +123,7 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
                 'bg-red-500': signal.signal_type === 'SELL',
                 'bg-yellow-500': signal.signal_type === 'HOLD',
               })}
-              style={{ width: `${signal.confidence}%` }}
+              style={{ width: `${confidencePercent}%` }}
             />
           </div>
         </div>

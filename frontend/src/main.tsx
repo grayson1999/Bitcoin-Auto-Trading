@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '@stores/auth.store'
+import { TradingConfigProvider } from '@/core/contexts/TradingConfigContext'
 import App from './App'
 import './index.css'
 
@@ -21,7 +22,9 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <TradingConfigProvider>
+            <App />
+          </TradingConfigProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

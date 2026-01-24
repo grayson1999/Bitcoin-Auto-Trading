@@ -4,6 +4,7 @@ import { Skeleton } from '@/core/components/ui/skeleton'
 import type { Position } from '@/core/types'
 import { formatCurrency, formatPercent, formatNumber } from '@/core/utils/formatters'
 import { cn } from '@/core/utils/cn'
+import { useTradingConfig } from '@/core/contexts/TradingConfigContext'
 
 interface PositionCardProps {
   position: Position | null
@@ -12,6 +13,8 @@ interface PositionCardProps {
 }
 
 export function PositionCard({ position, isLoading, className }: PositionCardProps) {
+  const { currency } = useTradingConfig()
+
   if (isLoading) {
     return (
       <CommonCard title="현재 포지션" className={className}>
@@ -29,7 +32,7 @@ export function PositionCard({ position, isLoading, className }: PositionCardPro
       <CommonCard title="현재 포지션" className={className}>
         <div className="flex flex-col items-center justify-center py-6 text-gray-500">
           <p className="text-lg">포지션 없음</p>
-          <p className="text-sm">현재 보유중인 BTC가 없습니다</p>
+          <p className="text-sm">현재 보유중인 {currency}가 없습니다</p>
         </div>
       </CommonCard>
     )
@@ -45,7 +48,7 @@ export function PositionCard({ position, isLoading, className }: PositionCardPro
           <div>
             <p className="text-sm text-gray-400">보유 수량</p>
             <p className="text-xl font-semibold text-white">
-              {formatNumber(position.quantity, 8)} BTC
+              {formatNumber(position.quantity, 8)} {currency}
             </p>
           </div>
           <Badge

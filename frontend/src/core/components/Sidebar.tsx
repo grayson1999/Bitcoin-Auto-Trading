@@ -14,6 +14,7 @@ import { cn } from '@core/utils'
 import { useAuth } from '@stores/auth.store'
 import { Button } from '@core/components/ui/button'
 import { useState } from 'react'
+import { useTradingConfig } from '@/core/contexts/TradingConfigContext'
 
 interface NavItem {
   to: string
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const { user, isAdmin, logout } = useAuth()
+  const { currency } = useTradingConfig()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
 
@@ -74,7 +76,7 @@ export function Sidebar() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center h-16 px-6 border-b border-border">
-            <h1 className="text-lg font-bold text-primary">BTC Trading</h1>
+            <h1 className="text-lg font-bold text-primary">{currency} Trading</h1>
           </div>
 
           {/* Navigation */}

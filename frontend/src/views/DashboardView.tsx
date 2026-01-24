@@ -12,6 +12,7 @@ import { PositionCard } from '@/components/dashboard/PositionCard'
 import { BalanceCard } from '@/components/dashboard/BalanceCard'
 import { LatestSignalCard } from '@/components/dashboard/LatestSignalCard'
 import { RiskStatusCard } from '@/components/dashboard/RiskStatusCard'
+import { useTradingConfig } from '@/core/contexts/TradingConfigContext'
 import type { ChartSettings } from '@/core/types'
 
 const DEFAULT_CHART_SETTINGS: ChartSettings = {
@@ -24,6 +25,7 @@ const DEFAULT_CHART_SETTINGS: ChartSettings = {
 }
 
 export function DashboardView() {
+  const { currency } = useTradingConfig()
   const [chartSettings, setChartSettings] = useState<ChartSettings>(DEFAULT_CHART_SETTINGS)
 
   // Dashboard summary query with 5s auto-refresh
@@ -102,7 +104,7 @@ export function DashboardView() {
       />
 
       {/* Chart Section */}
-      <CommonCard title="BTC/KRW 차트" className="overflow-hidden">
+      <CommonCard title={`${currency}/KRW 차트`} className="overflow-hidden">
         <div className="space-y-4">
           <IndicatorControls
             settings={chartSettings}

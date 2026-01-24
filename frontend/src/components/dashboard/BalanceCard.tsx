@@ -2,6 +2,7 @@ import { CommonCard } from '@/core/components/CommonCard'
 import { Skeleton } from '@/core/components/ui/skeleton'
 import type { Balance } from '@/core/types'
 import { formatCurrency, formatNumber } from '@/core/utils/formatters'
+import { useTradingConfig } from '@/core/contexts/TradingConfigContext'
 
 interface BalanceCardProps {
   balance: Balance | null
@@ -10,6 +11,8 @@ interface BalanceCardProps {
 }
 
 export function BalanceCard({ balance, isLoading, className }: BalanceCardProps) {
+  const { currency } = useTradingConfig()
+
   if (isLoading) {
     return (
       <CommonCard title="계좌 잔고" className={className}>
@@ -60,9 +63,9 @@ export function BalanceCard({ balance, isLoading, className }: BalanceCardProps)
           </div>
 
           <div className="rounded-lg bg-gray-800/50 p-3">
-            <p className="text-xs text-gray-400">BTC 잔고</p>
+            <p className="text-xs text-gray-400">{currency} 잔고</p>
             <p className="text-lg font-semibold text-white">
-              {formatNumber(balance.coin, 8)} BTC
+              {formatNumber(balance.coin, 8)} {currency}
             </p>
             {balance.coin_locked > 0 && (
               <p className="text-xs text-yellow-500">
@@ -75,7 +78,7 @@ export function BalanceCard({ balance, isLoading, className }: BalanceCardProps)
         {/* Average Buy Price */}
         {balance.coin > 0 && balance.coin_avg_buy_price > 0 && (
           <div className="border-t border-gray-700 pt-3">
-            <p className="text-xs text-gray-400">BTC 평균 매수가</p>
+            <p className="text-xs text-gray-400">{currency} 평균 매수가</p>
             <p className="text-sm text-white">
               {formatCurrency(balance.coin_avg_buy_price)}
             </p>
