@@ -10,6 +10,7 @@ from loguru import logger
 
 from src.config.constants import DEFAULT_MAX_RETRIES
 from src.modules.market import get_data_collector
+from src.scheduler.metrics import track_job
 from src.utils.database import async_session_factory
 from src.utils.retry import with_retry
 
@@ -34,7 +35,7 @@ async def collect_market_data_job() -> None:
     """
     collector = get_data_collector()
 
-    async with async_session_factory() as session:
+    async with track_job("data_collection"), async_session_factory() as session:
         try:
             result = await collector.collect_with_retry(
                 session, max_attempts=DEFAULT_MAX_RETRIES
@@ -52,3 +53,4 @@ async def collect_market_data_job() -> None:
         except Exception as e:
             await session.rollback()
             logger.exception(f"데이터 수집 작업 오류: {e}")
+            raise

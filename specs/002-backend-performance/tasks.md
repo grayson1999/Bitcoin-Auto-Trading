@@ -143,13 +143,13 @@
 
 ### Implementation for User Story 6
 
-- [ ] T024 [P] [US6] Create track_job context manager in backend/src/scheduler/metrics.py
-- [ ] T025 [US6] Apply track_job to data_collection job in backend/src/scheduler/jobs/data_collection.py
-- [ ] T026 [US6] Apply track_job to signal_generation job in backend/src/scheduler/jobs/signal_generation.py
-- [ ] T027 [US6] Apply track_job to volatility_check job in backend/src/scheduler/jobs/volatility_check.py
-- [ ] T028 [US6] Apply track_job to order_sync job in backend/src/scheduler/jobs/order_sync.py
+- [X] T024 [P] [US6] Create track_job context manager in backend/src/scheduler/metrics.py
+- [X] T025 [US6] Apply track_job to data_collection job in backend/src/scheduler/jobs/data_collection.py
+- [X] T026 [US6] Apply track_job to signal_generation job in backend/src/scheduler/jobs/signal_generation.py
+- [X] T027 [US6] Apply track_job to volatility_check job in backend/src/scheduler/jobs/signal_generation.py
+- [X] T028 [US6] Apply track_job to order_sync job in backend/src/scheduler/jobs/order_sync.py
 
-**Checkpoint**: journalctl에서 JSON 메트릭 로그 확인
+**Checkpoint**: journalctl에서 JSON 메트릭 로그 확인 ✓ (track_job 컨텍스트 매니저 적용 완료)
 
 ---
 

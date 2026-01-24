@@ -7,6 +7,7 @@ PENDING 상태의 주문을 Upbit와 동기화하는 작업을 정의합니다.
 from loguru import logger
 
 from src.modules.trading.service import get_trading_service
+from src.scheduler.metrics import track_job
 from src.utils.database import async_session_factory
 
 
@@ -23,7 +24,7 @@ async def sync_pending_orders_job() -> None:
         3. 체결 완료(done) → 포지션 및 통계 업데이트
         4. 취소(cancel) → CANCELLED로 변경
     """
-    async with async_session_factory() as session:
+    async with track_job("order_sync"), async_session_factory() as session:
         try:
             trading_service = await get_trading_service(session)
             synced_count = await trading_service.sync_pending_orders()
@@ -34,3 +35,4 @@ async def sync_pending_orders_job() -> None:
         except Exception as e:
             await session.rollback()
             logger.exception(f"PENDING 주문 동기화 작업 오류: {e}")
+            raise

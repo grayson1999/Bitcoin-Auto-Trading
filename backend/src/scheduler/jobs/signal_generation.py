@@ -10,6 +10,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from src.entities import SignalType, TradingSignal
+from src.scheduler.metrics import track_job
 from src.utils.database import async_session_factory
 from src.utils.retry import with_retry
 
@@ -47,7 +48,7 @@ async def generate_trading_signal_job() -> None:
     from src.modules.signal.service import SignalService, SignalServiceError
     from src.modules.trading import OrderBlockedReason, get_trading_service
 
-    async with async_session_factory() as session:
+    async with track_job("signal_generation"), async_session_factory() as session:
         try:
             # 신호 생성 전 Upbit 잔고와 포지션 동기화
             trading_service = await get_trading_service(session)
@@ -104,10 +105,12 @@ async def generate_trading_signal_job() -> None:
         except SignalServiceError as e:
             await session.rollback()
             logger.warning(f"AI 신호 생성 실패: {e}")
+            raise
 
         except Exception as e:
             await session.rollback()
             logger.exception(f"AI 신호 생성 작업 오류: {e}")
+            raise
 
 
 async def execute_trading_from_signal_job(signal_id: int) -> None:
@@ -198,7 +201,7 @@ async def check_volatility_job() -> None:
     # 순환 참조 방지를 위한 지연 임포트
     from src.modules.risk.service import RiskCheckResult, get_risk_service
 
-    async with async_session_factory() as session:
+    async with track_job("volatility_check"), async_session_factory() as session:
         try:
             risk_service = get_risk_service(session)
 
@@ -221,6 +224,7 @@ async def check_volatility_job() -> None:
         except Exception as e:
             await session.rollback()
             logger.exception(f"변동성 체크 작업 오류: {e}")
+            raise
 
 
 async def evaluate_signal_performance_job() -> None:
