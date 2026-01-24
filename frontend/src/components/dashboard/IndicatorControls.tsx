@@ -73,7 +73,7 @@ export function IndicatorControls({
             id="ma20"
             checked={settings.showMA20}
             onCheckedChange={() => handleToggle('showMA20')}
-            className="h-4 w-7"
+            size="small"
           />
           <Label
             htmlFor="ma20"
@@ -89,7 +89,7 @@ export function IndicatorControls({
             id="ma50"
             checked={settings.showMA50}
             onCheckedChange={() => handleToggle('showMA50')}
-            className="h-4 w-7"
+            size="small"
           />
           <Label
             htmlFor="ma50"
@@ -105,7 +105,7 @@ export function IndicatorControls({
             id="ma200"
             checked={settings.showMA200}
             onCheckedChange={() => handleToggle('showMA200')}
-            className="h-4 w-7"
+            size="small"
           />
           <Label
             htmlFor="ma200"
@@ -126,7 +126,7 @@ export function IndicatorControls({
             id="rsi"
             checked={settings.showRSI}
             onCheckedChange={() => handleToggle('showRSI')}
-            className="h-4 w-7"
+            size="small"
           />
           <Label
             htmlFor="rsi"
@@ -142,7 +142,7 @@ export function IndicatorControls({
             id="macd"
             checked={settings.showMACD}
             onCheckedChange={() => handleToggle('showMACD')}
-            className="h-4 w-7"
+            size="small"
           />
           <Label htmlFor="macd" className="text-xs text-gray-300 cursor-pointer">
             MACD
