@@ -69,9 +69,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Integrate MarketDataSampler into SignalService in backend/src/modules/signal/service.py
-- [ ] T013 [US2] Replace _get_recent_market_data() to use sampler in backend/src/modules/signal/service.py
-- [ ] T014 [US2] Update PromptBuilder to accept sampled data structure in backend/src/modules/signal/prompt/builder.py
+- [x] T012 [US2] Integrate MarketDataSampler into SignalService in backend/src/modules/signal/service.py
+- [x] T013 [US2] Replace _get_recent_market_data() to use sampler in backend/src/modules/signal/service.py
+- [x] T014 [US2] Update PromptBuilder to accept sampled data structure in backend/src/modules/signal/prompt/builder.py
 
 **Checkpoint**: 프롬프트 토큰 4,000개 이하 달성
 

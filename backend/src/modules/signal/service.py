@@ -39,6 +39,7 @@ from src.modules.signal.prompt import (
     get_config_for_coin,
     get_system_instruction,
 )
+from src.modules.signal.sampler import MarketDataSampler
 from src.modules.signal.tracker import PerformanceSummary, SignalPerformanceTracker
 from src.repositories.signal_repository import SignalRepository
 from src.utils import UTC
@@ -107,10 +108,11 @@ class SignalService:
             volatility_tolerance=base_config.volatility_tolerance,
         )
 
-        # 프롬프트 빌더 및 파서 초기화
+        # 프롬프트 빌더, 파서, 샘플러 초기화
         self._prompt_builder = SignalPromptBuilder(self.currency, self.prompt_config)
         self._response_parser = SignalResponseParser()
         self._signal_repo = SignalRepository(db)
+        self._sampler = MarketDataSampler()
 
         logger.info(
             f"SignalService 초기화: {self.currency} ({self.coin_type.value}), "
@@ -141,12 +143,22 @@ class SignalService:
         if not force:
             await self._check_cooldown()
 
-        # 1. 시장 데이터 수집
-        market_data_list = await self._get_recent_market_data()
-        if not market_data_list:
+        # 1. 시장 데이터 수집 및 샘플링
+        raw_market_data = await self._get_recent_market_data()
+        if not raw_market_data:
             raise SignalServiceError("분석할 시장 데이터가 없습니다")
 
-        latest_data = market_data_list[0]
+        # 샘플링 적용 (토큰 절감)
+        sampled_data = self._sampler.get_sampled_data(raw_market_data)
+        sampling_stats = self._sampler.get_statistics(sampled_data)
+        logger.info(
+            f"시장 데이터 샘플링: {len(raw_market_data)}개 → {sampling_stats['total']}개 "
+            f"(장기: {sampling_stats['long_term']}, 중기: {sampling_stats['mid_term']}, "
+            f"단기: {sampling_stats['short_term']})"
+        )
+
+        # 최신 데이터는 raw에서 가져옴 (샘플링 전)
+        latest_data = raw_market_data[0]
         current_price = float(latest_data.price)
 
         # 2. 멀티 타임프레임 분석
@@ -167,12 +179,12 @@ class SignalService:
         # 4. 잔고 정보 조회
         balance_info = await self._get_balance_info()
 
-        # 5. 프롬프트 생성 (코인 유형별 템플릿 사용)
+        # 5. 프롬프트 생성 (코인 유형별 템플릿 사용, 샘플링된 데이터 사용)
         system_instruction = get_system_instruction(
             self.currency, self.coin_type, self.prompt_config
         )
         prompt = self._prompt_builder.build_enhanced_prompt(
-            market_data_list=market_data_list,
+            sampled_data=sampled_data,
             mtf_result=mtf_result,
             perf_summary=perf_summary,
             balance_info=balance_info,

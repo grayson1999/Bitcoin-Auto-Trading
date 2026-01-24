@@ -48,16 +48,16 @@ class SignalPromptBuilder:
 
     def build_enhanced_prompt(
         self,
-        market_data_list: list[MarketData],
+        sampled_data: dict[str, list[MarketData]],
         mtf_result: MultiTimeframeResult,
         perf_summary: PerformanceSummary,
         balance_info: dict | None = None,
     ) -> str:
         """
-        개선된 분석 프롬프트 생성 (prompt_templates 사용)
+        개선된 분석 프롬프트 생성 (prompt_templates 사용, 샘플링된 데이터)
 
         Args:
-            market_data_list: 시장 데이터 목록
+            sampled_data: 샘플링된 시장 데이터 {"long_term": [...], "mid_term": [...], "short_term": [...]}
             mtf_result: 멀티 타임프레임 분석 결과
             perf_summary: 성과 요약
             balance_info: 잔고 정보
@@ -65,13 +65,26 @@ class SignalPromptBuilder:
         Returns:
             str: 생성된 프롬프트
         """
-        latest = market_data_list[0]
+        # 모든 시간대 데이터를 합쳐서 최신/최고 데이터 추출
+        all_data: list[MarketData] = []
+        for period_data in sampled_data.values():
+            all_data.extend(period_data)
 
-        # 24시간 변동률 계산
-        if len(market_data_list) > 1:
-            oldest = market_data_list[-1]
+        if not all_data:
+            raise ValueError("샘플링된 데이터가 없습니다")
+
+        # timestamp 기준으로 정렬 (내림차순 - 최신이 먼저)
+        all_data.sort(key=lambda x: x.timestamp, reverse=True)
+        latest = all_data[0]
+
+        # 24시간 변동률 계산 (mid_term 데이터의 가장 오래된 것과 비교)
+        mid_term_data = sampled_data.get("mid_term", [])
+        if mid_term_data:
+            oldest_mid = min(mid_term_data, key=lambda x: x.timestamp)
             price_change_pct = (
-                (float(latest.price) - float(oldest.price)) / float(oldest.price) * 100
+                (float(latest.price) - float(oldest_mid.price))
+                / float(oldest_mid.price)
+                * 100
             )
         else:
             price_change_pct = 0.0
