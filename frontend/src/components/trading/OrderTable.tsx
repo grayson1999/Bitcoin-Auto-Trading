@@ -19,8 +19,8 @@ interface OrderTableProps {
 
 export function OrderTable({ orders, className }: OrderTableProps) {
   return (
-    <div className={cn('rounded-lg border border-border', className)}>
-      <Table>
+    <div className={cn('rounded-lg border border-border overflow-x-auto', className)}>
+      <Table className="min-w-[700px]">
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="w-[140px]">주문 ID</TableHead>
