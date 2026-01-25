@@ -195,11 +195,12 @@ class OrderValidator:
         )
 
         position_pct = min_pct + (max_pct - min_pct) * normalized
-        order_amount = balance_info.total_krw * position_pct / Decimal("100")
+        order_amount = balance_info.krw_available * position_pct / Decimal("100")
 
         logger.info(
             f"동적 포지션: confidence={confidence}, "
-            f"pct={position_pct:.2f}%, amount={order_amount:,.0f}원"
+            f"pct={position_pct:.2f}%, krw_available={balance_info.krw_available:,.0f}원, "
+            f"amount={order_amount:,.0f}원"
         )
 
         # 최소 주문 금액 확인
@@ -225,7 +226,6 @@ class OrderValidator:
                 blocked_reason=OrderBlockedReason.INSUFFICIENT_BALANCE,
                 message=f"가용 잔고 부족: {balance_info.krw_available:,.0f}원",
             )
-
         # 포지션 크기 검증
         pos_result = await self._risk_service.check_position_size(
             order_amount, balance_info.total_krw

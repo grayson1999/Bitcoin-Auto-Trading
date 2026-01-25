@@ -412,6 +412,9 @@ class TradingService:
         idempotency_key: str | None = None,
     ) -> Order:
         """주문 레코드 생성"""
+        # user_id가 없으면 시스템 기본 사용자 ID 사용 (스케줄러 자동 주문)
+        effective_user_id = user_id or 1
+
         # 매도 주문 시 현재 평균 매수가 저장 (손익 계산용)
         avg_cost_at_order: Decimal | None = None
         if side == OrderSide.SELL:
@@ -423,7 +426,7 @@ class TradingService:
                 )
 
         order = Order(
-            user_id=user_id,
+            user_id=effective_user_id,
             signal_id=signal_id,
             order_type=order_type.value,
             side=side.value,
