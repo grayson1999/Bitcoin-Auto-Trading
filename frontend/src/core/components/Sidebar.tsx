@@ -68,7 +68,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center h-16 px-6 border-b border-white/5">
-            <div className="w-2 h-6 bg-primary rounded-full mr-3 animate-pulse" />
+            <img src="/logo.png" alt="Nano Banana" className="w-8 h-8 mr-3 rounded-full object-cover shadow-lg shadow-primary/20" />
             <h1 className="text-lg font-bold tracking-tight text-foreground font-heading">
               {currency} <span className="text-muted-foreground font-normal">Trading</span>
             </h1>
