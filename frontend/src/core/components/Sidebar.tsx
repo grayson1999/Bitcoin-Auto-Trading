@@ -7,13 +7,10 @@ import {
   Wallet,
   Shield,
   LogOut,
-  Menu,
-  X,
 } from 'lucide-react'
 import { cn } from '@core/utils'
 import { useAuth } from '@stores/auth.store'
 import { Button } from '@core/components/ui/button'
-import { useState } from 'react'
 import { useTradingConfig } from '@/core/contexts/TradingConfigContext'
 
 interface NavItem {
@@ -32,11 +29,15 @@ const navItems: NavItem[] = [
   { to: '/admin', icon: <Shield size={20} />, label: '관리자', adminOnly: true },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, isAdmin, logout } = useAuth()
   const { currency } = useTradingConfig()
   const navigate = useNavigate()
-  const [isOpen, setIsOpen] = useState(false)
 
   const handleLogout = async () => {
     await logout()
@@ -47,21 +48,11 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden text-muted-foreground hover:text-foreground hover:bg-transparent"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </Button>
-
       {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setIsOpen(false)}
+          onClick={onClose}
         />
       )}
 
@@ -89,7 +80,7 @@ export function Sidebar() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                onClick={() => setIsOpen(false)}
+                onClick={onClose}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',

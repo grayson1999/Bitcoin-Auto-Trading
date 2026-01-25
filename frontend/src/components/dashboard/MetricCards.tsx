@@ -54,7 +54,7 @@ function MetricCardItem({
       </div>
       <p
         className={cn(
-          'mt-1 text-2xl font-bold font-heading tracking-tight',
+          'mt-1 text-xl sm:text-2xl font-bold font-heading tracking-tight',
           trend === 'up' && 'text-emerald-400',
           trend === 'down' && 'text-rose-500',
           trend === 'neutral' && 'text-zinc-100'

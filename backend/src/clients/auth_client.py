@@ -76,18 +76,25 @@ class AuthClient:
         self._client = httpx.AsyncClient(
             base_url=base_url,
             timeout=httpx.Timeout(5.0, connect=3.0),
+            http2=False,  # HTTP/1.1 강제 (RemoteProtocolError 방지)
+            limits=httpx.Limits(
+                max_keepalive_connections=5,
+                keepalive_expiry=30.0,  # 30초 후 연결 만료
+            ),
         )
         logger.info(f"AuthClient 초기화 완료: {base_url}")
 
-    async def verify_token(self, token: str) -> AuthUser:
+    async def verify_token(self, token: str, max_retries: int = 2) -> AuthUser:
         """
         액세스 토큰 검증
 
         Auth Server의 /api/v1/auth/verify 엔드포인트를 호출하여
         토큰의 유효성을 검증하고 사용자 정보를 반환합니다.
+        연결 오류 시 재시도를 수행합니다.
 
         Args:
             token: Bearer 액세스 토큰
+            max_retries: 최대 재시도 횟수 (기본값: 2)
 
         Returns:
             AuthUser: 검증된 사용자 정보
@@ -95,41 +102,68 @@ class AuthClient:
         Raises:
             AuthError: 토큰 무효 (401), Auth Server 연결 실패 (503)
         """
-        try:
-            response = await self._client.get(
-                "/api/v1/auth/verify",
-                headers={"Authorization": f"Bearer {token}"},
-            )
+        last_error: Exception | None = None
 
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("is_valid"):
-                    user_data = data.get("user", {})
-                    return AuthUser(
-                        id=user_data.get("id", ""),
-                        email=user_data.get("email", ""),
-                        name=user_data.get("name", ""),
-                        role=user_data.get("role", "user"),
+        for attempt in range(max_retries + 1):
+            try:
+                response = await self._client.get(
+                    "/api/v1/auth/verify",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("is_valid"):
+                        user_data = data.get("user", {})
+                        return AuthUser(
+                            id=user_data.get("id", ""),
+                            email=user_data.get("email", ""),
+                            name=user_data.get("name", ""),
+                            role=user_data.get("role", "user"),
+                        )
+                    raise AuthError("토큰이 유효하지 않습니다", 401)
+
+                if response.status_code == 401:
+                    detail = response.json().get("detail", "인증 실패")
+                    raise AuthError(detail, 401)
+
+                raise AuthError(
+                    f"토큰 검증 실패: {response.status_code}", response.status_code
+                )
+
+            except httpx.ConnectError as e:
+                last_error = e
+                if attempt < max_retries:
+                    logger.warning(
+                        f"Auth Server 연결 실패, 재시도 ({attempt + 1}/{max_retries}): {e}"
                     )
-                raise AuthError("토큰이 유효하지 않습니다", 401)
+                    continue
+                logger.error(f"Auth Server 연결 실패: {e}")
+                raise AuthError("인증 서버에 연결할 수 없습니다", 503) from e
+            except httpx.RemoteProtocolError as e:
+                last_error = e
+                if attempt < max_retries:
+                    logger.warning(
+                        f"Auth Server 프로토콜 오류, 재시도 ({attempt + 1}/{max_retries}): {e}"
+                    )
+                    continue
+                logger.error(f"Auth Server 프로토콜 오류: {e}")
+                raise AuthError("인증 서버 연결이 끊어졌습니다", 503) from e
+            except httpx.TimeoutException as e:
+                last_error = e
+                if attempt < max_retries:
+                    logger.warning(
+                        f"Auth Server 타임아웃, 재시도 ({attempt + 1}/{max_retries}): {e}"
+                    )
+                    continue
+                logger.error(f"Auth Server 타임아웃: {e}")
+                raise AuthError("인증 서버 응답 시간 초과", 503) from e
+            except httpx.HTTPError as e:
+                logger.error(f"Auth Server HTTP 오류: {e}")
+                raise AuthError("인증 서버 오류", 503) from e
 
-            if response.status_code == 401:
-                detail = response.json().get("detail", "인증 실패")
-                raise AuthError(detail, 401)
-
-            raise AuthError(
-                f"토큰 검증 실패: {response.status_code}", response.status_code
-            )
-
-        except httpx.ConnectError as e:
-            logger.error(f"Auth Server 연결 실패: {e}")
-            raise AuthError("인증 서버에 연결할 수 없습니다", 503) from e
-        except httpx.TimeoutException as e:
-            logger.error(f"Auth Server 타임아웃: {e}")
-            raise AuthError("인증 서버 응답 시간 초과", 503) from e
-        except httpx.HTTPError as e:
-            logger.error(f"Auth Server HTTP 오류: {e}")
-            raise AuthError("인증 서버 오류", 503) from e
+        # 이 지점에 도달하면 안 되지만, 안전을 위해 추가
+        raise AuthError("인증 서버 오류", 503) from last_error
 
     async def close(self) -> None:
         """HTTP 클라이언트 연결 종료"""
