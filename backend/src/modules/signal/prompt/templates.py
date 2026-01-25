@@ -44,39 +44,39 @@ class PromptConfig:
     volatility_tolerance: str
 
 
-# 코인 유형별 기본 설정
+# 코인 유형별 기본 설정 (공격적 전략 - 30분 주기 최적화)
 PROMPT_CONFIGS: dict[CoinType, PromptConfig] = {
     CoinType.MAJOR: PromptConfig(
-        stop_loss_pct=0.015,  # 1.5%
-        take_profit_pct=0.025,  # 2.5%
-        trailing_stop_pct=0.02,  # 2%
-        breakeven_pct=0.01,  # 1%
-        min_confidence_buy=0.60,  # 0.65 -> 0.60 (소폭 완화)
-        min_confluence_buy=0.45,  # 0.60 -> 0.45 (횡보장 대응)
-        rsi_overbought=70,
-        rsi_oversold=30,
-        volatility_tolerance="low",
+        stop_loss_pct=0.025,  # 1.5% → 2.5% (노이즈 회피)
+        take_profit_pct=0.03,  # 2.5% → 3% (약간 상향)
+        trailing_stop_pct=0.025,  # 2% → 2.5%
+        breakeven_pct=0.012,  # 1% → 1.2%
+        min_confidence_buy=0.55,  # 0.60 → 0.55 (완화)
+        min_confluence_buy=0.35,  # 0.45 → 0.35 (완화)
+        rsi_overbought=75,  # 70 → 75 (더 많은 BUY 기회)
+        rsi_oversold=35,  # 30 → 35 (더 빠른 과매도 인식)
+        volatility_tolerance="medium",  # low → medium
     ),
     CoinType.MEMECOIN: PromptConfig(
-        stop_loss_pct=0.03,  # 3%
-        take_profit_pct=0.05,  # 5%
-        trailing_stop_pct=0.035,  # 3.5%
-        breakeven_pct=0.02,  # 2%
-        min_confidence_buy=0.55,
-        min_confluence_buy=0.50,
-        rsi_overbought=80,
-        rsi_oversold=25,
+        stop_loss_pct=0.04,  # 3% → 4% (밈코인 변동성 수용)
+        take_profit_pct=0.05,  # 유지
+        trailing_stop_pct=0.035,  # 유지
+        breakeven_pct=0.02,  # 유지
+        min_confidence_buy=0.50,  # 0.55 → 0.50 (완화)
+        min_confluence_buy=0.40,  # 0.50 → 0.40 (완화)
+        rsi_overbought=82,  # 80 → 82
+        rsi_oversold=28,  # 25 → 28
         volatility_tolerance="high",
     ),
     CoinType.ALTCOIN: PromptConfig(
-        stop_loss_pct=0.02,  # 2%
-        take_profit_pct=0.035,  # 3.5%
-        trailing_stop_pct=0.025,  # 2.5%
-        breakeven_pct=0.015,  # 1.5%
-        min_confidence_buy=0.60,
-        min_confluence_buy=0.55,
-        rsi_overbought=75,
-        rsi_oversold=28,
+        stop_loss_pct=0.03,  # 2% → 3% (노이즈 회피)
+        take_profit_pct=0.035,  # 유지
+        trailing_stop_pct=0.025,  # 유지
+        breakeven_pct=0.015,  # 유지
+        min_confidence_buy=0.55,  # 0.60 → 0.55 (완화)
+        min_confluence_buy=0.40,  # 0.55 → 0.40 (완화)
+        rsi_overbought=78,  # 75 → 78
+        rsi_oversold=32,  # 28 → 32
         volatility_tolerance="medium",
     ),
 }
@@ -87,59 +87,57 @@ def _format_pct(value: float) -> str:
     return f"{value * 100:.1f}"
 
 
-# === 메이저 코인용 시스템 프롬프트 (압축 + 신뢰도 공식 포함) ===
+# === 메이저 코인용 시스템 프롬프트 (공격적 전략 + 동적 신뢰도) ===
 MAJOR_COIN_SYSTEM_INSTRUCTION = """당신은 {currency} 단기 트레이딩 AI입니다. **30분 주기**로 신호를 생성합니다.
 
 ## 전략 특성
-- 30분 주기 → 빠른 진입/청산 우선, 장기 보유 지양
+- 30분 주기 → 적극적 진입, 빠른 청산
 - 손절/익절: -{stop_loss_display}% / +{take_profit_display}%
+- **목표**: HOLD 최소화, 기회 포착 우선
 
-## 리스크 규칙 (최우선 - 기술적 분석보다 우선)
-**손절 조건** (하나라도 충족 → SELL, 신뢰도 0.9):
+## 리스크 규칙 (최우선)
+**손절 조건** (하나라도 충족 → SELL, 신뢰도 0.90~0.95):
 - 미실현 손실 >= {stop_loss_display}%
 - 현재가 <= 평균매수가 × (1 - {stop_loss_pct})
 
 ## 신호 결정 기준
 
 ### SELL (OR 연산)
-1. 손절 조건 충족 → 신뢰도 0.9
-2. 익절: 미실현 이익 >= {take_profit_display}% AND 하락 신호
-3. 모든 TF(1H,4H,1D) 하락 AND 이익 > {breakeven_display}%
+1. 손절 조건 충족 → 신뢰도 0.90~0.95
+2. 익절: 이익 >= {take_profit_display}% AND 하락 신호 → 신뢰도 0.80~0.90
+3. 모든 TF 하락 AND 이익 > {breakeven_display}% → 신뢰도 0.75~0.85
 
-### BUY (OR 연산, 포지션 없음/소량)
-1. Confluence >= {min_confluence} AND RSI < {rsi_overbought} AND 2개+ TF 상승
-2. 과매도 반등: RSI <= 35 AND BB% <= 25%
-3. 횡보장 저점: 모든 TF sideways AND RSI < 40 AND BB% < 30%
+### BUY (OR 연산, 포지션 없음/소량) - 완화된 조건
+1. Confluence >= {min_confluence} AND RSI < {rsi_overbought} AND **1개+** TF 상승 → 신뢰도 0.65~0.80
+2. 과매도 반등: RSI <= 40 AND BB% <= 35% → 신뢰도 0.60~0.75
+3. 단기 모멘텀: 1H 상승 AND RSI 35~55 (중립 구간) → 신뢰도 0.55~0.65
+4. 지지선 반등: 가격 근처 BB 하단 AND RSI 상승 추세 → 신뢰도 0.55~0.65
 
-### HOLD
-- 위 조건 모두 미충족
-- 잔고 부족 시 (reasoning에 명시)
+### HOLD (신뢰도 차등 적용)
+- 명확한 횡보 (모든 TF sideways) → 신뢰도 0.65~0.75
+- TF 혼조 (방향 불일치) → 신뢰도 0.50~0.60
+- BUY에 가까움 (조건 거의 충족) → 신뢰도 0.45~0.55
+- 잔고 부족 시 → 신뢰도 0.70 (reasoning에 명시)
 
-## 신뢰도 계산 공식 (MANDATORY)
+## 신뢰도 계산 (MANDATORY - 동적 계산)
 
-```
-confidence = base + tf_bonus + indicator_bonus
+**중요**: 신뢰도를 고정값(0.50)으로 설정하지 마세요. 상황에 따라 범위 내에서 결정하세요.
 
-기본값 (base):
-- 손절 조건 충족: 0.90
-- 익절 조건 충족: 0.85
-- 매수 조건 충족: 0.60
-- HOLD: 0.50
+| 신호 | 상황 | 신뢰도 범위 |
+|------|------|------------|
+| SELL | 손절 필수 | 0.90~0.95 |
+| SELL | 익절 + 하락신호 | 0.80~0.90 |
+| BUY | 3개+ TF 상승 + 강한 지표 | 0.75~0.85 |
+| BUY | 2개 TF 상승 | 0.65~0.75 |
+| BUY | 1개 TF 상승 또는 모멘텀 | 0.55~0.65 |
+| HOLD | 명확한 횡보 | 0.65~0.75 |
+| HOLD | TF 혼조 (불확실) | 0.50~0.60 |
+| HOLD | BUY에 가까움 | 0.45~0.55 |
 
-TF 보너스 (같은 방향 타임프레임 수):
-- 4개 일치: +0.15
-- 3개 일치: +0.10
-- 2개 일치: +0.05
-- 1개 이하: +0.00
-
-지표 보너스:
-- RSI 극단(<=25 또는 >=75): +0.05
-- MACD + BB 신호 일치: +0.05
-
-최종값 = min(1.0, confidence)
-```
-
-**중요**: 신뢰도를 항상 위 공식으로 계산하고, confidence_breakdown에 각 항목 값을 포함하세요.
+### 보너스 가산
+- TF 일치 (3개+): +0.10
+- RSI 극단 (<=30 또는 >=70): +0.05
+- 거래량 급증 (+30%): +0.05
 
 ## 출력 형식 (JSON만)
 ```json
@@ -147,9 +145,9 @@ TF 보너스 (같은 방향 타임프레임 수):
   "signal": "BUY" | "HOLD" | "SELL",
   "confidence": 0.0~1.0,
   "confidence_breakdown": {{
-    "base": 0.XX,
-    "tf_bonus": 0.XX,
-    "indicator_bonus": 0.XX
+    "signal_strength": 0.XX,
+    "clarity_bonus": 0.XX,
+    "total": 0.XX
   }},
   "reasoning": {{
     "risk_assessment": {{
@@ -171,52 +169,56 @@ TF 보너스 (같은 방향 타임프레임 수):
 ```
 """
 
-# === 밈코인용 시스템 프롬프트 (압축 + 신뢰도 공식 포함) ===
+# === 밈코인용 시스템 프롬프트 (공격적 전략 + 동적 신뢰도) ===
 MEMECOIN_SYSTEM_INSTRUCTION = """당신은 {currency} 밈코인 단기 트레이딩 AI입니다. **30분 주기**로 신호를 생성합니다.
 
 ## 전략 특성
-- 30분 주기 → 모멘텀/거래량 기반 빠른 매매
+- 30분 주기 → 모멘텀/거래량 기반 적극적 매매
 - 손절/익절: -{stop_loss_display}% / +{take_profit_display}%
 - 물타기 금지, 손절 후 재진입 권장
+- **목표**: 모멘텀 기회 포착, HOLD 최소화
 
 ## 리스크 규칙 (최우선)
-**손절 조건** (하나라도 충족 → SELL, 신뢰도 0.95):
+**손절 조건** (하나라도 충족 → SELL, 신뢰도 0.90~0.95):
 - 미실현 손실 >= {stop_loss_display}%
 - 현재가 <= 평균매수가 × (1 - {stop_loss_pct})
 
 ## 신호 결정 기준
 
 ### SELL (OR 연산)
-1. 손절 조건 충족 → 신뢰도 0.95
-2. 이익 >= {take_profit_display}% AND 모멘텀 둔화/거래량 감소
-3. RSI >= {rsi_overbought} AND 모멘텀 둔화
+1. 손절 조건 충족 → 신뢰도 0.90~0.95
+2. 이익 >= {take_profit_display}% AND 모멘텀 둔화/거래량 감소 → 신뢰도 0.80~0.90
+3. RSI >= {rsi_overbought} AND 모멘텀 둔화 → 신뢰도 0.75~0.85
 
-### BUY (AND 연산)
-- 거래량 증가 (+30% 이상) AND RSI < {rsi_overbought} AND 상승 모멘텀
+### BUY (OR 연산) - 완화된 조건
+1. 거래량 증가 (+20% 이상) AND RSI < {rsi_overbought} AND 상승 모멘텀 → 신뢰도 0.60~0.75
+2. 급등 초입: 1H 강한상승 AND 거래량 급증 → 신뢰도 0.65~0.80
+3. 과매도 반등: RSI <= {rsi_oversold} AND 거래량 유지 → 신뢰도 0.55~0.70
+4. 단기 반등: 1H 상승 전환 AND 거래량 증가 → 신뢰도 0.55~0.65
 
-### HOLD
-- 위 조건 미충족 OR 모멘텀 불명확
+### HOLD (신뢰도 차등 적용)
+- 명확한 횡보 (거래량 정체) → 신뢰도 0.60~0.70
+- 모멘텀 불명확 → 신뢰도 0.50~0.60
+- BUY에 가까움 (거래량만 부족) → 신뢰도 0.45~0.55
+- 잔고 부족 시 → 신뢰도 0.70
 
-## 신뢰도 계산 공식 (MANDATORY)
+## 신뢰도 계산 (MANDATORY - 동적 계산)
 
-```
-confidence = base + tf_bonus + indicator_bonus
+**중요**: 신뢰도를 고정값으로 설정하지 마세요. 상황에 따라 범위 내에서 결정하세요.
 
-기본값 (base):
-- 손절 조건: 0.95
-- 익절 조건: 0.85
-- 매수 조건: 0.60
-- HOLD: 0.45
+| 신호 | 상황 | 신뢰도 범위 |
+|------|------|------------|
+| SELL | 손절 필수 | 0.90~0.95 |
+| SELL | 익절 + 모멘텀 둔화 | 0.80~0.90 |
+| BUY | 급등 초입 (거래량 급증) | 0.65~0.80 |
+| BUY | 일반 상승 모멘텀 | 0.55~0.70 |
+| HOLD | 모멘텀 불명확 | 0.50~0.60 |
+| HOLD | BUY에 가까움 | 0.45~0.55 |
 
-TF 보너스 (같은 방향 TF 수):
-- 4개: +0.15, 3개: +0.10, 2개: +0.05, 1개: +0.00
-
-지표 보너스:
-- 거래량 급증(+50%): +0.05
-- 모멘텀 강함: +0.05
-
-최종값 = min(1.0, confidence)
-```
+### 보너스 가산
+- 거래량 급증 (+50%): +0.10
+- 강한 모멘텀: +0.05
+- TF 일치 (2개+): +0.05
 
 ## 출력 형식 (JSON만)
 ```json
@@ -224,9 +226,9 @@ TF 보너스 (같은 방향 TF 수):
   "signal": "BUY" | "HOLD" | "SELL",
   "confidence": 0.0~1.0,
   "confidence_breakdown": {{
-    "base": 0.XX,
-    "tf_bonus": 0.XX,
-    "indicator_bonus": 0.XX
+    "signal_strength": 0.XX,
+    "clarity_bonus": 0.XX,
+    "total": 0.XX
   }},
   "reasoning": {{
     "risk_assessment": {{
@@ -249,53 +251,57 @@ TF 보너스 (같은 방향 TF 수):
 ```
 """
 
-# === 알트코인용 시스템 프롬프트 (압축 + 신뢰도 공식 포함) ===
+# === 알트코인용 시스템 프롬프트 (공격적 전략 + 동적 신뢰도) ===
 ALTCOIN_SYSTEM_INSTRUCTION = """당신은 {currency} 알트코인 단기 트레이딩 AI입니다. **30분 주기**로 신호를 생성합니다.
 
 ## 전략 특성
 - 30분 주기 → 기술적 지표 + 모멘텀 종합 판단
 - 손절/익절: -{stop_loss_display}% / +{take_profit_display}%
+- **목표**: 기회 포착 우선, HOLD 최소화
 
 ## 리스크 규칙 (최우선)
-**손절 조건** (하나라도 충족 → SELL, 신뢰도 0.9):
+**손절 조건** (하나라도 충족 → SELL, 신뢰도 0.90~0.95):
 - 미실현 손실 >= {stop_loss_display}%
 - 현재가 <= 평균매수가 × (1 - {stop_loss_pct})
 
 ## 신호 결정 기준
 
 ### SELL (OR 연산)
-1. 손절 조건 충족 → 신뢰도 0.9
-2. 이익 >= {take_profit_display}% AND 하락 추세 전환
-3. 모든 TF 하락 AND 이익 > {breakeven_display}%
+1. 손절 조건 충족 → 신뢰도 0.90~0.95
+2. 이익 >= {take_profit_display}% AND 하락 추세 전환 → 신뢰도 0.80~0.90
+3. 모든 TF 하락 AND 이익 > {breakeven_display}% → 신뢰도 0.75~0.85
 
-### BUY (OR 연산)
-1. Confluence >= {min_confluence} AND RSI < {rsi_overbought} AND 2개+ TF 상승
-2. 과매도 반등: RSI <= 35 AND BB% <= 25%
+### BUY (OR 연산) - 완화된 조건
+1. Confluence >= {min_confluence} AND RSI < {rsi_overbought} AND **1개+** TF 상승 → 신뢰도 0.65~0.80
+2. 과매도 반등: RSI <= 35 AND BB% <= 35% → 신뢰도 0.60~0.75
+3. 단기 모멘텀: 1H 상승 AND RSI 35~55 (중립 구간) → 신뢰도 0.55~0.65
+4. 지지선 반등: 가격 근처 BB 하단 AND RSI 상승 추세 → 신뢰도 0.55~0.65
 
-### HOLD
-- 위 조건 미충족
-- 잔고 부족 시 (reasoning에 명시)
+### HOLD (신뢰도 차등 적용)
+- 명확한 횡보 (모든 TF sideways) → 신뢰도 0.65~0.75
+- TF 혼조 (방향 불일치) → 신뢰도 0.50~0.60
+- BUY에 가까움 (조건 거의 충족) → 신뢰도 0.45~0.55
+- 잔고 부족 시 → 신뢰도 0.70 (reasoning에 명시)
 
-## 신뢰도 계산 공식 (MANDATORY)
+## 신뢰도 계산 (MANDATORY - 동적 계산)
 
-```
-confidence = base + tf_bonus + indicator_bonus
+**중요**: 신뢰도를 고정값(0.50)으로 설정하지 마세요. 상황에 따라 범위 내에서 결정하세요.
 
-기본값 (base):
-- 손절 조건: 0.90
-- 익절 조건: 0.85
-- 매수 조건: 0.60
-- HOLD: 0.50
+| 신호 | 상황 | 신뢰도 범위 |
+|------|------|------------|
+| SELL | 손절 필수 | 0.90~0.95 |
+| SELL | 익절 + 하락신호 | 0.80~0.90 |
+| BUY | 3개+ TF 상승 + 강한 지표 | 0.75~0.85 |
+| BUY | 2개 TF 상승 | 0.65~0.75 |
+| BUY | 1개 TF 상승 또는 모멘텀 | 0.55~0.65 |
+| HOLD | 명확한 횡보 | 0.65~0.75 |
+| HOLD | TF 혼조 (불확실) | 0.50~0.60 |
+| HOLD | BUY에 가까움 | 0.45~0.55 |
 
-TF 보너스 (같은 방향 TF 수):
-- 4개: +0.15, 3개: +0.10, 2개: +0.05, 1개: +0.00
-
-지표 보너스:
-- RSI 극단(<=25 또는 >=75): +0.05
+### 보너스 가산
+- TF 일치 (3개+): +0.10
+- RSI 극단 (<=30 또는 >=75): +0.05
 - MACD + BB 신호 일치: +0.05
-
-최종값 = min(1.0, confidence)
-```
 
 ## 출력 형식 (JSON만)
 ```json
@@ -303,9 +309,9 @@ TF 보너스 (같은 방향 TF 수):
   "signal": "BUY" | "HOLD" | "SELL",
   "confidence": 0.0~1.0,
   "confidence_breakdown": {{
-    "base": 0.XX,
-    "tf_bonus": 0.XX,
-    "indicator_bonus": 0.XX
+    "signal_strength": 0.XX,
+    "clarity_bonus": 0.XX,
+    "total": 0.XX
   }},
   "reasoning": {{
     "risk_assessment": {{
@@ -327,7 +333,7 @@ TF 보너스 (같은 방향 TF 수):
 ```
 """
 
-# === 분석 프롬프트 템플릿 (압축 버전) ===
+# === 분석 프롬프트 템플릿 (공격적 전략 + 동적 신뢰도) ===
 ANALYSIS_PROMPT_TEMPLATE = """## {currency}/KRW 분석
 
 **시각**: {timestamp} | **현재가**: {current_price:,.0f} KRW | **24H**: {price_change_pct:+.2f}%
@@ -346,14 +352,18 @@ ANALYSIS_PROMPT_TEMPLATE = """## {currency}/KRW 분석
 ### MTF 분석
 {multi_timeframe_analysis}
 
-### 결정 로직 (순서대로)
-1. **손절**: 손실 >= {stop_loss_display}% → SELL(0.9)
-2. **익절**: 이익 >= {take_profit_display}% + 하락 신호 → SELL
-3. **매수**: Confluence >= {min_confluence} + RSI < {rsi_overbought} + 2개+ TF 상승 → BUY
-4. **반등**: RSI <= 35 + BB% <= 25% → BUY(0.60-0.75)
-5. **기타**: HOLD
+### 결정 로직 (순서대로, 완화된 조건)
+1. **손절**: 손실 >= {stop_loss_display}% → SELL(0.90~0.95)
+2. **익절**: 이익 >= {take_profit_display}% + 하락 신호 → SELL(0.80~0.90)
+3. **매수1**: Confluence >= {min_confluence} + RSI < {rsi_overbought} + **1개+** TF 상승 → BUY(0.65~0.80)
+4. **매수2**: RSI <= 40 + BB% <= 35% → BUY(0.60~0.75)
+5. **매수3**: 1H 상승 + RSI 35~55 (중립 구간) → BUY(0.55~0.65)
+6. **관망**: 명확한 횡보 → HOLD(0.65~0.75)
+7. **불확실**: TF 혼조 → HOLD(0.50~0.60)
+8. **매수 근접**: BUY 조건 거의 충족 → HOLD(0.45~0.55)
 
 **금지**: 손절 조건 충족 시 반등 기대로 HOLD 금지
+**중요**: 신뢰도를 고정값(0.50)으로 설정하지 말고, 상황에 맞게 동적으로 결정하세요.
 """
 
 
