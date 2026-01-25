@@ -224,21 +224,21 @@
 
 ### US5용 API 레이어
 
-- [ ] T084 [P] [US5] `frontend/src/api/config.api.ts`에 설정 API 함수 생성
+- [X] T084 [P] [US5] `frontend/src/api/config.api.ts`에 설정 API 함수 생성
 
 ### US5용 설정 컴포넌트
 
-- [ ] T085 [P] [US5] `frontend/src/components/settings/TradingSettingsForm.tsx`에 TradingSettingsForm 컴포넌트 생성 (포지션 크기, 손절매, 일일 한도)
-- [ ] T086 [P] [US5] `frontend/src/components/settings/AISettingsForm.tsx`에 AISettingsForm 컴포넌트 생성 (모델, 신호 주기)
-- [ ] T087 [P] [US5] `frontend/src/components/settings/ResetSettingsButton.tsx`에 ResetSettingsButton 컴포넌트 생성
-- [ ] T088 [P] [US5] `frontend/src/components/settings/SettingsSection.tsx`에 SettingsSection 래퍼 컴포넌트 생성
+- [X] T085 [P] [US5] `frontend/src/components/settings/TradingSettingsForm.tsx`에 TradingSettingsForm 컴포넌트 생성 (포지션 크기, 손절매, 일일 한도)
+- [X] T086 [P] [US5] `frontend/src/components/settings/AISettingsForm.tsx`에 AISettingsForm 컴포넌트 생성 (모델, 신호 주기)
+- [X] T087 [P] [US5] `frontend/src/components/settings/ResetSettingsButton.tsx`에 ResetSettingsButton 컴포넌트 생성
+- [X] T088 [P] [US5] `frontend/src/components/settings/SettingsSection.tsx`에 SettingsSection 래퍼 컴포넌트 생성
 
 ### US5용 설정 뷰
 
-- [ ] T089 [US5] `frontend/src/views/SettingsView.tsx`에 모든 설정 폼이 포함된 SettingsView 페이지 생성
-- [ ] T090 [US5] 숫자 입력 폼 유효성 검사 구현
-- [ ] T091 [US5] 성공/에러 토스트 알림과 함께 저장 기능 구현
-- [ ] T092 [US5] 확인 다이얼로그와 함께 기본값 초기화 구현
+- [X] T089 [US5] `frontend/src/views/SettingsView.tsx`에 모든 설정 폼이 포함된 SettingsView 페이지 생성
+- [X] T090 [US5] 숫자 입력 폼 유효성 검사 구현
+- [X] T091 [US5] 성공/에러 토스트 알림과 함께 저장 기능 구현
+- [X] T092 [US5] 확인 다이얼로그와 함께 기본값 초기화 구현
 
 **체크포인트**: 사용자 스토리 5 완료 - 저장 및 초기화 기능이 포함된 설정 페이지 동작
 

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '@stores/auth.store'
 import { TradingConfigProvider } from '@/core/contexts/TradingConfigContext'
+import { ToastProvider } from '@/core/components/Toast'
 import App from './App'
 import './index.css'
 
@@ -23,7 +24,9 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <AuthProvider>
           <TradingConfigProvider>
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </TradingConfigProvider>
         </AuthProvider>
       </BrowserRouter>
