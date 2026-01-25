@@ -117,16 +117,23 @@ class TradingService:
         self._monitor = OrderMonitor(session, private_api)
         self._position_manager = PositionManager(session, public_api, self._validator)
 
-    async def execute_from_signal(self, signal: TradingSignal) -> OrderResult:
+    async def execute_from_signal(
+        self,
+        signal: TradingSignal,
+        user_id: int | None = None,
+    ) -> OrderResult:
         """
         AI 신호에 따른 주문 실행
 
         Args:
             signal: AI 매매 신호
+            user_id: 주문 생성자 ID (기본값: signal.user_id)
 
         Returns:
             OrderResult: 실행 결과
         """
+        # user_id가 없으면 signal.user_id 사용
+        order_user_id = user_id or signal.user_id
         logger.info(
             f"주문 실행 시작: signal_id={signal.id}, "
             f"type={signal.signal_type}, confidence={signal.confidence}"
@@ -153,9 +160,9 @@ class TradingService:
 
         # 2. 주문 방향에 따른 처리
         if signal.signal_type == SignalType.BUY.value:
-            return await self._execute_buy_order(signal, balance_info)
+            return await self._execute_buy_order(signal, balance_info, order_user_id)
         elif signal.signal_type == SignalType.SELL.value:
-            return await self._execute_sell_order(signal, balance_info)
+            return await self._execute_sell_order(signal, balance_info, order_user_id)
 
         return OrderResult(
             success=False,
@@ -167,6 +174,7 @@ class TradingService:
         self,
         signal: TradingSignal,
         balance_info: BalanceInfo,
+        user_id: int | None = None,
     ) -> OrderResult:
         """매수 주문 실행"""
         logger.info("매수 주문 처리 시작")
@@ -186,12 +194,14 @@ class TradingService:
             side=OrderSide.BUY,
             amount=buy_validation.order_amount,
             signal_id=signal.id,
+            user_id=user_id,
         )
 
     async def _execute_sell_order(
         self,
         signal: TradingSignal,
         balance_info: BalanceInfo,
+        user_id: int | None = None,
     ) -> OrderResult:
         """매도 주문 실행"""
         logger.info("매도 주문 처리 시작")
@@ -219,6 +229,7 @@ class TradingService:
             side=OrderSide.SELL,
             amount=sell_volume,
             signal_id=signal.id,
+            user_id=user_id,
         )
 
     async def _place_order_with_retry(
@@ -226,6 +237,7 @@ class TradingService:
         side: OrderSide,
         amount: Decimal,
         signal_id: int | None = None,
+        user_id: int | None = None,
     ) -> OrderResult:
         """
         재시도 로직이 포함된 주문 실행 (중복 주문 방지 포함)
@@ -234,6 +246,7 @@ class TradingService:
             side: 주문 방향 (BUY/SELL)
             amount: 주문 금액(매수) 또는 수량(매도)
             signal_id: 연관 신호 ID
+            user_id: 주문 생성자 ID
 
         Returns:
             OrderResult: 실행 결과
@@ -273,6 +286,7 @@ class TradingService:
                         side=side,
                         amount=amount,
                         signal_id=signal_id,
+                        user_id=user_id,
                         idempotency_key=idempotency_key,
                     )
                     logger.info(
@@ -313,6 +327,7 @@ class TradingService:
                             side=side,
                             amount=amount,
                             signal_id=signal_id,
+                            user_id=user_id,
                             idempotency_key=idempotency_key,
                         )
                     order.mark_failed(e.message)
@@ -343,6 +358,7 @@ class TradingService:
                 side=side,
                 amount=amount,
                 signal_id=signal_id,
+                user_id=user_id,
                 idempotency_key=idempotency_key,
             )
             error_msg = str(last_error) if last_error else "알 수 없는 오류"
@@ -390,6 +406,7 @@ class TradingService:
         side: OrderSide,
         amount: Decimal,
         signal_id: int | None = None,
+        user_id: int | None = None,
         order_type: OrderType = OrderType.MARKET,
         price: Decimal | None = None,
         idempotency_key: str | None = None,
@@ -406,6 +423,7 @@ class TradingService:
                 )
 
         order = Order(
+            user_id=user_id,
             signal_id=signal_id,
             order_type=order_type.value,
             side=side.value,
@@ -463,6 +481,7 @@ class TradingService:
                 )
 
             daily_stats = DailyStats(
+                user_id=order.user_id,
                 date=today,
                 starting_balance=current_balance,
                 ending_balance=current_balance,

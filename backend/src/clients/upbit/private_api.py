@@ -267,7 +267,12 @@ class UpbitPrivateAPI:
         if volume is not None:
             params["volume"] = str(volume)
         if price is not None:
-            params["price"] = str(price)
+            # 시장가 매수(ord_type=price)는 원화 금액이므로 정수로 변환
+            # Upbit은 원화 금액에 소수점을 허용하지 않음
+            if ord_type == "price":
+                params["price"] = str(int(price))
+            else:
+                params["price"] = str(price)
 
         logger.info(f"Order request: {params}")
 
@@ -303,6 +308,12 @@ class UpbitPrivateAPI:
 
         if not isinstance(response, dict):
             raise UpbitPrivateAPIError(ERROR_INVALID_ORDER)
+
+        logger.debug(
+            f"Get order response: uuid={uuid}, state={response.get('state')}, "
+            f"executed_volume={response.get('executed_volume')}, "
+            f"executed_funds={response.get('executed_funds')}"
+        )
 
         return parse_order_response(response)
 

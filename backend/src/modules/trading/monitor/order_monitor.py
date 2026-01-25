@@ -198,6 +198,30 @@ class OrderMonitor:
                     return
 
                 elif upbit_response.state == "cancel":
+                    # 부분 체결 후 취소된 경우 (시장가 매수에서 자주 발생)
+                    if (
+                        upbit_response.executed_volume
+                        and upbit_response.executed_volume > 0
+                    ):
+                        executed_price = self.calculate_executed_price(
+                            order, upbit_response
+                        )
+                        executed_volume = upbit_response.executed_volume
+                        total_value = executed_volume * executed_price
+                        fee = total_value * _UPBIT_FEE_RATE
+
+                        order.mark_executed(
+                            executed_price=executed_price,
+                            executed_amount=executed_volume,
+                            fee=fee,
+                        )
+                        logger.info(
+                            f"[부분 체결 후 취소] order_id={order.id}, "
+                            f"executed_price={executed_price}, "
+                            f"executed_amount={executed_volume}"
+                        )
+                        return
+
                     order.mark_cancelled()
                     logger.warning(f"[주문 취소됨] order_id={order.id}")
                     return
@@ -272,8 +296,28 @@ class OrderMonitor:
                     synced_count += 1
 
                 elif upbit_order.state == "cancel":
-                    order.mark_cancelled()
-                    logger.info(f"PENDING 주문 취소 확인: order_id={order.id}")
+                    # 부분 체결 후 취소된 경우
+                    executed_volume = upbit_order.executed_volume or Decimal("0")
+                    if executed_volume > 0:
+                        executed_price = self.calculate_executed_price(
+                            order, upbit_order
+                        )
+                        total_value = executed_volume * executed_price
+                        fee = total_value * _UPBIT_FEE_RATE
+
+                        order.mark_executed(
+                            executed_price=executed_price,
+                            executed_amount=executed_volume,
+                            fee=fee,
+                        )
+                        logger.info(
+                            f"PENDING 주문 부분 체결 확인: order_id={order.id}, "
+                            f"executed_price={executed_price}, "
+                            f"executed_amount={executed_volume}"
+                        )
+                    else:
+                        order.mark_cancelled()
+                        logger.info(f"PENDING 주문 취소 확인: order_id={order.id}")
                     synced_count += 1
 
                 # state == "wait" 인 경우는 여전히 대기 중이므로 건너뜀

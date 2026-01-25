@@ -7,7 +7,7 @@ AI 매매 신호 API 엔드포인트 모듈
 - 수동 신호 생성 (POST /signals/generate)
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
@@ -215,4 +215,86 @@ async def generate_signal(
         raise HTTPException(
             status_code=503,
             detail=f"신호 생성 실패: {error_msg}",
+        ) from e
+
+
+@router.post(
+    "/generate-manual",
+    response_model=GenerateSignalResponse,
+    summary="테스트용 수동 신호 생성",
+    description="AI를 거치지 않고 직접 매매 신호를 생성합니다 (테스트용).",
+    responses={
+        503: {"description": "시장 데이터 없음"},
+    },
+)
+async def generate_manual_signal(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: CurrentUser,
+    resolved_user: ResolvedUser,
+    signal_type: Annotated[
+        Literal["BUY", "HOLD", "SELL"],
+        Query(description="신호 타입 (BUY/HOLD/SELL)"),
+    ],
+    confidence: Annotated[
+        float,
+        Query(ge=0.0, le=1.0, description="신뢰도 (0.0~1.0)"),
+    ] = 0.85,
+    reasoning: Annotated[
+        str,
+        Query(description="신호 근거"),
+    ] = "테스트용 수동 생성 신호",
+) -> GenerateSignalResponse:
+    """
+    테스트용 수동 신호 생성
+
+    AI를 거치지 않고 직접 BUY/SELL/HOLD 신호를 생성합니다.
+    BUY/SELL 신호 생성 시 자동 거래가 실행됩니다.
+
+    Args:
+        session: 데이터베이스 세션
+        signal_type: 신호 타입 (BUY/HOLD/SELL)
+        confidence: 신뢰도 (0.0~1.0, 기본값: 0.85)
+        reasoning: 신호 근거
+
+    Returns:
+        GenerateSignalResponse: 생성된 신호와 메시지
+    """
+    service = get_signal_service(session)
+
+    try:
+        signal = await service.create_manual_signal(
+            signal_type=signal_type,
+            confidence=confidence,
+            reasoning=reasoning,
+            user_id=resolved_user.id,
+        )
+
+        logger.info(
+            f"수동 신호 생성 완료: {signal.signal_type} (신뢰도: {signal.confidence})"
+        )
+
+        # BUY/SELL 신호면 자동 매매 실행
+        if signal.signal_type in (SignalType.BUY.value, SignalType.SELL.value):
+            logger.info(f"자동 매매 트리거: signal_id={signal.id}")
+            await execute_trading_from_signal_job(signal.id)
+
+        return GenerateSignalResponse(
+            signal=TradingSignalResponse.model_validate(signal),
+            message=f"수동 신호가 성공적으로 생성되었습니다 ({signal.signal_type})",
+        )
+
+    except SignalServiceError as e:
+        error_msg = str(e)
+
+        # 시장 데이터 없음
+        if "시장 데이터" in error_msg:
+            raise HTTPException(
+                status_code=503,
+                detail="분석할 시장 데이터가 없습니다. 데이터 수집을 확인하세요.",
+            ) from e
+
+        logger.error(f"수동 신호 생성 실패: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"수동 신호 생성 실패: {error_msg}",
         ) from e

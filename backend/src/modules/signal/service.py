@@ -336,6 +336,63 @@ class SignalService:
             logger.warning(f"잔고 조회 중 오류: {e}")
             return None
 
+    async def create_manual_signal(
+        self,
+        signal_type: str,
+        confidence: float = 0.85,
+        reasoning: str = "테스트용 수동 생성 신호",
+        user_id: int | None = None,
+    ) -> TradingSignal:
+        """
+        수동 신호 생성 (AI 호출 없음)
+
+        테스트 목적으로 직접 BUY/SELL/HOLD 신호를 생성합니다.
+
+        Args:
+            signal_type: 신호 타입 (BUY/HOLD/SELL)
+            confidence: 신뢰도 (0.0~1.0, 기본값: 0.85)
+            reasoning: 신호 근거 (기본값: "테스트용 수동 생성 신호")
+            user_id: 생성자 ID
+
+        Returns:
+            TradingSignal: 생성된 신호
+
+        Raises:
+            SignalServiceError: 시장 데이터가 없는 경우
+        """
+        # 1. 최신 시장 데이터 조회
+        raw_market_data = await self._get_recent_market_data(hours=1)
+        if not raw_market_data:
+            raise SignalServiceError("분석할 시장 데이터가 없습니다")
+
+        latest_data = raw_market_data[0]
+
+        # 2. 신호 생성
+        signal = TradingSignal(
+            market_data_id=latest_data.id,
+            signal_type=signal_type.upper(),
+            confidence=Decimal(str(max(0.0, min(1.0, confidence)))),
+            reasoning=reasoning,
+            created_at=datetime.now(UTC),
+            model_name="manual-test",
+            input_tokens=0,
+            output_tokens=0,
+            price_at_signal=latest_data.price,
+            user_id=user_id,
+        )
+
+        # 3. DB 저장
+        await self._signal_repo.save(signal)
+        await self.db.commit()
+        await self.db.refresh(signal)
+
+        logger.info(
+            f"수동 신호 생성 완료: {signal.signal_type} "
+            f"(신뢰도: {signal.confidence}, user_id: {user_id})"
+        )
+
+        return signal
+
     async def get_latest_signal(self) -> TradingSignal | None:
         """최신 신호 조회 (Repository 사용)"""
         return await self._signal_repo.get_latest_one()

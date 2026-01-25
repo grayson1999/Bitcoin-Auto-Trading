@@ -72,7 +72,9 @@ async def generate_trading_signal_job() -> None:
                     f"type={signal.signal_type}, confidence={signal.confidence}"
                 )
 
-                order_result = await trading_service.execute_from_signal(signal)
+                order_result = await trading_service.execute_from_signal(
+                    signal, user_id=signal.user_id
+                )
 
                 if order_result.success:
                     if order_result.order:
@@ -151,7 +153,9 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
 
             # 2. TradingService 생성 및 주문 실행
             trading_service = await get_trading_service(session)
-            order_result = await trading_service.execute_from_signal(signal)
+            order_result = await trading_service.execute_from_signal(
+                signal, user_id=signal.user_id
+            )
 
             if order_result.success:
                 if order_result.order:
@@ -162,6 +166,8 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
                     )
                 else:
                     logger.info(f"자동 매매 결과: {order_result.message}")
+                # 성공 시 커밋 (TradingService에서 커밋했지만 세션 종료 전 재확인)
+                await session.commit()
             else:
                 logger.warning(
                     f"자동 매매 실패: {order_result.message}, "
