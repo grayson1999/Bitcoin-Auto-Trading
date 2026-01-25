@@ -254,24 +254,24 @@
 
 ### US6용 API 레이어
 
-- [ ] T093 [P] [US6] `frontend/src/api/admin.api.ts`에 관리자 API 함수 생성
-- [ ] T094 [P] [US6] `frontend/src/api/health.api.ts`에 헬스 API 함수 생성
-- [ ] T095 [P] [US6] `frontend/src/api/mocks/admin.mock.ts`에 관리자 시스템 메트릭 mock 데이터 폴백 생성
+- [X] T093 [P] [US6] `frontend/src/api/admin.api.ts`에 관리자 API 함수 생성
+- [X] T094 [P] [US6] `frontend/src/api/health.api.ts`에 헬스 API 함수 생성
+- [X] T095 [P] [US6] `frontend/src/api/mocks/admin.mock.ts`에 관리자 시스템 메트릭 mock 데이터 폴백 생성
 
 ### US6용 관리자 컴포넌트
 
-- [ ] T096 [P] [US6] `frontend/src/components/admin/SchedulerStatus.tsx`에 SchedulerStatus 컴포넌트 생성
-- [ ] T097 [P] [US6] `frontend/src/components/admin/DatabaseStatus.tsx`에 DatabaseStatus 컴포넌트 생성
-- [ ] T098 [P] [US6] `frontend/src/components/admin/SystemResources.tsx`에 SystemResources 컴포넌트 생성 (CPU, 메모리)
-- [ ] T099 [P] [US6] `frontend/src/components/admin/DiskUsage.tsx`에 70% 경고가 포함된 DiskUsage 컴포넌트 생성
-- [ ] T100 [P] [US6] `frontend/src/components/admin/SystemHealthOverview.tsx`에 SystemHealthOverview 컴포넌트 생성
+- [X] T096 [P] [US6] `frontend/src/components/admin/SchedulerStatus.tsx`에 SchedulerStatus 컴포넌트 생성
+- [X] T097 [P] [US6] `frontend/src/components/admin/DatabaseStatus.tsx`에 DatabaseStatus 컴포넌트 생성
+- [X] T098 [P] [US6] `frontend/src/components/admin/SystemResources.tsx`에 SystemResources 컴포넌트 생성 (CPU, 메모리)
+- [X] T099 [P] [US6] `frontend/src/components/admin/DiskUsage.tsx`에 70% 경고가 포함된 DiskUsage 컴포넌트 생성
+- [X] T100 [P] [US6] `frontend/src/components/admin/SystemHealthOverview.tsx`에 SystemHealthOverview 컴포넌트 생성
 
 ### US6용 관리자 뷰
 
-- [ ] T101 [US6] `frontend/src/views/AdminView.tsx`에 모든 관리자 컴포넌트를 조합한 AdminView 페이지 생성
-- [ ] T102 [US6] AdminRoute 가드 구현 (비관리자는 대시보드로 리다이렉트)
-- [ ] T103 [US6] 시스템 메트릭 자동 갱신 구현 (10초 간격)
-- [ ] T104 [US6] Skeleton 컴포넌트로 로딩 상태 추가
+- [X] T101 [US6] `frontend/src/views/AdminView.tsx`에 모든 관리자 컴포넌트를 조합한 AdminView 페이지 생성
+- [X] T102 [US6] AdminRoute 가드 구현 (비관리자는 대시보드로 리다이렉트)
+- [X] T103 [US6] 시스템 메트릭 자동 갱신 구현 (10초 간격)
+- [X] T104 [US6] Skeleton 컴포넌트로 로딩 상태 추가
 
 **체크포인트**: 사용자 스토리 6 완료 - 시스템 모니터링이 포함된 관리자 페이지 동작 (관리자 전용 접근)
 

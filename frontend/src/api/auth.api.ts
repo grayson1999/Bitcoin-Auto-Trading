@@ -1,9 +1,16 @@
 import { authClient, getRefreshToken } from '@core/api/client'
 import type { User, AuthTokens } from '@core/types'
 
-interface LoginResponse extends AuthTokens {}
+interface LoginResponse extends AuthTokens {
+  user?: User
+}
 
 interface RefreshResponse extends AuthTokens {}
+
+interface VerifyResponse {
+  is_valid: boolean
+  user: User | null
+}
 
 export const authApi = {
   /** Login with email and password */
@@ -39,8 +46,11 @@ export const authApi = {
 
   /** Verify current token and get user info */
   async verify(): Promise<User> {
-    const response = await authClient.get<User>('/auth/verify')
-    return response.data
+    const response = await authClient.get<VerifyResponse>('/auth/verify')
+    if (!response.data.is_valid || !response.data.user) {
+      throw new Error('Invalid token')
+    }
+    return response.data.user
   },
 }
 

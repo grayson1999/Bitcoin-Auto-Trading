@@ -343,7 +343,7 @@ export interface User {
   id: string
   email: string
   name: string
-  role: UserRole
+  role: string // Backend may return 'ADMIN' or 'admin', use toLowerCase() for comparison
 }
 
 /** Auth tokens */

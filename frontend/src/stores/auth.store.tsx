@@ -24,7 +24,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
 
   const isAuthenticated = !!user
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = user?.role?.toLowerCase() === 'admin'
 
   const refreshUser = useCallback(async () => {
     const token = getAccessToken()
@@ -50,8 +50,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await authApi.login(email, password)
       setTokens(response.access_token, response.refresh_token)
-      const userData = await authApi.verify()
-      setUser(userData)
+      // Login response includes user info, use it directly
+      if (response.user) {
+        setUser(response.user)
+      } else {
+        // Fallback to verify if user not in response
+        const userData = await authApi.verify()
+        setUser(userData)
+      }
     } finally {
       setIsLoading(false)
     }
