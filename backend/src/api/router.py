@@ -6,6 +6,7 @@ API 라우터 등록 모듈
 
 from fastapi import APIRouter
 
+from src.modules.admin import router as admin_router
 from src.modules.config import router as config_router
 from src.modules.dashboard import router as dashboard_router
 from src.modules.health import router as health_router
@@ -35,5 +36,6 @@ def create_api_router() -> APIRouter:
     router.include_router(risk_router, tags=["Risk"])
     router.include_router(trading_router, tags=["Trading"])
     router.include_router(config_router, tags=["Config"])
+    router.include_router(admin_router, tags=["Admin"])
 
     return router

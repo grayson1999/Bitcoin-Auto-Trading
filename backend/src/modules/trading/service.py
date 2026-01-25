@@ -94,6 +94,7 @@ class TradingService:
         private_api: UpbitPrivateAPI,
         public_api: UpbitPublicAPI,
         risk_service: RiskService,
+        user_id: int,
         notifier: "Notifier | None" = None,
     ) -> None:
         """
@@ -104,18 +105,22 @@ class TradingService:
             private_api: Upbit Private API 클라이언트
             public_api: Upbit Public API 클라이언트
             risk_service: 리스크 관리 서비스
+            user_id: 거래 소유자 ID
             notifier: 알림 서비스 (선택)
         """
         self._session = session
         self._private_api = private_api
         self._public_api = public_api
         self._risk_service = risk_service
+        self._user_id = user_id
         self._notifier = notifier
 
         # 검증기, 모니터, 포지션 관리자 초기화
         self._validator = OrderValidator(private_api, public_api, risk_service)
         self._monitor = OrderMonitor(session, private_api)
-        self._position_manager = PositionManager(session, public_api, self._validator)
+        self._position_manager = PositionManager(
+            session, public_api, self._validator, user_id
+        )
 
     async def execute_from_signal(
         self,
@@ -689,6 +694,7 @@ class TradingService:
 
 async def get_trading_service(
     session: AsyncSession,
+    user_id: int | None = None,
     private_api: UpbitPrivateAPI | None = None,
     public_api: UpbitPublicAPI | None = None,
     risk_service: RiskService | None = None,
@@ -699,6 +705,7 @@ async def get_trading_service(
 
     Args:
         session: SQLAlchemy 비동기 세션
+        user_id: 거래 소유자 ID (기본: 첫 번째 사용자)
         private_api: Upbit Private API 클라이언트 (기본: 싱글톤)
         public_api: Upbit Public API 클라이언트 (기본: 싱글톤)
         risk_service: 리스크 관리 서비스 (기본: 새 인스턴스)
@@ -708,6 +715,7 @@ async def get_trading_service(
         TradingService: 거래 서비스
     """
     from src.clients.upbit import get_upbit_private_api, get_upbit_public_api
+    from src.entities import User
     from src.modules.risk.service import get_risk_service
 
     if private_api is None:
@@ -719,4 +727,13 @@ async def get_trading_service(
     if risk_service is None:
         risk_service = get_risk_service(session)
 
-    return TradingService(session, private_api, public_api, risk_service, notifier)
+    # user_id가 없으면 첫 번째 사용자 조회
+    if user_id is None:
+        result = await session.execute(select(User.id).order_by(User.id).limit(1))
+        user_id = result.scalar_one_or_none()
+        if user_id is None:
+            raise TradingServiceError("등록된 사용자가 없습니다", code="NO_USER")
+
+    return TradingService(
+        session, private_api, public_api, risk_service, user_id, notifier
+    )

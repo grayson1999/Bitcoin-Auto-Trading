@@ -33,6 +33,7 @@ class PositionManager:
         _session: SQLAlchemy 비동기 세션
         _public_api: Upbit Public API 클라이언트
         _validator: 주문 검증기 (잔고 조회용)
+        _user_id: 포지션 소유자 ID
     """
 
     def __init__(
@@ -40,6 +41,7 @@ class PositionManager:
         session: AsyncSession,
         public_api: UpbitPublicAPI,
         validator: OrderValidator,
+        user_id: int,
     ) -> None:
         """
         PositionManager 초기화
@@ -48,14 +50,19 @@ class PositionManager:
             session: SQLAlchemy 비동기 세션
             public_api: Upbit Public API 클라이언트
             validator: 주문 검증기
+            user_id: 포지션 소유자 ID
         """
         self._session = session
         self._public_api = public_api
         self._validator = validator
+        self._user_id = user_id
 
     async def get_position(self) -> Position | None:
         """현재 포지션 조회"""
-        stmt = select(Position).where(Position.symbol == settings.trading_ticker)
+        stmt = select(Position).where(
+            Position.symbol == settings.trading_ticker,
+            Position.user_id == self._user_id,
+        )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -71,6 +78,7 @@ class PositionManager:
         if position is None:
             # 포지션 생성
             position = Position(
+                user_id=self._user_id,
                 symbol=settings.trading_ticker,
                 quantity=Decimal("0"),
                 avg_buy_price=Decimal("0"),
@@ -152,6 +160,7 @@ class PositionManager:
         # 포지션이 없으면 새로 생성
         if position is None:
             position = Position(
+                user_id=self._user_id,
                 symbol=settings.trading_ticker,
                 quantity=Decimal("0"),
                 avg_buy_price=Decimal("0"),
