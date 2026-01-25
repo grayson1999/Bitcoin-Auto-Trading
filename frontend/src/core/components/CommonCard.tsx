@@ -12,7 +12,7 @@ interface CommonCardProps extends React.HTMLAttributes<HTMLDivElement> {
 export const CommonCard = forwardRef<HTMLDivElement, CommonCardProps>(
   ({ title, description, headerAction, noPadding, children, className, ...props }, ref) => {
     return (
-      <Card ref={ref} className={cn('bg-surface border-border', className)} {...props}>
+      <Card ref={ref} className={cn('glass-card', className)} {...props}>
         {(title || description || headerAction) && (
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>

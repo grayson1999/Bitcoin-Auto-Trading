@@ -42,22 +42,22 @@ export function PositionCard({ position, isLoading, className }: PositionCardPro
 
   return (
     <CommonCard title="현재 포지션" className={className}>
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Position Info */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-400">보유 수량</p>
-            <p className="text-xl font-semibold text-white">
-              {formatNumber(position.quantity, 8)} {currency}
+            <p className="text-sm text-zinc-400">보유 수량</p>
+            <p className="text-2xl font-bold text-foreground font-heading mt-1">
+              {formatNumber(position.quantity, 8)} <span className="text-lg font-normal text-zinc-500">{currency}</span>
             </p>
           </div>
           <Badge
             variant="outline"
             className={cn(
-              'text-sm',
+              'text-sm px-3 py-1 font-semibold backdrop-blur-md',
               isProfitable
-                ? 'border-green-500 text-green-400'
-                : 'border-red-500 text-red-400'
+                ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
+                : 'border-rose-500/30 text-rose-500 bg-rose-500/10'
             )}
           >
             {isProfitable ? '수익' : '손실'}
@@ -65,28 +65,28 @@ export function PositionCard({ position, isLoading, className }: PositionCardPro
         </div>
 
         {/* Average Buy Price */}
-        <div>
-          <p className="text-sm text-gray-400">평균 매수가</p>
-          <p className="text-lg text-white">{formatCurrency(position.avg_buy_price)}</p>
+        <div className="p-3 rounded-lg bg-black/20 border border-white/5 flex justify-between items-center">
+          <p className="text-sm text-zinc-400">평균 매수가</p>
+          <p className="text-lg text-foreground font-mono-num">{formatCurrency(position.avg_buy_price)}</p>
         </div>
 
         {/* Current Value & P&L */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-400">평가금액</p>
-            <p className="text-lg text-white">{formatCurrency(position.current_value)}</p>
+            <p className="text-sm text-zinc-400 mb-1">평가금액</p>
+            <p className="text-lg text-foreground font-mono-num font-medium">{formatCurrency(position.current_value)}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-400">미실현 손익</p>
+            <p className="text-sm text-zinc-400 mb-1">미실현 손익</p>
             <p
               className={cn(
-                'text-lg font-semibold',
-                isProfitable ? 'text-green-400' : 'text-red-400'
+                'text-lg font-semibold font-mono-num',
+                isProfitable ? 'text-emerald-400' : 'text-rose-500'
               )}
             >
               {isProfitable ? '+' : ''}
               {formatCurrency(position.unrealized_pnl)}
-              <span className="ml-1 text-sm">
+              <span className="ml-1.5 text-xs opacity-80 font-normal">
                 ({isProfitable ? '+' : ''}
                 {formatPercent(position.unrealized_pnl_pct)})
               </span>

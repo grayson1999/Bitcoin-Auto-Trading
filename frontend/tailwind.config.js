@@ -41,20 +41,26 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        // Custom trading colors
-        surface: '#151921',
-        up: '#10B981',
-        down: '#F43F5E',
-        neutral: '#F59E0B',
+        // Custom trading colors - Modern Matte Glass Palette
+        surface: 'hsl(var(--surface))', // For glass backgrounds
+        up: '#34D399',      // Emerald-400
+        down: '#F43F5E',    // Rose-500
+        neutral: '#A1A1AA', // Zinc-400
+        'chart-up': 'rgba(52, 211, 153, 0.1)',   // Very subtle fill
+        'chart-down': 'rgba(244, 63, 94, 0.1)',  // Very subtle fill
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      boxShadow: {
+        'glass': '0 4px 24px -1px rgba(0, 0, 0, 0.2)',
+      }
     },
   },
   plugins: [require('tailwindcss-animate')],

@@ -39,36 +39,36 @@ export function BalanceCard({ balance, isLoading, className }: BalanceCardProps)
 
   return (
     <CommonCard title="계좌 잔고" className={className}>
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Total Value */}
         <div>
-          <p className="text-sm text-gray-400">총 평가금액</p>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-sm text-zinc-400">총 평가금액</p>
+          <p className="text-3xl font-bold text-foreground font-heading tracking-tight mt-1">
             {formatCurrency(balance.total_krw)}
           </p>
         </div>
 
         {/* Balance Details */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg bg-gray-800/50 p-3">
-            <p className="text-xs text-gray-400">KRW 잔고</p>
-            <p className="text-lg font-semibold text-white">
+          <div className="rounded-xl bg-black/20 p-4 border border-white/5">
+            <p className="text-xs text-zinc-500 mb-1">KRW 잔고</p>
+            <p className="text-lg font-semibold text-foreground font-mono-num">
               {formatCurrency(balance.krw)}
             </p>
             {balance.krw_locked > 0 && (
-              <p className="text-xs text-yellow-500">
+              <p className="text-xs text-zinc-400 mt-1 font-mono-num">
                 잠김: {formatCurrency(balance.krw_locked)}
               </p>
             )}
           </div>
 
-          <div className="rounded-lg bg-gray-800/50 p-3">
-            <p className="text-xs text-gray-400">{currency} 잔고</p>
-            <p className="text-lg font-semibold text-white">
-              {formatNumber(balance.coin, 8)} {currency}
+          <div className="rounded-xl bg-black/20 p-4 border border-white/5">
+            <p className="text-xs text-zinc-500 mb-1">{currency} 잔고</p>
+            <p className="text-lg font-semibold text-foreground font-mono-num">
+              {formatNumber(balance.coin, 8)} <span className="text-sm text-zinc-500">{currency}</span>
             </p>
             {balance.coin_locked > 0 && (
-              <p className="text-xs text-yellow-500">
+              <p className="text-xs text-zinc-400 mt-1 font-mono-num">
                 잠김: {formatNumber(balance.coin_locked, 8)}
               </p>
             )}
@@ -77,11 +77,13 @@ export function BalanceCard({ balance, isLoading, className }: BalanceCardProps)
 
         {/* Average Buy Price */}
         {balance.coin > 0 && balance.coin_avg_buy_price > 0 && (
-          <div className="border-t border-gray-700 pt-3">
-            <p className="text-xs text-gray-400">{currency} 평균 매수가</p>
-            <p className="text-sm text-white">
-              {formatCurrency(balance.coin_avg_buy_price)}
-            </p>
+          <div className="border-t border-white/5 pt-4">
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-zinc-500">{currency} 평균 매수가</p>
+              <p className="text-sm text-foreground font-mono-num font-medium">
+                {formatCurrency(balance.coin_avg_buy_price)}
+              </p>
+            </div>
           </div>
         )}
       </div>

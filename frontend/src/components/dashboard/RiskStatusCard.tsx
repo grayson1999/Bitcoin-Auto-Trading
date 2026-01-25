@@ -51,18 +51,18 @@ export function RiskStatusCard({ riskStatus, isLoading, className }: RiskStatusC
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isActive ? (
-              <ShieldCheck className="h-6 w-6 text-green-400" />
+              <ShieldCheck className="h-6 w-6 text-emerald-400" />
             ) : (
-              <ShieldAlert className="h-6 w-6 text-red-400" />
+              <ShieldAlert className="h-6 w-6 text-rose-500" />
             )}
-            <span className="font-medium text-white">거래 상태</span>
+            <span className="font-medium text-foreground">거래 상태</span>
           </div>
           <Badge
             className={cn(
-              'font-semibold',
+              'font-semibold backdrop-blur-md',
               isActive
-                ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                : 'bg-red-500/20 text-red-400 border-red-500/30',
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                : 'bg-rose-500/10 text-rose-500 border-rose-500/20',
               'border'
             )}
           >
@@ -72,24 +72,24 @@ export function RiskStatusCard({ riskStatus, isLoading, className }: RiskStatusC
 
         {/* Halt Reason */}
         {riskStatus.is_halted && riskStatus.halt_reason && (
-          <div className="rounded-lg bg-red-500/10 p-3 border border-red-500/30">
-            <div className="flex items-center gap-2 text-red-400">
+          <div className="rounded-lg bg-rose-500/10 p-3 border border-rose-500/20">
+            <div className="flex items-center gap-2 text-rose-400">
               <AlertTriangle className="h-4 w-4" />
               <span className="text-sm font-medium">중단 사유</span>
             </div>
-            <p className="mt-1 text-sm text-red-300">{riskStatus.halt_reason}</p>
+            <p className="mt-1 text-sm text-rose-300">{riskStatus.halt_reason}</p>
           </div>
         )}
 
         {/* Daily Loss Progress */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">일일 손실</span>
+            <span className="text-zinc-400">일일 손실</span>
             <span
-              className={cn({
-                'text-green-400': !isWarning,
+              className={cn('font-mono-num', {
+                'text-emerald-400': !isWarning,
                 'text-yellow-400': isWarning && !isCritical,
-                'text-red-400': isCritical,
+                'text-rose-400': isCritical,
               })}
             >
               {formatPercent(riskStatus.daily_loss_pct)} / {formatPercent(riskStatus.daily_loss_limit_pct)}
@@ -97,38 +97,38 @@ export function RiskStatusCard({ riskStatus, isLoading, className }: RiskStatusC
           </div>
           <Progress
             value={Math.min(dailyLossRatio, 100)}
-            className={cn('h-2', {
-              '[&>div]:bg-green-500': !isWarning,
+            className={cn('h-1.5 bg-zinc-800', {
+              '[&>div]:bg-emerald-500': !isWarning,
               '[&>div]:bg-yellow-500': isWarning && !isCritical,
-              '[&>div]:bg-red-500': isCritical,
+              '[&>div]:bg-rose-500': isCritical,
             })}
           />
         </div>
 
         {/* Risk Parameters */}
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg bg-gray-800/50 p-2">
-            <p className="text-xs text-gray-400">손절매</p>
-            <p className="font-medium text-white">{formatPercent(riskStatus.stop_loss_pct)}</p>
+          <div className="rounded-lg bg-black/20 p-2.5 border border-white/5">
+            <p className="text-xs text-zinc-500">손절매</p>
+            <p className="font-medium text-foreground font-mono-num">{formatPercent(riskStatus.stop_loss_pct)}</p>
           </div>
-          <div className="rounded-lg bg-gray-800/50 p-2">
-            <p className="text-xs text-gray-400">포지션 크기</p>
-            <p className="font-medium text-white">{formatPercent(riskStatus.position_size_pct)}</p>
+          <div className="rounded-lg bg-black/20 p-2.5 border border-white/5">
+            <p className="text-xs text-zinc-500">포지션 크기</p>
+            <p className="font-medium text-foreground font-mono-num">{formatPercent(riskStatus.position_size_pct)}</p>
           </div>
-          <div className="rounded-lg bg-gray-800/50 p-2">
-            <p className="text-xs text-gray-400">변동성 한도</p>
-            <p className="font-medium text-white">{formatPercent(riskStatus.volatility_threshold_pct)}</p>
+          <div className="rounded-lg bg-black/20 p-2.5 border border-white/5">
+            <p className="text-xs text-zinc-500">변동성 한도</p>
+            <p className="font-medium text-foreground font-mono-num">{formatPercent(riskStatus.volatility_threshold_pct)}</p>
           </div>
-          <div className="rounded-lg bg-gray-800/50 p-2">
-            <p className="text-xs text-gray-400">현재 변동성</p>
+          <div className="rounded-lg bg-black/20 p-2.5 border border-white/5">
+            <p className="text-xs text-zinc-500">현재 변동성</p>
             <p
-              className={cn('font-medium', {
-                'text-green-400':
+              className={cn('font-medium font-mono-num', {
+                'text-emerald-400':
                   riskStatus.current_volatility_pct < riskStatus.volatility_threshold_pct * 0.7,
                 'text-yellow-400':
                   riskStatus.current_volatility_pct >= riskStatus.volatility_threshold_pct * 0.7 &&
                   riskStatus.current_volatility_pct < riskStatus.volatility_threshold_pct,
-                'text-red-400':
+                'text-rose-400':
                   riskStatus.current_volatility_pct >= riskStatus.volatility_threshold_pct,
               })}
             >

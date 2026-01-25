@@ -13,22 +13,22 @@ export interface SignalConfig {
 export const SIGNAL_CONFIG: Record<SignalType, SignalConfig> = {
   BUY: {
     color: 'text-up',
-    bgColor: 'bg-up/10',
-    borderColor: 'border-up/30',
+    bgColor: 'bg-emerald-500/5',
+    borderColor: 'border-emerald-500/20',
     label: '매수',
     description: 'AI가 매수를 권장합니다',
   },
   SELL: {
     color: 'text-down',
-    bgColor: 'bg-down/10',
-    borderColor: 'border-down/30',
+    bgColor: 'bg-rose-500/5',
+    borderColor: 'border-rose-500/20',
     label: '매도',
     description: 'AI가 매도를 권장합니다',
   },
   HOLD: {
     color: 'text-neutral',
-    bgColor: 'bg-neutral/10',
-    borderColor: 'border-neutral/30',
+    bgColor: 'bg-zinc-500/5',
+    borderColor: 'border-zinc-500/20',
     label: '홀드',
     description: 'AI가 관망을 권장합니다',
   },

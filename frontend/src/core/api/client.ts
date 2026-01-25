@@ -53,8 +53,20 @@ export function isAuthenticated(): boolean {
   return !!getAccessToken()
 }
 
-// Request interceptor: Add auth token
+// Request interceptor: Add auth token to apiClient
 apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = getAccessToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+// Request interceptor: Add auth token to authClient (for verify endpoint)
+authClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken()
     if (token) {

@@ -51,7 +51,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden"
+        className="fixed top-4 left-4 z-50 lg:hidden text-muted-foreground hover:text-foreground hover:bg-transparent"
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -60,7 +60,7 @@ export function Sidebar() {
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -68,19 +68,23 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-screen bg-surface border-r border-border transition-transform duration-300',
-          'w-64 lg:translate-x-0',
+          'fixed top-0 left-0 z-40 h-screen w-64 transition-transform duration-300',
+          'bg-black/20 backdrop-blur-xl border-r border-white/5', // Matte Glass Style
+          'lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center h-16 px-6 border-b border-border">
-            <h1 className="text-lg font-bold text-primary">{currency} Trading</h1>
+          <div className="flex items-center h-16 px-6 border-b border-white/5">
+            <div className="w-2 h-6 bg-primary rounded-full mr-3 animate-pulse" />
+            <h1 className="text-lg font-bold tracking-tight text-foreground font-heading">
+              {currency} <span className="text-muted-foreground font-normal">Trading</span>
+            </h1>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
             {filteredNavItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -88,10 +92,10 @@ export function Sidebar() {
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                     isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      ? 'bg-primary/10 text-primary shadow-[inset_3px_0_0_0_hsl(var(--primary))]' // Subtle active indicator
+                      : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
                   )
                 }
               >
@@ -102,24 +106,24 @@ export function Sidebar() {
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-sm font-medium text-primary">
+          <div className="p-4 border-t border-white/5">
+            <div className="flex items-center gap-3 px-3 py-3 mb-2 rounded-lg bg-white/5 border border-white/5">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center ring-1 ring-white/10">
+                <span className="text-sm font-bold text-primary">
                   {user?.name?.charAt(0) || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                <p className="text-sm font-medium truncate text-foreground">{user?.name || 'User'}</p>
+                <p className="text-xs text-muted-foreground truncate font-mono">{user?.email}</p>
               </div>
             </div>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
+              className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               onClick={handleLogout}
             >
-              <LogOut size={20} />
+              <LogOut size={18} />
               로그아웃
             </Button>
           </div>

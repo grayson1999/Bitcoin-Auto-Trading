@@ -15,23 +15,23 @@ interface LatestSignalCardProps {
 const SIGNAL_CONFIG = {
   BUY: {
     icon: ArrowUpCircle,
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/10',
-    borderColor: 'border-green-500/30',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/20',
     label: '매수',
   },
   SELL: {
     icon: ArrowDownCircle,
-    color: 'text-red-400',
-    bgColor: 'bg-red-500/10',
-    borderColor: 'border-red-500/30',
+    color: 'text-rose-400',
+    bgColor: 'bg-rose-500/10',
+    borderColor: 'border-rose-500/20',
     label: '매도',
   },
   HOLD: {
     icon: MinusCircle,
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/10',
-    borderColor: 'border-yellow-500/30',
+    color: 'text-zinc-400',
+    bgColor: 'bg-zinc-500/10',
+    borderColor: 'border-zinc-500/20',
     label: '보류',
   },
 } as const
@@ -57,9 +57,9 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
   if (!signal) {
     return (
       <CommonCard title="최신 AI 신호" className={className}>
-        <div className="flex flex-col items-center justify-center py-6 text-gray-500">
-          <MinusCircle className="h-10 w-10 mb-2" />
-          <p className="text-lg">신호 없음</p>
+        <div className="flex flex-col items-center justify-center py-6 text-zinc-500">
+          <MinusCircle className="h-10 w-10 mb-2 opacity-50" />
+          <p className="text-lg font-medium">신호 없음</p>
           <p className="text-sm">아직 생성된 AI 신호가 없습니다</p>
         </div>
       </CommonCard>
@@ -73,14 +73,15 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
 
   return (
     <CommonCard title="최신 AI 신호" className={className}>
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Signal Type & Confidence */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                'flex h-12 w-12 items-center justify-center rounded-full',
-                config.bgColor
+                'flex h-12 w-12 items-center justify-center rounded-xl ring-1 ring-inset',
+                config.bgColor,
+                config.borderColor
               )}
             >
               <Icon className={cn('h-6 w-6', config.color)} />
@@ -88,7 +89,7 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
             <div>
               <Badge
                 className={cn(
-                  'text-sm font-semibold',
+                  'text-sm font-semibold backdrop-blur-md',
                   config.bgColor,
                   config.color,
                   config.borderColor,
@@ -97,31 +98,31 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
               >
                 {config.label}
               </Badge>
-              <p className="mt-1 text-sm text-gray-400">
+              <p className="mt-1 text-sm text-zinc-400 font-mono-num">
                 신뢰도: {confidencePercent}%
               </p>
             </div>
           </div>
           <div className="text-right">
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <Clock className="h-3 w-3" />
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-mono-num">
+              <Clock className="h-3.5 w-3.5" />
               {formatDateTime(signal.created_at)}
             </div>
           </div>
         </div>
 
         {/* Confidence Bar */}
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs">
-            <span className="text-gray-400">신뢰도</span>
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs font-medium">
+            <span className="text-zinc-500">신뢰도</span>
             <span className={config.color}>{confidencePercent}%</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-700">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
             <div
               className={cn('h-full rounded-full transition-all', {
-                'bg-green-500': signal.signal_type === 'BUY',
-                'bg-red-500': signal.signal_type === 'SELL',
-                'bg-yellow-500': signal.signal_type === 'HOLD',
+                'bg-emerald-500': signal.signal_type === 'BUY',
+                'bg-rose-500': signal.signal_type === 'SELL',
+                'bg-zinc-500': signal.signal_type === 'HOLD',
               })}
               style={{ width: `${confidencePercent}%` }}
             />
@@ -130,9 +131,9 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
 
         {/* Reasoning */}
         {signal.reasoning && (
-          <div className="rounded-lg bg-gray-800/50 p-3">
-            <p className="text-xs text-gray-400 mb-1">분석 근거</p>
-            <p className="text-sm text-gray-300 line-clamp-3">{signal.reasoning}</p>
+          <div className="rounded-lg bg-black/20 p-3.5 border border-white/5">
+            <p className="text-xs text-zinc-500 mb-1.5 font-medium">분석 근거</p>
+            <p className="text-sm text-zinc-300 line-clamp-3 leading-relaxed">{signal.reasoning}</p>
           </div>
         )}
       </div>

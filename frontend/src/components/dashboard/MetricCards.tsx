@@ -33,29 +33,31 @@ function MetricCardItem({
 }: MetricCardItemProps) {
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
+      <div className="glass-card p-5">
         <div className="flex items-center gap-2">
-          <Skeleton className="h-5 w-5 rounded" />
-          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-5 w-5 rounded bg-zinc-800" />
+          <Skeleton className="h-4 w-20 bg-zinc-800" />
         </div>
-        <Skeleton className="mt-2 h-7 w-32" />
-        <Skeleton className="mt-1 h-4 w-16" />
+        <Skeleton className="mt-3 h-8 w-32 bg-zinc-800" />
+        <Skeleton className="mt-2 h-4 w-16 bg-zinc-800" />
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-      <div className="flex items-center gap-2 text-gray-400">
-        {icon}
-        <span className="text-sm">{title}</span>
+    <div className="glass-card p-5 transition-all duration-300 hover:bg-zinc-900/60">
+      <div className="flex items-center gap-2 text-zinc-400 mb-2">
+        <div className="p-1.5 rounded-md bg-white/5">
+          {icon}
+        </div>
+        <span className="text-sm font-medium">{title}</span>
       </div>
       <p
         className={cn(
-          'mt-2 text-xl font-bold',
-          trend === 'up' && 'text-green-400',
-          trend === 'down' && 'text-red-400',
-          trend === 'neutral' && 'text-white'
+          'mt-1 text-2xl font-bold font-heading tracking-tight',
+          trend === 'up' && 'text-emerald-400',
+          trend === 'down' && 'text-rose-500',
+          trend === 'neutral' && 'text-zinc-100'
         )}
       >
         {value}
@@ -63,10 +65,10 @@ function MetricCardItem({
       {subValue && (
         <p
           className={cn(
-            'text-sm',
-            trend === 'up' && 'text-green-400/80',
-            trend === 'down' && 'text-red-400/80',
-            trend === 'neutral' && 'text-gray-400'
+            'text-sm font-mono-num mt-1 font-medium',
+            trend === 'up' && 'text-emerald-400/90',
+            trend === 'down' && 'text-rose-500/90',
+            trend === 'neutral' && 'text-zinc-500'
           )}
         >
           {subValue}

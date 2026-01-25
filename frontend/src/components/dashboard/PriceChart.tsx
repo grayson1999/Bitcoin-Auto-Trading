@@ -89,7 +89,7 @@ function signalsToMarkers(
       return {
         time,
         position: isBuy ? 'belowBar' : 'aboveBar',
-        color: isBuy ? '#22c55e' : '#ef4444',
+        color: isBuy ? '#34D399' : '#F43F5E',
         shape: isBuy ? 'arrowUp' : 'arrowDown',
         text: `${isBuy ? '매수' : '매도'} ${Math.round(signal.confidence * 100)}%`,
       } as SeriesMarker<Time>
@@ -148,24 +148,24 @@ export function PriceChart({
   const getChartOptions = (options: any = {}) => ({
     layout: {
       background: { color: 'transparent' },
-      textColor: '#9ca3af',
+      textColor: '#a1a1aa', // Zinc-400
     },
     grid: {
-      vertLines: { color: '#1f2937' },
-      horzLines: { color: '#1f2937' },
+      vertLines: { color: '#27272a' }, // Zinc-800
+      horzLines: { color: '#27272a' }, // Zinc-800
     },
     crosshair: {
       mode: 1,
-      vertLine: { color: '#6b7280', width: 1, style: 2 },
-      horzLine: { color: '#6b7280', width: 1, style: 2 },
+      vertLine: { color: '#52525b', width: 1, style: 2 }, // Zinc-600
+      horzLine: { color: '#52525b', width: 1, style: 2 }, // Zinc-600
     },
     timeScale: {
-      borderColor: '#374151',
+      borderColor: '#27272a',
       timeVisible: true,
       secondsVisible: false,
     },
     rightPriceScale: {
-      borderColor: '#374151',
+      borderColor: '#27272a',
       scaleMargins: { top: 0.1, bottom: 0.1 },
       minimumWidth: 80,
     },
@@ -183,12 +183,12 @@ export function PriceChart({
     }))
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#22c55e',
-      downColor: '#ef4444',
-      borderUpColor: '#22c55e',
-      borderDownColor: '#ef4444',
-      wickUpColor: '#22c55e',
-      wickDownColor: '#ef4444',
+      upColor: '#34D399',      // Emerald-400
+      downColor: '#F43F5E',    // Rose-500
+      borderUpColor: '#34D399',
+      borderDownColor: '#F43F5E',
+      wickUpColor: '#34D399',
+      wickDownColor: '#F43F5E',
     })
 
     mainChartRef.current = chart
