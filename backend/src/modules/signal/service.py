@@ -197,7 +197,7 @@ class SignalService:
             response = await self.ai_client.generate(
                 prompt=prompt,
                 system_instruction=system_instruction,
-                temperature=0.5,
+                temperature=0.7,
                 max_output_tokens=1024,
             )
         except AIClientError as e:
