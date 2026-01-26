@@ -1,3 +1,4 @@
+import { useEffect, useRef, useCallback } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,31 @@ export function CommonModal({
   className,
   size = 'md',
 }: CommonModalProps) {
+  const historyPushedRef = useRef(false)
+
+  const handlePopState = useCallback(() => {
+    if (historyPushedRef.current) {
+      historyPushedRef.current = false
+      onOpenChange(false)
+    }
+  }, [onOpenChange])
+
+  useEffect(() => {
+    if (open) {
+      history.pushState({ modal: true }, '')
+      historyPushedRef.current = true
+      window.addEventListener('popstate', handlePopState)
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      if (historyPushedRef.current) {
+        historyPushedRef.current = false
+        history.back()
+      }
+    }
+  }, [open, handlePopState])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn('bg-surface border-border', sizeClasses[size], className)}>
