@@ -6,9 +6,11 @@
 - cleanup: 오래된 데이터 정리
 - signal_generation: AI 신호 생성 및 자동 매매
 - order_sync: PENDING 주문 동기화
+- daily_stats: DailyStats 자동 생성
 """
 
 from src.scheduler.jobs.cleanup import cleanup_old_data_job
+from src.scheduler.jobs.daily_stats import ensure_daily_stats_job
 from src.scheduler.jobs.data_collection import collect_market_data_job
 from src.scheduler.jobs.order_sync import sync_pending_orders_job
 from src.scheduler.jobs.signal_generation import (
@@ -25,6 +27,8 @@ __all__ = [
     "cleanup_old_data_job",
     # 데이터 수집
     "collect_market_data_job",
+    # DailyStats 자동 생성
+    "ensure_daily_stats_job",
     # 신호 성과 평가
     "evaluate_signal_performance_job",
     "execute_trading_from_signal_job",

@@ -69,9 +69,7 @@ class PortfolioService:
         first_stat = all_stats[0]
         initial_balance = first_stat.starting_balance
 
-        total_deposits = sum(
-            adj.amount for adj in adjustments if adj.amount > 0
-        )
+        total_deposits = sum(adj.amount for adj in adjustments if adj.amount > 0)
         total_withdrawals = sum(
             abs(adj.amount) for adj in adjustments if adj.amount < 0
         )
@@ -100,7 +98,7 @@ class PortfolioService:
             else 0.0
         )
 
-        # 오늘 통계
+        # 오늘 통계 (DailyStats 없을 때 전일 ending_balance 기준 fallback)
         today = date.today()
         today_stat = next((s for s in all_stats if s.date == today), None)
 
@@ -113,12 +111,21 @@ class PortfolioService:
                 today_return_pct = float(
                     today_stat.realized_pnl / today_stat.starting_balance * 100
                 )
+        else:
+            # 오늘 DailyStats가 없을 때: 가장 최근 ending_balance 기준으로 오늘 수익률 계산
+            last_stat = all_stats[-1]
+            if last_stat.ending_balance > 0:
+                today_return_pct = float(
+                    (current_balance - last_stat.ending_balance)
+                    / last_stat.ending_balance
+                    * 100
+                )
 
         # MDD (Maximum Drawdown) 계산 - 누적 실현 손익 기준
         max_drawdown_pct = self._calculate_mdd_from_pnl(all_stats)
 
-        # 최근 30일 수익 차트 데이터 (누적 실현 손익)
-        profit_chart_data = self._generate_chart_data(all_stats)
+        # 최근 30일 수익 차트 데이터 (누적 실현 손익 + 오늘 포인트)
+        profit_chart_data = self._generate_chart_data(all_stats, current_balance)
 
         return PortfolioSummaryResponse(
             total_deposit=total_invested,  # 입금/출금 반영된 총 투자금
@@ -227,13 +234,16 @@ class PortfolioService:
         return float(max_drawdown)
 
     def _generate_chart_data(
-        self, stats: list[DailyStats]
+        self,
+        stats: list[DailyStats],
+        current_balance: Decimal | None = None,
     ) -> list[ProfitDataPoint]:
         """
-        수익 차트 데이터 생성 (최근 30일, 누적 실현 손익)
+        수익 차트 데이터 생성 (최근 30일, 누적 실현 손익 + 오늘 포인트)
 
         Args:
             stats: DailyStats 리스트 (날짜 오름차순)
+            current_balance: 현재 Upbit 총 잔고 (오늘 포인트 추가용)
 
         Returns:
             list[ProfitDataPoint]: 차트 데이터 포인트 리스트
@@ -245,9 +255,7 @@ class PortfolioService:
         recent_stats = [s for s in stats if s.date >= thirty_days_ago]
 
         # 30일 이전까지의 누적 손익 계산 (시작점)
-        prior_pnl = sum(
-            s.realized_pnl for s in stats if s.date < thirty_days_ago
-        )
+        prior_pnl = sum(s.realized_pnl for s in stats if s.date < thirty_days_ago)
 
         # 차트 데이터 생성 (누적 실현 손익)
         chart_data: list[ProfitDataPoint] = []
@@ -259,6 +267,19 @@ class PortfolioService:
                 ProfitDataPoint(
                     date=stat.date.isoformat(),
                     value=cumulative_pnl,
+                )
+            )
+
+        # 오늘 DailyStats가 없으면 current_balance 기반 미실현 손익 포인트 추가
+        has_today = any(s.date == today for s in recent_stats)
+        if not has_today and current_balance is not None and stats:
+            # 미실현 손익 = current_balance - 최근 ending_balance + 누적 실현 손익
+            last_stat = stats[-1]
+            unrealized_change = current_balance - last_stat.ending_balance
+            chart_data.append(
+                ProfitDataPoint(
+                    date=today.isoformat(),
+                    value=cumulative_pnl + unrealized_change,
                 )
             )
 

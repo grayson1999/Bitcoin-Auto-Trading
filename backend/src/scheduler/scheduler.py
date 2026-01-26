@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from loguru import logger
 
@@ -25,6 +26,7 @@ from src.scheduler.jobs import (
     check_volatility_job,
     cleanup_old_data_job,
     collect_market_data_job,
+    ensure_daily_stats_job,
     evaluate_signal_performance_job,
     generate_trading_signal_job,
     recover_unexecuted_signals_job,
@@ -145,6 +147,25 @@ def setup_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
         max_instances=1,
         coalesce=True,
+    )
+
+    # DailyStats 자동 생성 (매일 00:05 KST + 서버 시작 시 즉시 실행)
+    scheduler.add_job(
+        ensure_daily_stats_job,
+        trigger=CronTrigger(hour=0, minute=5, timezone="Asia/Seoul"),
+        id="ensure_daily_stats",
+        name="DailyStats 자동 생성",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+    # 서버 시작 시 즉시 실행 (오늘 DailyStats 보장)
+    scheduler.add_job(
+        ensure_daily_stats_job,
+        id="ensure_daily_stats_startup",
+        name="DailyStats 시작 시 생성",
+        replace_existing=True,
+        max_instances=1,
     )
 
     logger.info(
