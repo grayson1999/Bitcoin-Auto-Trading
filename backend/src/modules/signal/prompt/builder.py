@@ -49,6 +49,7 @@ class SignalPromptBuilder:
         sampled_data: dict[str, list[MarketData]],
         mtf_result: MultiTimeframeResult,
         balance_info: dict | None = None,
+        performance_summary: str = "",
     ) -> str:
         """
         개선된 분석 프롬프트 생성 (prompt_templates 사용, 샘플링된 데이터)
@@ -57,6 +58,7 @@ class SignalPromptBuilder:
             sampled_data: 샘플링된 시장 데이터 {"long_term": [...], "mid_term": [...], "short_term": [...]}
             mtf_result: 멀티 타임프레임 분석 결과
             balance_info: 잔고 정보
+            performance_summary: 성과 피드백 문자열 (AI 프롬프트에 포함)
 
         Returns:
             str: 생성된 프롬프트
@@ -101,6 +103,7 @@ class SignalPromptBuilder:
             risk_check=risk_check,
             technical_indicators=technical_indicators,
             multi_timeframe_analysis=multi_timeframe_analysis,
+            performance_summary=performance_summary,
         )
 
     def _format_asset_status(self, balance_info: dict | None) -> str:

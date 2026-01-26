@@ -5,12 +5,16 @@ AI 매매 신호 생성, 자동 매매 실행, 변동성 체크, 신호 성과 �
 지수 백오프 재시도로 Rate Limit, 네트워크 오류를 자동 복구합니다.
 """
 
+from datetime import datetime, timedelta
+
 import httpx
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import and_, select
 
 from src.entities import SignalType, TradingSignal
+from src.entities.order import Order
 from src.scheduler.metrics import track_job
+from src.utils import UTC
 from src.utils.database import async_session_factory
 from src.utils.retry import with_retry
 
@@ -86,9 +90,11 @@ async def generate_trading_signal_job() -> None:
                     else:
                         logger.info(f"자동 매매 결과: {order_result.message}")
                 else:
-                    logger.warning(
-                        f"자동 매매 실패: {order_result.message}, "
-                        f"reason={order_result.blocked_reason}"
+                    logger.error(
+                        f"자동 매매 실패 상세: signal_id={signal.id}, "
+                        f"type={signal.signal_type}, "
+                        f"reason={order_result.blocked_reason}, "
+                        f"message={order_result.message}"
                     )
 
                     # 잔고 부족으로 주문 실패 시 신호를 HOLD로 변환
@@ -231,6 +237,94 @@ async def check_volatility_job() -> None:
         except Exception as e:
             await session.rollback()
             logger.exception(f"변동성 체크 작업 오류: {e}")
+            raise
+
+
+async def recover_unexecuted_signals_job() -> None:
+    """
+    미실행 BUY/SELL 신호 복구 작업
+
+    서버 재시작 등으로 신호는 생성되었지만 주문이 실행되지 않은 경우를 감지하여
+    재실행합니다. 최근 1시간 이내의 BUY/SELL 신호 중 매칭 주문이 없는 것을 조회합니다.
+    """
+    from src.modules.trading import OrderBlockedReason, get_trading_service
+
+    async with (
+        track_job("recover_unexecuted_signals"),
+        async_session_factory() as session,
+    ):
+        try:
+            cutoff = datetime.now(UTC) - timedelta(hours=1)
+
+            # BUY/SELL 신호 중 orders 테이블에 매칭 주문이 없는 것 조회
+            stmt = (
+                select(TradingSignal)
+                .outerjoin(Order, Order.signal_id == TradingSignal.id)
+                .where(
+                    and_(
+                        TradingSignal.signal_type.in_(
+                            [SignalType.BUY.value, SignalType.SELL.value]
+                        ),
+                        TradingSignal.created_at > cutoff,
+                        Order.id.is_(None),
+                    )
+                )
+            )
+
+            result = await session.execute(stmt)
+            unexecuted_signals = list(result.scalars().all())
+
+            if not unexecuted_signals:
+                return
+
+            logger.warning(f"미실행 신호 {len(unexecuted_signals)}건 발견, 복구 시작")
+
+            trading_service = await get_trading_service(session)
+
+            for signal in unexecuted_signals:
+                try:
+                    logger.info(
+                        f"미실행 신호 복구 시도: signal_id={signal.id}, "
+                        f"type={signal.signal_type}, confidence={signal.confidence}"
+                    )
+
+                    order_result = await trading_service.execute_from_signal(
+                        signal, user_id=signal.user_id
+                    )
+
+                    if order_result.success:
+                        logger.info(
+                            f"미실행 신호 복구 성공: signal_id={signal.id}, "
+                            f"message={order_result.message}"
+                        )
+                    else:
+                        logger.warning(
+                            f"미실행 신호 복구 실패: signal_id={signal.id}, "
+                            f"reason={order_result.blocked_reason}, "
+                            f"message={order_result.message}"
+                        )
+
+                        # 잔고 부족 시 HOLD 변환
+                        if (
+                            order_result.blocked_reason
+                            == OrderBlockedReason.INSUFFICIENT_BALANCE
+                        ):
+                            signal.signal_type = SignalType.HOLD.value
+                            signal.reasoning = (
+                                signal.reasoning or ""
+                            ) + " [복구 시 잔고 부족으로 HOLD 처리]"
+
+                except Exception as e:
+                    logger.exception(
+                        f"미실행 신호 복구 중 오류: signal_id={signal.id}, error={e}"
+                    )
+
+            await session.commit()
+            logger.info(f"미실행 신호 복구 완료: {len(unexecuted_signals)}건 처리")
+
+        except Exception as e:
+            await session.rollback()
+            logger.exception(f"미실행 신호 복구 작업 오류: {e}")
             raise
 
 

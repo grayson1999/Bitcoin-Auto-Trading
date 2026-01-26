@@ -173,7 +173,10 @@ class SignalService:
         # 3. 잔고 정보 조회
         balance_info = await self._get_balance_info()
 
-        # 4. 프롬프트 생성 (코인 유형별 템플릿 사용, 샘플링된 데이터 사용)
+        # 4. 성과 피드백 조회
+        performance_summary = await self._build_performance_summary()
+
+        # 5. 프롬프트 생성 (코인 유형별 템플릿 사용, 샘플링된 데이터 사용)
         system_instruction = get_system_instruction(
             self.currency, self.coin_type, self.prompt_config
         )
@@ -181,19 +184,20 @@ class SignalService:
             sampled_data=sampled_data,
             mtf_result=mtf_result,
             balance_info=balance_info,
+            performance_summary=performance_summary,
         )
 
         # 디버그: 생성된 프롬프트 로깅 (민감 정보 마스킹)
         logger.info(f"AI 프롬프트 생성 완료 (길이: {len(prompt)}자)")
         logger.debug(f"프롬프트:\n{mask_sensitive_data(prompt)}")
 
-        # 5. AI 호출
+        # 6. AI 호출
         ai_start_time = time.monotonic()
         try:
             response = await self.ai_client.generate(
                 prompt=prompt,
                 system_instruction=system_instruction,
-                temperature=0.3,
+                temperature=0.5,
                 max_output_tokens=1024,
             )
         except AIClientError as e:
@@ -216,16 +220,16 @@ class SignalService:
                 f"입력 토큰이 목표(4,000)를 초과했습니다: {response.input_tokens}"
             )
 
-        # 6. 응답 파싱
+        # 7. 응답 파싱
         parsed = self._response_parser.parse_response(
             response.text,
             balance_info=balance_info,
         )
 
-        # 7. 기술적 지표 스냅샷 생성
+        # 8. 기술적 지표 스냅샷 생성
         technical_snapshot = self._prompt_builder.create_technical_snapshot(mtf_result)
 
-        # 8. DB에 저장 (Repository 사용)
+        # 9. DB에 저장 (Repository 사용)
         signal = TradingSignal(
             market_data_id=latest_data.id,
             signal_type=parsed.signal_type,
@@ -240,7 +244,7 @@ class SignalService:
             user_id=user_id,
         )
         await self._signal_repo.save(signal)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(signal)
 
         logger.info(
@@ -249,6 +253,39 @@ class SignalService:
         )
 
         return signal
+
+    async def _build_performance_summary(self) -> str:
+        """최근 신호 성과 요약 생성 (프롬프트용)"""
+        try:
+            from src.modules.signal import SignalPerformanceTracker
+
+            tracker = SignalPerformanceTracker(self.db)
+            summary = await tracker.generate_performance_summary(limit=20)
+
+            if summary.total_signals == 0:
+                return ""
+
+            lines = [
+                "### 최근 신호 성과",
+                f"- 총 {summary.total_signals}건 평가 완료",
+                f"- 매수 정확도: {summary.buy_accuracy:.0f}%",
+                f"- 매도 정확도: {summary.sell_accuracy:.0f}%",
+            ]
+
+            if summary.avg_pnl_24h != 0:
+                lines.append(f"- 평균 24시간 수익률: {summary.avg_pnl_24h:+.2f}%")
+
+            if summary.feedback_summary:
+                lines.append(f"- 피드백: {summary.feedback_summary}")
+
+            lines.append("- 이 성과를 참고하여 신호 품질을 개선하세요.")
+            lines.append("")
+
+            return "\n".join(lines)
+
+        except Exception as e:
+            logger.warning(f"성과 요약 생성 실패 (무시): {e}")
+            return ""
 
     async def _check_cooldown(self) -> None:
         """쿨다운 체크 (Repository 사용)"""

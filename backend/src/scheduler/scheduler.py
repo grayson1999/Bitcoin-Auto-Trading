@@ -17,13 +17,17 @@ from src.config.constants import (
     DATA_CLEANUP_INTERVAL_HOURS,
     DATA_COLLECTION_INTERVAL_SECONDS,
     PENDING_ORDER_SYNC_MINUTES,
+    SIGNAL_PERFORMANCE_EVAL_HOURS,
+    SIGNAL_RECOVERY_INTERVAL_MINUTES,
     VOLATILITY_CHECK_INTERVAL_SECONDS,
 )
 from src.scheduler.jobs import (
     check_volatility_job,
     cleanup_old_data_job,
     collect_market_data_job,
+    evaluate_signal_performance_job,
     generate_trading_signal_job,
+    recover_unexecuted_signals_job,
     sync_pending_orders_job,
 )
 from src.utils import UTC
@@ -121,12 +125,36 @@ def setup_scheduler() -> AsyncIOScheduler:
         coalesce=True,
     )
 
+    # 미실행 신호 복구 작업
+    scheduler.add_job(
+        recover_unexecuted_signals_job,
+        trigger=IntervalTrigger(minutes=SIGNAL_RECOVERY_INTERVAL_MINUTES),
+        id="recover_unexecuted_signals",
+        name="미실행 신호 복구",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+
+    # 신호 성과 평가 작업
+    scheduler.add_job(
+        evaluate_signal_performance_job,
+        trigger=IntervalTrigger(hours=SIGNAL_PERFORMANCE_EVAL_HOURS),
+        id="evaluate_signal_performance",
+        name="신호 성과 평가",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+
     logger.info(
         f"스케줄러 설정 완료: "
         f"데이터 수집 ({DATA_COLLECTION_INTERVAL_SECONDS}초), "
         f"변동성 체크 ({VOLATILITY_CHECK_INTERVAL_SECONDS}초), "
         f"AI 신호 생성 ({signal_interval_minutes}분), "
         f"PENDING 동기화 ({PENDING_ORDER_SYNC_MINUTES}분), "
+        f"미실행 신호 복구 ({SIGNAL_RECOVERY_INTERVAL_MINUTES}분), "
+        f"신호 성과 평가 ({SIGNAL_PERFORMANCE_EVAL_HOURS}시간), "
         f"데이터 정리 ({DATA_CLEANUP_INTERVAL_HOURS}시간)"
     )
 
