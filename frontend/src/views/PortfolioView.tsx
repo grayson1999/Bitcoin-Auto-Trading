@@ -2,12 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw, AlertCircle, PieChart } from 'lucide-react'
 import { fetchPortfolioSummary } from '@/api/portfolio.api'
+import { fetchDashboardSummary } from '@/api/dashboard.api'
 import { CommonButton } from '@/core/components/CommonButton'
 import { EmptyState } from '@/core/components/EmptyState'
 import { CumulativeReturnCard } from '@/components/portfolio/CumulativeReturnCard'
 import { TodayReturnCard } from '@/components/portfolio/TodayReturnCard'
 import { TradeStatsCard } from '@/components/portfolio/TradeStatsCard'
 import { ProfitChart } from '@/components/portfolio/ProfitChart'
+import { PositionCard } from '@/components/dashboard/PositionCard'
+import { BalanceCard } from '@/components/dashboard/BalanceCard'
 
 export function PortfolioView() {
   const navigate = useNavigate()
@@ -24,6 +27,14 @@ export function PortfolioView() {
     queryFn: fetchPortfolioSummary,
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // 1 minute auto-refresh
+  })
+
+  // Dashboard data for position & balance
+  const { data: dashboard, isLoading: isDashboardLoading } = useQuery({
+    queryKey: ['dashboardSummary'],
+    queryFn: fetchDashboardSummary,
+    staleTime: 30000,
+    refetchInterval: 60000,
   })
 
   const handleRefresh = () => {
@@ -110,15 +121,26 @@ export function PortfolioView() {
       {/* Summary Cards - 2 column grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <CumulativeReturnCard
-          totalDeposit={portfolio?.total_deposit ?? 0}
-          currentValue={portfolio?.current_value ?? 0}
           cumulativeReturnPct={portfolio?.cumulative_return_pct ?? 0}
+          totalRealizedPnl={portfolio?.total_realized_pnl ?? 0}
           isLoading={isLoading}
         />
         <TodayReturnCard
           todayReturnPct={portfolio?.today_return_pct ?? 0}
           todayRealizedPnl={portfolio?.today_realized_pnl ?? 0}
           isLoading={isLoading}
+        />
+      </div>
+
+      {/* Position & Balance Cards - 2 column grid */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <PositionCard
+          position={dashboard?.position ?? null}
+          isLoading={isDashboardLoading}
+        />
+        <BalanceCard
+          balance={dashboard?.balance ?? null}
+          isLoading={isDashboardLoading}
         />
       </div>
 

@@ -46,7 +46,8 @@ class PortfolioSummaryResponse(BaseModel):
 
     total_deposit: Decimal = Field(description="초기 투자금 (KRW)")
     current_value: Decimal = Field(description="현재 평가금 (KRW)")
-    cumulative_return_pct: float = Field(description="누적 수익률 (%)")
+    cumulative_return_pct: float = Field(description="누적 수익률 (%, 실현 손익 기준)")
+    total_realized_pnl: Decimal = Field(description="누적 실현 손익 (KRW)")
     today_return_pct: float = Field(description="오늘 수익률 (%)")
     today_realized_pnl: Decimal = Field(description="오늘 실현 손익 (KRW)")
     total_trades: int = Field(description="총 거래 횟수")

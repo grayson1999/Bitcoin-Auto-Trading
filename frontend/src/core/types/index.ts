@@ -204,6 +204,7 @@ export interface PortfolioSummary {
   total_deposit: number
   current_value: number
   cumulative_return_pct: number
+  total_realized_pnl: number
   today_return_pct: number
   today_realized_pnl: number
   total_trades: number

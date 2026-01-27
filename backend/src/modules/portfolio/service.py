@@ -55,6 +55,7 @@ class PortfolioService:
                 total_deposit=current_balance,
                 current_value=current_balance,
                 cumulative_return_pct=0.0,
+                total_realized_pnl=Decimal("0"),
                 today_return_pct=0.0,
                 today_realized_pnl=Decimal("0"),
                 total_trades=0,
@@ -83,11 +84,9 @@ class PortfolioService:
         # 누적 실현 손익
         total_pnl = sum(stat.realized_pnl for stat in all_stats)
 
-        # 누적 수익률 (입금/출금 고려)
+        # 누적 수익률 (실현 손익 기준)
         if total_invested > 0:
-            cumulative_return_pct = float(
-                (current_balance - total_invested) / total_invested * 100
-            )
+            cumulative_return_pct = float(total_pnl / total_invested * 100)
         else:
             cumulative_return_pct = 0.0
 
@@ -131,6 +130,7 @@ class PortfolioService:
             total_deposit=total_invested,  # 입금/출금 반영된 총 투자금
             current_value=current_balance,
             cumulative_return_pct=cumulative_return_pct,
+            total_realized_pnl=total_pnl,
             today_return_pct=today_return_pct,
             today_realized_pnl=today_realized_pnl,
             total_trades=total_trades,
