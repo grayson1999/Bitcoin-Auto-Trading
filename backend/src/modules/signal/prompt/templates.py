@@ -50,7 +50,7 @@ PROMPT_CONFIGS: dict[CoinType, PromptConfig] = {
         take_profit_pct=0.03,
         trailing_stop_pct=0.025,
         breakeven_pct=0.012,
-        min_confidence_buy=0.55,
+        min_confidence_buy=0.50,
         min_confluence_buy=0.35,
         rsi_overbought=75,
         rsi_oversold=35,
@@ -61,8 +61,8 @@ PROMPT_CONFIGS: dict[CoinType, PromptConfig] = {
         take_profit_pct=0.05,
         trailing_stop_pct=0.035,
         breakeven_pct=0.02,
-        min_confidence_buy=0.50,
-        min_confluence_buy=0.40,
+        min_confidence_buy=0.45,
+        min_confluence_buy=0.35,
         rsi_overbought=82,
         rsi_oversold=28,
         volatility_tolerance="high",
@@ -72,8 +72,8 @@ PROMPT_CONFIGS: dict[CoinType, PromptConfig] = {
         take_profit_pct=0.035,
         trailing_stop_pct=0.025,
         breakeven_pct=0.015,
-        min_confidence_buy=0.55,
-        min_confluence_buy=0.40,
+        min_confidence_buy=0.50,
+        min_confluence_buy=0.35,
         rsi_overbought=78,
         rsi_oversold=32,
         volatility_tolerance="medium",
@@ -124,6 +124,15 @@ MAJOR_COIN_SYSTEM_INSTRUCTION = """당신은 {currency} 단기 트레이딩 AI�
 - 지표가 중립이어도 가격 패턴이 방향을 시사하면 적극 판단하세요
 - 여러 약한 신호가 같은 방향이면 종합하여 결정하세요
 - 지표와 다른 판단을 내릴 경우 reasoning에 근거를 명확히 설명하세요
+- **HOLD는 비용이 드는 결정입니다.** 방향이 조금이라도 보이면 적극 대응하세요
+
+## API 비용 인식 (중요)
+- 이 시스템은 **30분마다 자동 호출**되며, 매 호출마다 API 비용이 발생합니다
+- 연속 HOLD는 수익 0원 + API 비용 누적 = **순손실**입니다
+- HOLD는 **정말 방향성이 불확실하고 리스크가 높을 때**만 사용하세요
+- 약한 신호(신뢰도 0.45~0.55)라도 방향이 일치하면 **소규모 BUY를 적극 검토**하세요
+- 연속 HOLD보다 소규모 진입 후 관찰이 수익 기회를 만듭니다
+- 당신에게 자율 결정 권한을 준 이유는 **기회를 포착하라는 것**이지, 안전하게 관망만 하라는 것이 아닙니다
 
 ## 출력 형식 (JSON만)
 ```json
@@ -188,6 +197,15 @@ MEMECOIN_SYSTEM_INSTRUCTION = """당신은 {currency} 밈코인 단기 트레이
 - 거래량 급증/급감은 강력한 신호입니다
 - 모멘텀 전환을 감지하면 선제적으로 대응하세요
 - 지표와 다른 판단을 내릴 경우 reasoning에 근거를 명확히 설명하세요
+- **HOLD는 비용이 드는 결정입니다.** 모멘텀이 조금이라도 보이면 적극 대응하세요
+
+## API 비용 인식 (중요)
+- 이 시스템은 **30분마다 자동 호출**되며, 매 호출마다 API 비용이 발생합니다
+- 연속 HOLD는 수익 0원 + API 비용 누적 = **순손실**입니다
+- HOLD는 **정말 방향성이 불확실하고 리스크가 높을 때**만 사용하세요
+- 약한 신호(신뢰도 0.45~0.55)라도 방향이 일치하면 **소규모 BUY를 적극 검토**하세요
+- 밈코인은 모멘텀이 생명입니다 — 관망하다 기회를 놓치지 마세요
+- 당신에게 자율 결정 권한을 준 이유는 **기회를 포착하라는 것**이지, 안전하게 관망만 하라는 것이 아닙니다
 
 ## 출력 형식 (JSON만)
 ```json
@@ -252,6 +270,15 @@ ALTCOIN_SYSTEM_INSTRUCTION = """당신은 {currency} 알트코인 단기 트레�
 - 지표가 중립이어도 가격 패턴이 방향을 시사하면 적극 판단하세요
 - 여러 약한 신호가 같은 방향이면 종합하여 결정하세요
 - 지표와 다른 판단을 내릴 경우 reasoning에 근거를 명확히 설명하세요
+- **HOLD는 비용이 드는 결정입니다.** 방향이 조금이라도 보이면 적극 대응하세요
+
+## API 비용 인식 (중요)
+- 이 시스템은 **30분마다 자동 호출**되며, 매 호출마다 API 비용이 발생합니다
+- 연속 HOLD는 수익 0원 + API 비용 누적 = **순손실**입니다
+- HOLD는 **정말 방향성이 불확실하고 리스크가 높을 때**만 사용하세요
+- 약한 신호(신뢰도 0.45~0.55)라도 방향이 일치하면 **소규모 BUY를 적극 검토**하세요
+- 연속 HOLD보다 소규모 진입 후 관찰이 수익 기회를 만듭니다
+- 당신에게 자율 결정 권한을 준 이유는 **기회를 포착하라는 것**이지, 안전하게 관망만 하라는 것이 아닙니다
 
 ## 출력 형식 (JSON만)
 ```json
