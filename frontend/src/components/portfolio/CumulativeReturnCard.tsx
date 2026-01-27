@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { CommonCard } from '@/core/components/CommonCard'
 import { Skeleton } from '@/core/components/ui/skeleton'
 import { formatCurrency, formatPercent } from '@/core/utils/formatters'
@@ -20,46 +20,55 @@ export function CumulativeReturnCard({
   if (isLoading) {
     return (
       <CommonCard title="누적 실현 수익률" className={className}>
-        <Skeleton className="h-12 w-32" />
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-28" />
+          <Skeleton className="h-6 w-40" />
+        </div>
       </CommonCard>
     )
   }
 
-  const isPositive = cumulativeReturnPct >= 0
+  const isPositive = totalRealizedPnl > 0
+  const isNegative = totalRealizedPnl < 0
+  const isNeutral = totalRealizedPnl === 0
+
+  const getIcon = () => {
+    if (isPositive) return <TrendingUp className="h-5 w-5 text-up" />
+    if (isNegative) return <TrendingDown className="h-5 w-5 text-down" />
+    return <Minus className="h-5 w-5 text-gray-400" />
+  }
+
+  const getColorClass = () => {
+    if (isPositive) return 'text-up'
+    if (isNegative) return 'text-down'
+    return 'text-gray-400'
+  }
 
   return (
     <CommonCard title="누적 실현 수익률" className={className}>
-      <div className="flex items-center gap-3">
-        <div
-          className={cn(
-            'flex items-center justify-center rounded-full p-2',
-            isPositive ? 'bg-up/10' : 'bg-down/10'
-          )}
-        >
-          {isPositive ? (
-            <TrendingUp className="h-6 w-6 text-up" />
-          ) : (
-            <TrendingDown className="h-6 w-6 text-down" />
-          )}
-        </div>
-        <div>
-          <p
-            className={cn(
-              'text-3xl font-bold',
-              isPositive ? 'text-up' : 'text-down'
-            )}
-          >
+      <div className="space-y-3">
+        {/* Return Percentage */}
+        <div className="flex items-center gap-2">
+          {getIcon()}
+          <p className={cn('text-2xl font-bold', getColorClass())}>
             {formatPercent(cumulativeReturnPct, { showSign: true })}
           </p>
-          <p
-            className={cn(
-              'text-sm',
-              isPositive ? 'text-up/80' : 'text-down/80'
-            )}
-          >
+        </div>
+
+        {/* Realized P&L */}
+        <div className="rounded-lg bg-gray-800/50 p-3">
+          <p className="text-xs text-gray-400">누적 실현 손익</p>
+          <p className={cn('text-lg font-semibold', getColorClass())}>
             {formatCurrency(totalRealizedPnl, { showSign: true })}
           </p>
         </div>
+
+        {/* Status Message */}
+        <p className="text-xs text-gray-500">
+          {isPositive && '누적 수익 중'}
+          {isNegative && '누적 손실 중'}
+          {isNeutral && '거래 기록 없음'}
+        </p>
       </div>
     </CommonCard>
   )
