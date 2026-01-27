@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { ArrowUpCircle, ArrowDownCircle, MinusCircle, Clock } from 'lucide-react'
 import { CommonCard } from '@/core/components/CommonCard'
 import { Badge } from '@/core/components/ui/badge'
 import { Skeleton } from '@/core/components/ui/skeleton'
+import { SignalDetailModal } from '@/components/signals/SignalDetailModal'
 import type { TradingSignal } from '@/core/types'
 import { formatDateTime } from '@/core/utils/formatters'
 import { cn } from '@/core/utils/cn'
@@ -37,6 +39,8 @@ const SIGNAL_CONFIG = {
 } as const
 
 export function LatestSignalCard({ signal, isLoading, className }: LatestSignalCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
   if (isLoading) {
     return (
       <CommonCard title="최신 AI 신호" className={className}>
@@ -72,7 +76,19 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
   const confidencePercent = Math.round(signal.confidence * 100)
 
   return (
-    <CommonCard title="최신 AI 신호" className={className}>
+    <CommonCard
+      title="최신 AI 신호"
+      headerAction={
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+        >
+          자세히 보기 &rarr;
+        </button>
+      }
+      className={className}
+    >
       <div className="space-y-5">
         {/* Signal Type & Confidence */}
         <div className="flex items-center justify-between">
@@ -137,6 +153,13 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
           </div>
         )}
       </div>
+
+      {/* Signal Detail Modal */}
+      <SignalDetailModal
+        signal={signal}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
     </CommonCard>
   )
 }
