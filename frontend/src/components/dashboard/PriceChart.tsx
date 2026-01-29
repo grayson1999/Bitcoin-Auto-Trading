@@ -13,8 +13,8 @@ import {
 } from 'lightweight-charts'
 import { useQuery } from '@tanstack/react-query'
 import { fetchMarketHistory } from '@/api/market.api'
-import { fetchSignals } from '@/api/signals.api'
-import type { ChartInterval, OHLCVData, TradingSignal } from '@/core/types'
+import { fetchOrders } from '@/api/trading.api'
+import type { ChartInterval, OHLCVData, Order } from '@/core/types'
 import { cn } from '@/core/utils/cn'
 import { Skeleton } from '@/core/components/ui/skeleton'
 import {
@@ -60,9 +60,9 @@ function transformToChartData(data: OHLCVData[]): CandlestickData[] {
   }))
 }
 
-/** Convert trading signals to chart markers (only within chart time range) */
-function signalsToMarkers(
-  signals: TradingSignal[],
+/** Convert executed orders to chart markers (only within chart time range) */
+function ordersToMarkers(
+  orders: Order[],
   chartData: OHLCVData[]
 ): SeriesMarker<Time>[] {
   if (chartData.length === 0) return []
@@ -75,23 +75,25 @@ function signalsToMarkers(
   const firstTime = getTimeAsNumber(chartData[0].time)
   const lastTime = getTimeAsNumber(chartData[chartData.length - 1].time)
 
-  return signals
-    .filter((s) => {
-      if (s.signal_type === 'HOLD') return false // HOLD는 표시 안함
-      const signalTime = new Date(s.created_at).getTime() / 1000
-      // Only include signals within chart time range
-      return signalTime >= firstTime && signalTime <= lastTime
+  return orders
+    .filter((o) => {
+      // Only show EXECUTED orders with valid execution data
+      if (o.status !== 'EXECUTED') return false
+      if (!o.executed_at || !o.executed_price) return false
+      const orderTime = new Date(o.executed_at).getTime() / 1000
+      // Only include orders within chart time range
+      return orderTime >= firstTime && orderTime <= lastTime
     })
-    .map((signal) => {
-      const isBuy = signal.signal_type === 'BUY'
-      const time = Math.floor(new Date(signal.created_at).getTime() / 1000) as Time
+    .map((order) => {
+      const isBuy = order.side === 'BUY'
+      const time = Math.floor(new Date(order.executed_at!).getTime() / 1000) as Time
 
       return {
         time,
         position: isBuy ? 'belowBar' : 'aboveBar',
         color: isBuy ? '#34D399' : '#F43F5E',
         shape: isBuy ? 'arrowUp' : 'arrowDown',
-        text: `${isBuy ? '매수' : '매도'} ${Math.round(signal.confidence * 100)}%`,
+        text: isBuy ? '매수' : '매도',
       } as SeriesMarker<Time>
     })
     .sort((a, b) => (a.time as number) - (b.time as number))
@@ -136,10 +138,10 @@ export function PriceChart({
     staleTime: 4000,
   })
 
-  // Fetch signals for markers
-  const { data: signalsData } = useQuery({
-    queryKey: ['signals', 'forChart'],
-    queryFn: () => fetchSignals({ limit: 50 }),
+  // Fetch executed orders for markers
+  const { data: ordersData } = useQuery({
+    queryKey: ['orders', 'forChart'],
+    queryFn: () => fetchOrders({ status: 'EXECUTED', limit: 50 }),
     refetchInterval: 30000, // 30초마다 갱신
     staleTime: 25000,
   })
@@ -354,17 +356,17 @@ export function PriceChart({
     mainChartRef.current?.timeScale().fitContent()
   }, [data, isChartReady])
 
-  // Update Signal Markers (only within chart data range)
+  // Update Order Markers (only within chart data range)
   useEffect(() => {
     if (!markersRef.current || !isChartReady || !data?.items) return
 
-    if (signalsData?.items && signalsData.items.length > 0) {
-      const markers = signalsToMarkers(signalsData.items, data.items)
+    if (ordersData?.items && ordersData.items.length > 0) {
+      const markers = ordersToMarkers(ordersData.items, data.items)
       markersRef.current.setMarkers(markers)
     } else {
       markersRef.current.setMarkers([])
     }
-  }, [signalsData, data, isChartReady])
+  }, [ordersData, data, isChartReady])
 
   // Data Updates - MA Indicators (on Main Chart)
   useEffect(() => {
