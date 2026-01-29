@@ -18,6 +18,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.clients.ai import AIClient, AIClientError, get_ai_client
+from src.clients.sentiment import FearGreedData, get_fear_greed_client
 from src.clients.upbit import (
     UpbitPrivateAPIError,
     UpbitPublicAPIError,
@@ -110,10 +111,13 @@ class SignalService:
         )
 
         # 프롬프트 빌더, 파서, 샘플러 초기화
-        self._prompt_builder = SignalPromptBuilder(self.currency, self.prompt_config)
+        self._prompt_builder = SignalPromptBuilder(
+            self.currency, self.prompt_config, self.coin_type
+        )
         self._response_parser = SignalResponseParser()
         self._signal_repo = SignalRepository(db)
         self._sampler = MarketDataSampler()
+        self._fear_greed_client = get_fear_greed_client()
 
         logger.info(
             f"SignalService 초기화: {self.currency} ({self.coin_type.value}), "
@@ -173,10 +177,13 @@ class SignalService:
         # 3. 잔고 정보 조회
         balance_info = await self._get_balance_info()
 
-        # 4. 성과 피드백 조회
+        # 4. Fear & Greed Index 조회 (BTC 기반 시장 심리)
+        fear_greed = await self._get_fear_greed()
+
+        # 5. 성과 피드백 조회
         performance_summary = await self._build_performance_summary()
 
-        # 5. 프롬프트 생성 (코인 유형별 템플릿 사용, 샘플링된 데이터 사용)
+        # 6. 프롬프트 생성 (코인 유형별 템플릿 사용, 샘플링된 데이터 사용)
         system_instruction = get_system_instruction(
             self.currency, self.coin_type, self.prompt_config
         )
@@ -185,13 +192,19 @@ class SignalService:
             mtf_result=mtf_result,
             balance_info=balance_info,
             performance_summary=performance_summary,
+            fear_greed=fear_greed,
         )
 
         # 디버그: 생성된 프롬프트 로깅 (민감 정보 마스킹)
-        logger.info(f"AI 프롬프트 생성 완료 (길이: {len(prompt)}자)")
+        fear_greed_log = (
+            f"Fear&Greed: {fear_greed.value} ({fear_greed.classification})"
+            if fear_greed
+            else "Fear&Greed: N/A"
+        )
+        logger.info(f"AI 프롬프트 생성 완료 (길이: {len(prompt)}자, {fear_greed_log})")
         logger.debug(f"프롬프트:\n{mask_sensitive_data(prompt)}")
 
-        # 6. AI 호출
+        # 7. AI 호출
         ai_start_time = time.monotonic()
         try:
             response = await self.ai_client.generate(
@@ -220,16 +233,16 @@ class SignalService:
                 f"입력 토큰이 목표(4,000)를 초과했습니다: {response.input_tokens}"
             )
 
-        # 7. 응답 파싱
+        # 8. 응답 파싱
         parsed = self._response_parser.parse_response(
             response.text,
             balance_info=balance_info,
         )
 
-        # 8. 기술적 지표 스냅샷 생성
+        # 9. 기술적 지표 스냅샷 생성
         technical_snapshot = self._prompt_builder.create_technical_snapshot(mtf_result)
 
-        # 9. DB에 저장 (Repository 사용)
+        # 10. DB에 저장 (Repository 사용)
         signal = TradingSignal(
             market_data_id=latest_data.id,
             signal_type=parsed.signal_type,
@@ -253,6 +266,22 @@ class SignalService:
         )
 
         return signal
+
+    async def _get_fear_greed(self) -> FearGreedData | None:
+        """
+        Fear & Greed Index 조회 (BTC 기반 시장 심리)
+
+        실패 시 None을 반환하고 신호 생성은 계속됩니다.
+        이 지표는 필수가 아닌 보조 지표입니다.
+
+        Returns:
+            FearGreedData | None: 지표 데이터 또는 None (조회 실패 시)
+        """
+        try:
+            return await self._fear_greed_client.get_current()
+        except Exception as e:
+            logger.warning(f"Fear & Greed Index 조회 실패 (무시): {e}")
+            return None
 
     async def _build_performance_summary(self) -> str:
         """최근 신호 성과 요약 생성 (프롬프트용)"""
