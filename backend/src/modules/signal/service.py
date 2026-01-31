@@ -284,7 +284,12 @@ class SignalService:
             return None
 
     async def _build_performance_summary(self) -> str:
-        """최근 신호 성과 요약 생성 (프롬프트용)"""
+        """
+        최근 신호 성과 요약 생성 (Reflection 메커니즘 적용)
+
+        CryptoTrade의 Reflection Agent 방식을 적용하여
+        성과 기반 전략 조정 지시를 포함합니다.
+        """
         try:
             from src.modules.signal import SignalPerformanceTracker
 
@@ -292,22 +297,55 @@ class SignalService:
             summary = await tracker.generate_performance_summary(limit=20)
 
             if summary.total_signals == 0:
-                return ""
+                return "성과 데이터 없음 - 보수적 접근 권장"
 
             lines = [
-                "### 최근 신호 성과",
-                f"- 총 {summary.total_signals}건 평가 완료",
-                f"- 매수 정확도: {summary.buy_accuracy:.0f}%",
-                f"- 매도 정확도: {summary.sell_accuracy:.0f}%",
+                "### 최근 신호 성과 (Reflection)",
+                f"- 평가 완료: {summary.total_signals}건",
+                f"- **매수(BUY) 정확도: {summary.buy_accuracy:.0f}%**",
+                f"- **매도(SELL) 정확도: {summary.sell_accuracy:.0f}%**",
             ]
 
             if summary.avg_pnl_24h != 0:
                 lines.append(f"- 평균 24시간 수익률: {summary.avg_pnl_24h:+.2f}%")
 
-            if summary.feedback_summary:
-                lines.append(f"- 피드백: {summary.feedback_summary}")
+            # Reflection 기반 전략 조정 권고 (v2 균형 버전: 강제 → 권고)
+            lines.append("")
+            lines.append("### 전략 조정 권고 (참고 사항)")
 
-            lines.append("- 이 성과를 참고하여 신호 품질을 개선하세요.")
+            # BUY 정확도 기반 조정 (권고로 완화)
+            if summary.buy_accuracy < 40:
+                lines.append(
+                    f"⚠️ 매수 정확도 {summary.buy_accuracy:.0f}%로 낮음"
+                )
+                lines.append(
+                    "→ 추세 확인 후 진입 권장. 역추세 매수는 위험할 수 있음"
+                )
+            elif summary.buy_accuracy < 50:
+                lines.append(f"⚠️ 매수 정확도 {summary.buy_accuracy:.0f}%로 다소 낮음")
+                lines.append(
+                    "→ 2개 이상 타임프레임 상승 확인 후 진입 권장"
+                )
+
+            # SELL 정확도 기반 조정 (권고로 완화)
+            if summary.sell_accuracy < 50:
+                lines.append(f"⚠️ 매도 정확도 {summary.sell_accuracy:.0f}%로 낮음")
+                lines.append("→ 명확한 하락 신호 확인 후 매도 권장")
+
+            # 연속 실패 경고 (권고로 완화)
+            if summary.improvement_suggestions:
+                for suggestion in summary.improvement_suggestions[:2]:
+                    if "연속" in suggestion:
+                        lines.append(f"📊 {suggestion}")
+                        lines.append(
+                            "→ 신중한 접근 권장"
+                        )
+
+            # 피드백 요약
+            if summary.feedback_summary:
+                lines.append("")
+                lines.append(f"📊 상세: {summary.feedback_summary}")
+
             lines.append("")
 
             return "\n".join(lines)
