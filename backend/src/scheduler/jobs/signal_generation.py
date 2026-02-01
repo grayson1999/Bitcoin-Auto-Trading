@@ -352,8 +352,8 @@ async def evaluate_signal_performance_job() -> None:
             if evaluated_count > 0:
                 logger.info(f"신호 성과 평가 완료: {evaluated_count}건")
 
-                # 성과 요약 생성 및 로깅
-                summary = await tracker.generate_performance_summary(limit=50)
+                # 성과 요약 생성 및 로깅 (7일 전체 데이터)
+                summary = await tracker.generate_performance_summary(limit=100, hours=168)
                 logger.info(
                     f"최근 성과 요약: "
                     f"총 {summary.total_signals}건, "

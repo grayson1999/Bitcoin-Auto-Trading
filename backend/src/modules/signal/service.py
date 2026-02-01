@@ -294,7 +294,8 @@ class SignalService:
             from src.modules.signal import SignalPerformanceTracker
 
             tracker = SignalPerformanceTracker(self.db)
-            summary = await tracker.generate_performance_summary(limit=20)
+            # 7일(168시간) 전체 신호로 정확도 계산 (단기 변동 민감도 감소)
+            summary = await tracker.generate_performance_summary(limit=100, hours=168)
 
             if summary.total_signals == 0:
                 return "성과 데이터 없음 - 보수적 접근 권장"
