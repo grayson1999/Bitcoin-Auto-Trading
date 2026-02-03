@@ -298,7 +298,7 @@ class SignalService:
             summary = await tracker.generate_performance_summary(limit=100, hours=168)
 
             if summary.total_signals == 0:
-                return "성과 데이터 없음 - 보수적 접근 권장"
+                return "성과 데이터 축적 중 - 기술적 지표 기반으로 판단하세요"
 
             lines = [
                 "### 최근 신호 성과 (Reflection)",
@@ -314,32 +314,32 @@ class SignalService:
             lines.append("")
             lines.append("### 전략 조정 권고 (참고 사항)")
 
-            # BUY 정확도 기반 조정 (권고로 완화)
+            # BUY 정확도 기반 조정 (v2.2: 악순환 방지, 매매 빈도 유지 유도)
             if summary.buy_accuracy < 40:
                 lines.append(
-                    f"⚠️ 매수 정확도 {summary.buy_accuracy:.0f}%로 낮음"
+                    f"📊 매수 정확도 {summary.buy_accuracy:.0f}%"
                 )
                 lines.append(
-                    "→ 추세 확인 후 진입 권장. 역추세 매수는 위험할 수 있음"
+                    "→ 진입 근거를 명확히 하되 기회를 놓치지 마세요"
                 )
             elif summary.buy_accuracy < 50:
-                lines.append(f"⚠️ 매수 정확도 {summary.buy_accuracy:.0f}%로 다소 낮음")
+                lines.append(f"📊 매수 정확도 {summary.buy_accuracy:.0f}%")
                 lines.append(
-                    "→ 2개 이상 타임프레임 상승 확인 후 진입 권장"
+                    "→ 1H 추세 + 보조 지표 확인 후 진입"
                 )
 
-            # SELL 정확도 기반 조정 (권고로 완화)
+            # SELL 정확도 기반 조정 (v2.2: 매매 빈도 유지 유도)
             if summary.sell_accuracy < 50:
-                lines.append(f"⚠️ 매도 정확도 {summary.sell_accuracy:.0f}%로 낮음")
-                lines.append("→ 명확한 하락 신호 확인 후 매도 권장")
+                lines.append(f"📊 매도 정확도 {summary.sell_accuracy:.0f}%")
+                lines.append("→ 1H 하락 추세 + 모멘텀 약화 확인 후 매도")
 
-            # 연속 실패 경고 (권고로 완화)
+            # 연속 실패 참고 (v2.2: 매매 빈도 유지 유도)
             if summary.improvement_suggestions:
                 for suggestion in summary.improvement_suggestions[:2]:
                     if "연속" in suggestion:
                         lines.append(f"📊 {suggestion}")
                         lines.append(
-                            "→ 신중한 접근 권장"
+                            "→ 진입 조건을 재점검하되 매매 빈도를 줄이지 마세요"
                         )
 
             # 피드백 요약

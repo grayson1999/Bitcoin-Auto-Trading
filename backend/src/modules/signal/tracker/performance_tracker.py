@@ -413,8 +413,8 @@ class SignalPerformanceTracker:
             buy_accuracy = self._calculate_accuracy(outcomes, SignalType.BUY.value)
             if buy_accuracy < 50:
                 suggestions.append(
-                    f"매수 정확도 {buy_accuracy:.1f}%로 낮음. "
-                    "RSI 과매도 + MACD 골든크로스 조건 강화 권장"
+                    f"매수 정확도 {buy_accuracy:.1f}%. "
+                    "1H 추세 방향성 확인 + 모멘텀 지표 참고"
                 )
 
         # 매도 정확도 분석
@@ -422,8 +422,8 @@ class SignalPerformanceTracker:
             sell_accuracy = self._calculate_accuracy(outcomes, SignalType.SELL.value)
             if sell_accuracy < 50:
                 suggestions.append(
-                    f"매도 정확도 {sell_accuracy:.1f}%로 낮음. "
-                    "RSI 과매수 + 볼린저밴드 상단 조건 강화 권장"
+                    f"매도 정확도 {sell_accuracy:.1f}%. "
+                    "1H 하락 추세 + 거래량 감소 확인 권장"
                 )
 
         # 변동성 대응
@@ -449,7 +449,7 @@ class SignalPerformanceTracker:
 
         if consecutive_fails >= 3:
             suggestions.append(
-                f"최근 {consecutive_fails}회 연속 오류. 시장 환경 변화 가능성 - 보수적 접근 권장"
+                f"최근 {consecutive_fails}회 연속 오류. 진입 조건 점검 권장 (매매 빈도 유지)"
             )
 
         return suggestions if suggestions else ["현재 성과 양호. 기존 전략 유지"]
