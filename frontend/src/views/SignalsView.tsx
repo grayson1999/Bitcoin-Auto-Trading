@@ -40,7 +40,7 @@ export function SignalsView() {
     queryFn: () => fetchSignals({
       type: filterType,
       limit: PAGE_SIZE,
-      offset: page * PAGE_SIZE,
+      page: page + 1,
     }),
     staleTime: 30000, // 30 seconds
   })

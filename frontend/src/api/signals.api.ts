@@ -3,7 +3,7 @@ import type { TradingSignal, TradingSignalListResponse, SignalType, TradingSigna
 
 export interface FetchSignalsParams {
   limit?: number
-  offset?: number
+  page?: number
   type?: SignalType | 'all'
 }
 
@@ -11,7 +11,7 @@ export interface FetchSignalsParams {
 export async function fetchSignals(params?: FetchSignalsParams): Promise<TradingSignalListResponse> {
   const queryParams: Record<string, number | string> = {
     limit: params?.limit ?? 20,
-    offset: params?.offset ?? 0,
+    page: params?.page ?? 1,
   }
 
   // Add type filter if specified and not 'all'

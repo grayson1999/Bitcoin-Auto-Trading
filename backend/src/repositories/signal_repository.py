@@ -47,7 +47,9 @@ class SignalRepository(BaseRepository[TradingSignal]):
             return query.where(TradingSignal.user_id == self.user_id)
         return query
 
-    async def get_latest(self, limit: int = 1) -> list[TradingSignal]:
+    async def get_latest(
+        self, limit: int = 1, offset: int = 0
+    ) -> list[TradingSignal]:
         """
         최신 매매 신호 조회
 
@@ -55,6 +57,7 @@ class SignalRepository(BaseRepository[TradingSignal]):
 
         Args:
             limit: 조회할 레코드 수 (기본: 1)
+            offset: 건너뛸 레코드 수 (기본: 0)
 
         Returns:
             최신 매매 신호 목록 (최신순)
@@ -62,7 +65,9 @@ class SignalRepository(BaseRepository[TradingSignal]):
         query = select(TradingSignal)
         query = self._user_filter(query)
         result = await self.session.execute(
-            query.order_by(TradingSignal.created_at.desc()).limit(limit)
+            query.order_by(TradingSignal.created_at.desc())
+            .offset(offset)
+            .limit(limit)
         )
         return list(result.scalars().all())
 
@@ -126,6 +131,7 @@ class SignalRepository(BaseRepository[TradingSignal]):
         self,
         signal_type: SignalType,
         limit: int = 100,
+        offset: int = 0,
     ) -> list[TradingSignal]:
         """
         신호 타입별 조회
@@ -133,6 +139,7 @@ class SignalRepository(BaseRepository[TradingSignal]):
         Args:
             signal_type: 신호 타입 (BUY/HOLD/SELL)
             limit: 최대 조회 개수
+            offset: 건너뛸 레코드 수 (기본: 0)
 
         Returns:
             해당 타입의 매매 신호 목록 (최신순)
@@ -142,7 +149,9 @@ class SignalRepository(BaseRepository[TradingSignal]):
         )
         query = self._user_filter(query)
         result = await self.session.execute(
-            query.order_by(TradingSignal.created_at.desc()).limit(limit)
+            query.order_by(TradingSignal.created_at.desc())
+            .offset(offset)
+            .limit(limit)
         )
         return list(result.scalars().all())
 

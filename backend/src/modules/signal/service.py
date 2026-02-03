@@ -511,10 +511,11 @@ class SignalService:
         """신호 목록 조회 (Repository 사용)"""
         if signal_type and signal_type != "all":
             signal_type_enum = SignalType(signal_type.upper())
-            return await self._signal_repo.get_by_type(signal_type_enum, limit=limit)
+            return await self._signal_repo.get_by_type(
+                signal_type_enum, limit=limit, offset=offset
+            )
 
-        signals = await self._signal_repo.get_latest(limit=limit + offset)
-        return signals[offset : offset + limit]
+        return await self._signal_repo.get_latest(limit=limit, offset=offset)
 
     async def get_signals_count(self, signal_type: str | None = None) -> int:
         """신호 총 개수 조회"""
