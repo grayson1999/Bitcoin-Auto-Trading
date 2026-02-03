@@ -139,6 +139,7 @@ class RiskEventManager:
         trigger_value: Decimal,
         action_taken: str,
         order_id: int | None = None,
+        user_id: int = 1,
     ) -> RiskEvent:
         """
         리스크 이벤트 생성 및 저장
@@ -148,11 +149,13 @@ class RiskEventManager:
             trigger_value: 발동 기준값
             action_taken: 수행된 조치
             order_id: 연관 주문 ID (선택)
+            user_id: 소유자 사용자 ID (기본값: 1, 시스템 사용자)
 
         Returns:
             RiskEvent: 생성된 이벤트
         """
         event = RiskEvent(
+            user_id=user_id,
             order_id=order_id,
             event_type=event_type.value,
             trigger_value=trigger_value,

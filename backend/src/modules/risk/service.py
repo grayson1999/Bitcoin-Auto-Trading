@@ -569,10 +569,11 @@ class RiskService:
         trigger_value: Decimal,
         action_taken: str,
         order_id: int | None = None,
+        user_id: int = 1,
     ) -> RiskEvent:
         """리스크 이벤트 생성 (RiskEventManager에 위임)"""
         return await self._event_manager.create_risk_event(
-            event_type, trigger_value, action_taken, order_id
+            event_type, trigger_value, action_taken, order_id, user_id
         )
 
 
