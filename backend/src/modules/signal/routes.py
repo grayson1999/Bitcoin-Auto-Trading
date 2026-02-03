@@ -27,7 +27,7 @@ from src.modules.signal.schemas import (
     TradingSignalResponse,
 )
 from src.modules.signal.service import SignalServiceError, get_signal_service
-from src.scheduler.jobs.signal_generation import execute_trading_from_signal_job
+from src.modules.trading import OrderBlockedReason, get_trading_service
 from src.utils.database import get_session
 
 router = APIRouter(prefix="/signals")
@@ -176,10 +176,32 @@ async def generate_signal(
             f"수동 신호 생성 완료: {signal.signal_type} (신뢰도: {signal.confidence})"
         )
 
-        # BUY/SELL 신호면 자동 매매 실행
+        # BUY/SELL 신호면 같은 세션 내에서 자동 매매 실행
         if signal.signal_type in (SignalType.BUY.value, SignalType.SELL.value):
             logger.info(f"자동 매매 트리거: signal_id={signal.id}")
-            await execute_trading_from_signal_job(signal.id)
+            trading_service = await get_trading_service(session)
+            order_result = await trading_service.execute_from_signal(
+                signal, user_id=signal.user_id
+            )
+            if order_result.success:
+                logger.info(
+                    f"자동 매매 완료: signal_id={signal.id}, "
+                    f"message={order_result.message}"
+                )
+            else:
+                logger.warning(
+                    f"자동 매매 실패: signal_id={signal.id}, "
+                    f"reason={order_result.blocked_reason}, "
+                    f"message={order_result.message}"
+                )
+                if (
+                    order_result.blocked_reason
+                    == OrderBlockedReason.INSUFFICIENT_BALANCE
+                ):
+                    signal.signal_type = SignalType.HOLD.value
+                    signal.reasoning = (
+                        signal.reasoning or ""
+                    ) + " [잔고 부족으로 HOLD 처리]"
 
         return GenerateSignalResponse(
             signal=TradingSignalResponse.model_validate(signal),
@@ -273,10 +295,32 @@ async def generate_manual_signal(
             f"수동 신호 생성 완료: {signal.signal_type} (신뢰도: {signal.confidence})"
         )
 
-        # BUY/SELL 신호면 자동 매매 실행
+        # BUY/SELL 신호면 같은 세션 내에서 자동 매매 실행
         if signal.signal_type in (SignalType.BUY.value, SignalType.SELL.value):
             logger.info(f"자동 매매 트리거: signal_id={signal.id}")
-            await execute_trading_from_signal_job(signal.id)
+            trading_service = await get_trading_service(session)
+            order_result = await trading_service.execute_from_signal(
+                signal, user_id=signal.user_id
+            )
+            if order_result.success:
+                logger.info(
+                    f"자동 매매 완료: signal_id={signal.id}, "
+                    f"message={order_result.message}"
+                )
+            else:
+                logger.warning(
+                    f"자동 매매 실패: signal_id={signal.id}, "
+                    f"reason={order_result.blocked_reason}, "
+                    f"message={order_result.message}"
+                )
+                if (
+                    order_result.blocked_reason
+                    == OrderBlockedReason.INSUFFICIENT_BALANCE
+                ):
+                    signal.signal_type = SignalType.HOLD.value
+                    signal.reasoning = (
+                        signal.reasoning or ""
+                    ) + " [잔고 부족으로 HOLD 처리]"
 
         return GenerateSignalResponse(
             signal=TradingSignalResponse.model_validate(signal),
