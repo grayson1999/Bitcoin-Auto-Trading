@@ -111,8 +111,13 @@ class OrderValidator:
                 None,
             )
 
-        # 1. 거래 활성화 상태 확인
-        if not await self._risk_service.is_trading_enabled():
+        # 매도 신호는 리스크 체크 우회 (손절 보호)
+        is_sell_signal = signal.signal_type == SignalType.SELL.value
+        if is_sell_signal:
+            logger.info("매도 신호 - 리스크 체크 우회 (손절 보호)")
+
+        # 1. 거래 활성화 상태 확인 (매도 신호는 우회)
+        if not is_sell_signal and not await self._risk_service.is_trading_enabled():
             logger.warning("거래 비활성화 상태 - 주문 실행 불가")
             return (
                 ValidationResult(
@@ -123,31 +128,33 @@ class OrderValidator:
                 None,
             )
 
-        # 2. 일일 손실 한도 체크
-        daily_result, daily_msg = await self._risk_service.check_daily_loss_limit()
-        if daily_result == RiskCheckResult.BLOCKED:
-            logger.warning(f"일일 손실 한도 도달: {daily_msg}")
-            return (
-                ValidationResult(
-                    is_valid=False,
-                    blocked_reason=OrderBlockedReason.DAILY_LIMIT_REACHED,
-                    message=daily_msg,
-                ),
-                None,
-            )
+        # 2. 일일 손실 한도 체크 (매도 신호는 우회)
+        if not is_sell_signal:
+            daily_result, daily_msg = await self._risk_service.check_daily_loss_limit()
+            if daily_result == RiskCheckResult.BLOCKED:
+                logger.warning(f"일일 손실 한도 도달: {daily_msg}")
+                return (
+                    ValidationResult(
+                        is_valid=False,
+                        blocked_reason=OrderBlockedReason.DAILY_LIMIT_REACHED,
+                        message=daily_msg,
+                    ),
+                    None,
+                )
 
-        # 3. 변동성 체크
-        vol_result, _vol_pct, vol_msg = await self._risk_service.check_volatility()
-        if vol_result == RiskCheckResult.BLOCKED:
-            logger.warning(f"고변동성 감지: {vol_msg}")
-            return (
-                ValidationResult(
-                    is_valid=False,
-                    blocked_reason=OrderBlockedReason.HIGH_VOLATILITY,
-                    message=vol_msg,
-                ),
-                None,
-            )
+        # 3. 변동성 체크 (매도 신호는 우회)
+        if not is_sell_signal:
+            vol_result, _vol_pct, vol_msg = await self._risk_service.check_volatility()
+            if vol_result == RiskCheckResult.BLOCKED:
+                logger.warning(f"고변동성 감지: {vol_msg}")
+                return (
+                    ValidationResult(
+                        is_valid=False,
+                        blocked_reason=OrderBlockedReason.HIGH_VOLATILITY,
+                        message=vol_msg,
+                    ),
+                    None,
+                )
 
         # 4. 잔고 조회
         try:

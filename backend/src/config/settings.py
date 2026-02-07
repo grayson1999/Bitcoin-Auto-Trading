@@ -91,7 +91,7 @@ class Settings(BaseSettings):
         description="일일 손실 한도 (3-10%) [DB 오버라이드 가능]",
     )
     signal_interval_minutes: int = Field(
-        default=30,
+        default=60,
         ge=5,
         le=120,
         description="AI 신호 생성 주기 (5-120분) [DB 오버라이드 가능]",

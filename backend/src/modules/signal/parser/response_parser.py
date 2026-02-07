@@ -1,15 +1,16 @@
 """
-신호 응답 파서 모듈 v2.1 (균형 버전)
+신호 응답 파서 모듈 v2.3 (BUY 정확도 개선)
 
 이 모듈은 AI 응답 파싱을 담당합니다.
 - JSON 파싱
-- action_score 기반 신호 결정 (v2.1 균형 버전)
-- 시장 레짐 파싱 (참고용, 차단 없음)
+- action_score 기반 신호 결정 (v2.3 BUY 임계값 강화)
+- 시장 레짐 파싱 (BEARISH 레짐 BUY 추가 필터)
 - 근거(reasoning) 포맷팅
 
-v2.1 변경사항:
-- 임계값 완화: 0.3 → 0.2
-- 레짐 기반 차단 로직 제거 (AI 판단 존중)
+v2.3 변경사항:
+- BUY 임계값 강화: 0.2 → 0.3
+- BEARISH 레짐 BUY 임계값: 0.4 (더 확실한 반전만 허용)
+- SELL 임계값 유지: -0.2
 """
 
 import json
@@ -25,8 +26,9 @@ from src.config.constants import (
 )
 from src.entities.trading_signal import SignalType
 
-# action_score 임계값 상수 (v2 균형 버전: 0.3 → 0.2로 완화)
-ACTION_SCORE_BUY_THRESHOLD = 0.2
+# action_score 임계값 상수 (v2.3: BUY 0.2 → 0.3 강화, BEARISH 0.4)
+ACTION_SCORE_BUY_THRESHOLD = 0.3
+ACTION_SCORE_BUY_THRESHOLD_BEARISH = 0.4
 ACTION_SCORE_SELL_THRESHOLD = -0.2
 ACTION_SCORE_STOP_LOSS = -0.95  # 손절 신호 임계값
 
@@ -149,20 +151,24 @@ class SignalResponseParser:
         market_regime: str,
     ) -> str:
         """
-        action_score 기반으로 신호 결정 (v2 균형 버전)
+        action_score 기반으로 신호 결정 (v2.3 BUY 정확도 개선)
 
-        v2 변경사항:
-        - 레짐 기반 차단 로직 제거 (AI가 레짐을 참고하여 판단)
-        - 임계값 완화: |score| < 0.2 → HOLD (기존 0.3)
-        - score >= 0.2 → BUY
-        - score <= -0.2 → SELL
+        v2.3 변경사항:
+        - BUY 임계값 강화: score >= 0.3 → BUY (기존 0.2)
+        - BEARISH 레짐: score >= 0.4 → BUY (더 확실한 반전만 허용)
+        - SELL 임계값 유지: score <= -0.2
         """
-        # 임계값 기반 신호 결정 (레짐 차단 없음)
-        if action_score >= ACTION_SCORE_BUY_THRESHOLD:
-            # BEARISH에서 BUY는 차단하지 않음 (AI가 판단)
+        # BUY 임계값: BEARISH에서는 더 높은 기준 적용
+        buy_threshold = (
+            ACTION_SCORE_BUY_THRESHOLD_BEARISH
+            if market_regime == "BEARISH"
+            else ACTION_SCORE_BUY_THRESHOLD
+        )
+
+        if action_score >= buy_threshold:
             if market_regime == "BEARISH":
                 logger.info(
-                    f"BEARISH 레짐에서 BUY 신호 허용 (score={action_score:.2f}) - AI 판단 존중"
+                    f"BEARISH 레짐에서 BUY 신호 허용 (score={action_score:.2f} >= {buy_threshold}) - 강한 반전 신호"
                 )
             return "BUY"
         elif action_score <= ACTION_SCORE_SELL_THRESHOLD:
