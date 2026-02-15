@@ -118,8 +118,8 @@ apiClient.interceptors.response.use(
           refresh_token: refreshToken,
         })
 
-        const { access_token, refresh_token } = response.data
-        setTokens(access_token, refresh_token)
+        const { access_token, refresh_token: new_refresh_token } = response.data
+        setTokens(access_token, new_refresh_token || refreshToken)
         onTokenRefreshed(access_token)
 
         originalRequest.headers.Authorization = `Bearer ${access_token}`

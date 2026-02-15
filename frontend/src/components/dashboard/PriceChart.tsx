@@ -131,9 +131,11 @@ export function PriceChart({
 
   const [isChartReady, setIsChartReady] = useState(false)
 
+  const candleCount = showMA200 ? 400 : 200
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['marketHistory', interval],
-    queryFn: () => fetchMarketHistory({ interval, count: 200 }),
+    queryKey: ['marketHistory', interval, candleCount],
+    queryFn: () => fetchMarketHistory({ interval, count: candleCount }),
     refetchInterval: 5000,
     staleTime: 4000,
   })
