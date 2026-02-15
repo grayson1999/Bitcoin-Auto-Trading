@@ -66,14 +66,15 @@ class Settings(BaseSettings):
 
     # === 거래 파라미터 (DB 오버라이드 가능) ===
     # 동적 포지션 사이징: AI 신뢰도에 따라 min~max 범위에서 계산
+    # v2.4: 하락장 자본 보존을 위해 25/50 → 10/25로 축소
     position_size_min_pct: float = Field(
-        default=25.0,
+        default=10.0,
         ge=1.0,
         le=50.0,
         description="최소 포지션 크기 비율 (신뢰도 낮을 때) [DB 오버라이드 가능]",
     )
     position_size_max_pct: float = Field(
-        default=50.0,
+        default=25.0,
         ge=5.0,
         le=100.0,
         description="최대 포지션 크기 비율 (신뢰도 높을 때) [DB 오버라이드 가능]",
@@ -125,30 +126,30 @@ class Settings(BaseSettings):
         description="거래 코인 심볼 (예: SOL, BTC, MOODENG)",
     )
 
-    # === AI 신호 손절/익절 비율 ===
+    # === AI 신호 손절/익절 비율 (v2.4: R:R 1:1.6 개선) ===
     signal_stop_loss_pct: float = Field(
-        default=0.015,
+        default=0.025,
         ge=0.005,
         le=0.10,
-        description="AI 신호 손절 비율 (0.015 = 1.5%)",
+        description="AI 신호 손절 비율 (0.025 = 2.5%)",
     )
     signal_take_profit_pct: float = Field(
-        default=0.025,
+        default=0.04,
         ge=0.01,
         le=0.20,
-        description="AI 신호 익절 비율 (0.025 = 2.5%)",
+        description="AI 신호 익절 비율 (0.04 = 4.0%)",
     )
     signal_trailing_stop_pct: float = Field(
-        default=0.02,
+        default=0.025,
         ge=0.005,
         le=0.10,
-        description="트레일링 스탑 활성화 수익률 (0.02 = 2%)",
+        description="트레일링 스탑 활성화 수익률 (0.025 = 2.5%)",
     )
     signal_breakeven_pct: float = Field(
-        default=0.01,
+        default=0.013,
         ge=0.005,
         le=0.05,
-        description="본전 손절 활성화 수익률 (0.01 = 1%)",
+        description="본전 손절 활성화 수익률 (0.013 = 1.3%)",
     )
 
     # === 변동성 돌파 전략 설정 (참고용) ===

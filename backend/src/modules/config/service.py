@@ -176,8 +176,8 @@ class ConfigService:
         Returns:
             (최소 %, 최대 %) 튜플
         """
-        min_pct = await self.get("position_size_min_pct", default=25.0)
-        max_pct = await self.get("position_size_max_pct", default=50.0)
+        min_pct = await self.get("position_size_min_pct", default=10.0)
+        max_pct = await self.get("position_size_max_pct", default=25.0)
         return (float(min_pct), float(max_pct))
 
     async def get_risk_params(self) -> dict[str, float]:

@@ -1,16 +1,17 @@
 """
-신호 응답 파서 모듈 v2.3 (BUY 정확도 개선)
+신호 응답 파서 모듈 v2.4 (하락장 전략 최적화)
 
 이 모듈은 AI 응답 파싱을 담당합니다.
 - JSON 파싱
-- action_score 기반 신호 결정 (v2.3 BUY 임계값 강화)
-- 시장 레짐 파싱 (BEARISH 레짐 BUY 추가 필터)
+- action_score 기반 신호 결정 (v2.4 BEARISH 임계값 강화)
+- 시장 레짐 파싱 (BEARISH 레짐 BUY/SELL 차별화)
 - 근거(reasoning) 포맷팅
 
-v2.3 변경사항:
-- BUY 임계값 강화: 0.2 → 0.3
-- BEARISH 레짐 BUY 임계값: 0.4 (더 확실한 반전만 허용)
-- SELL 임계값 유지: -0.2
+v2.4 변경사항:
+- BEARISH BUY 임계값 강화: 0.4 → 0.5
+- BEARISH SELL 임계값 완화: -0.2 → -0.15 (매도 적극화)
+- 일반 BUY/SELL 임계값 유지: 0.3 / -0.2
+- 거래량 분석 필드 표시 추가
 """
 
 import json
@@ -26,10 +27,11 @@ from src.config.constants import (
 )
 from src.entities.trading_signal import SignalType
 
-# action_score 임계값 상수 (v2.3: BUY 0.2 → 0.3 강화, BEARISH 0.4)
+# action_score 임계값 상수 (v2.4: BEARISH 차별화 강화)
 ACTION_SCORE_BUY_THRESHOLD = 0.3
-ACTION_SCORE_BUY_THRESHOLD_BEARISH = 0.4
+ACTION_SCORE_BUY_THRESHOLD_BEARISH = 0.5  # v2.4: 0.4 → 0.5 강화
 ACTION_SCORE_SELL_THRESHOLD = -0.2
+ACTION_SCORE_SELL_THRESHOLD_BEARISH = -0.15  # v2.4: 하락장 매도 적극화
 ACTION_SCORE_STOP_LOSS = -0.95  # 손절 신호 임계값
 
 
@@ -151,12 +153,12 @@ class SignalResponseParser:
         market_regime: str,
     ) -> str:
         """
-        action_score 기반으로 신호 결정 (v2.3 BUY 정확도 개선)
+        action_score 기반으로 신호 결정 (v2.4 하락장 전략 최적화)
 
-        v2.3 변경사항:
-        - BUY 임계값 강화: score >= 0.3 → BUY (기존 0.2)
-        - BEARISH 레짐: score >= 0.4 → BUY (더 확실한 반전만 허용)
-        - SELL 임계값 유지: score <= -0.2
+        v2.4 변경사항:
+        - BEARISH BUY 임계값 강화: score >= 0.5 → BUY (기존 0.4)
+        - BEARISH SELL 임계값 완화: score <= -0.15 → SELL (기존 -0.2)
+        - 일반 BUY/SELL 유지: 0.3 / -0.2
         """
         # BUY 임계값: BEARISH에서는 더 높은 기준 적용
         buy_threshold = (
@@ -165,17 +167,28 @@ class SignalResponseParser:
             else ACTION_SCORE_BUY_THRESHOLD
         )
 
+        # SELL 임계값: BEARISH에서는 더 낮은 기준 (매도 적극화)
+        sell_threshold = (
+            ACTION_SCORE_SELL_THRESHOLD_BEARISH
+            if market_regime == "BEARISH"
+            else ACTION_SCORE_SELL_THRESHOLD
+        )
+
         if action_score >= buy_threshold:
             if market_regime == "BEARISH":
                 logger.info(
                     f"BEARISH 레짐에서 BUY 신호 허용 (score={action_score:.2f} >= {buy_threshold}) - 강한 반전 신호"
                 )
             return "BUY"
-        elif action_score <= ACTION_SCORE_SELL_THRESHOLD:
+        elif action_score <= sell_threshold:
             # BULLISH에서 SELL도 차단하지 않음 (손절/익절 가능)
             if market_regime == "BULLISH" and action_score > ACTION_SCORE_STOP_LOSS:
                 logger.info(
                     f"BULLISH 레짐에서 SELL 신호 허용 (score={action_score:.2f}) - 익절/전략적 매도"
+                )
+            elif market_regime == "BEARISH":
+                logger.info(
+                    f"BEARISH 레짐에서 SELL 신호 (score={action_score:.2f} <= {sell_threshold}) - 추세 추종 매도"
                 )
             return "SELL"
         else:
@@ -208,9 +221,9 @@ class SignalResponseParser:
                 "강한 매수"
                 if action_score > 0.7
                 else "매수"
-                if action_score > 0.3
+                if action_score >= 0.3
                 else "관망"
-                if abs(action_score) < 0.3
+                if action_score > -0.3
                 else "매도"
                 if action_score > -0.7
                 else "강한 매도"
@@ -269,6 +282,12 @@ class SignalResponseParser:
 
             if tech.get("fear_greed") is not None:
                 tech_lines.append(f"• Fear & Greed: {tech['fear_greed']}")
+
+            # v2.4: 거래량 분석 필드 표시
+            if tech.get("volume_signal"):
+                tech_lines.append(f"• 거래량: {tech['volume_signal']}")
+            if tech.get("volume_price_divergence"):
+                tech_lines.append(f"• 거래량-가격: {tech['volume_price_divergence']}")
 
             if len(tech_lines) > 1:
                 sections.append("\n".join(tech_lines))

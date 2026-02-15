@@ -103,8 +103,8 @@ class SystemConfig(Base):
 # - trading_ticker: 환경변수로 관리
 # - trading_enabled: Risk API로 제어
 DEFAULT_CONFIGS = {
-    "position_size_min_pct": "25.0",
-    "position_size_max_pct": "50.0",
+    "position_size_min_pct": "10.0",
+    "position_size_max_pct": "25.0",
     "stop_loss_pct": "5.0",
     "daily_loss_limit_pct": "5.0",
     "signal_interval_hours": "1",
