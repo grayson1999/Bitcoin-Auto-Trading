@@ -100,13 +100,17 @@ class OpenAIClient(BaseAIClient):
         for attempt in range(MAX_RETRIES):
             try:
                 # 타임아웃과 함께 비동기 실행
+                # gpt-5-nano는 temperature 커스텀 미지원 (기본값 1만 허용)
+                create_kwargs: dict = {
+                    "model": self.model,
+                    "messages": messages,
+                    "max_completion_tokens": max_output_tokens,
+                }
+                if "nano" not in self.model:
+                    create_kwargs["temperature"] = temperature
+
                 response = await asyncio.wait_for(
-                    client.chat.completions.create(
-                        model=self.model,
-                        messages=messages,
-                        temperature=temperature,
-                        max_tokens=max_output_tokens,
-                    ),
+                    client.chat.completions.create(**create_kwargs),
                     timeout=self.timeout,
                 )
 
@@ -127,7 +131,7 @@ class OpenAIClient(BaseAIClient):
                 error_msg = str(e).lower()
 
                 # 재시도 불가능한 오류
-                if "api_key" in error_msg or "invalid" in error_msg:
+                if "api_key" in error_msg or "authentication" in error_msg:
                     raise AIClientError(
                         f"OpenAI API 인증 오류: {e}",
                         is_retryable=False,
@@ -161,8 +165,30 @@ class OpenAIClient(BaseAIClient):
         Returns:
             AIResponse: 파싱된 응답
         """
+        choice = response.choices[0]
+
+        # refusal 체크 (OpenAI safety filter)
+        if hasattr(choice.message, "refusal") and choice.message.refusal:
+            raise AIClientError(
+                f"OpenAI 안전 필터 거부: {choice.message.refusal}",
+                is_retryable=False,
+            )
+
+        # finish_reason 로깅 (length = 토큰 부족으로 잘림)
+        if choice.finish_reason == "length":
+            logger.error(
+                "OpenAI 응답이 토큰 제한으로 잘림 (finish_reason=length)"
+            )
+        elif choice.finish_reason != "stop":
+            logger.warning(f"OpenAI finish_reason: {choice.finish_reason}")
+
         # 텍스트 추출
-        text = response.choices[0].message.content or ""
+        text = choice.message.content or ""
+        if not text.strip():
+            raise AIClientError(
+                "OpenAI가 빈 응답을 반환함 (content=None/empty)",
+                is_retryable=True,
+            )
 
         # 토큰 사용량 추출
         usage = response.usage

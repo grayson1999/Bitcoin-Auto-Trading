@@ -108,12 +108,16 @@ class AIClient:
 
         try:
             logger.info("OpenAI fallback 사용됨")
-            return await self._openai_client.generate(
+            result = await self._openai_client.generate(
                 prompt=prompt,
                 system_instruction=system_instruction,
                 temperature=temperature,
-                max_output_tokens=max_output_tokens,
+                max_output_tokens=max(max_output_tokens, 4096),
             )
+            logger.debug(
+                f"OpenAI fallback 응답 (처음 200자): {result.text[:200]}"
+            )
+            return result
         except Exception as e:
             raise AIClientError(
                 f"Gemini와 OpenAI 모두 실패. Gemini: {gemini_error}, OpenAI: {e}",
