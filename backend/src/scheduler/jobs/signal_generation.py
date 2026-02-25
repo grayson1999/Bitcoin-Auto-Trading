@@ -71,15 +71,15 @@ async def generate_trading_signal_job() -> None:
 
             # BUY 사전 실행 필터
             if signal.signal_type == SignalType.BUY.value:
-                # 1. 최소 신뢰도 필터: BUY 신뢰도 < 0.4 → HOLD 변환
-                if signal.confidence < 0.4:
+                # 1. 최소 신뢰도 필터: BUY 신뢰도 < 0.25 → HOLD 변환 (v2.5: 0.40→0.25)
+                if signal.confidence < 0.25:
                     logger.info(
-                        f"BUY 신뢰도 필터: {signal.confidence:.2f} < 0.40 → HOLD 변환"
+                        f"BUY 신뢰도 필터: {signal.confidence:.2f} < 0.25 → HOLD 변환"
                     )
                     signal.signal_type = SignalType.HOLD.value
                     signal.reasoning = (
                         signal.reasoning or ""
-                    ) + f" [저신뢰도 BUY 필터: {signal.confidence:.2f} < 0.40]"
+                    ) + f" [저신뢰도 BUY 필터: {signal.confidence:.2f} < 0.25]"
 
                 # 2. 연속 실패 필터: 최근 48시간 BUY 5개 중 4개 이상 실패 → 차단
                 elif await _check_recent_buy_failure(session):

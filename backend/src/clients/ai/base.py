@@ -15,7 +15,7 @@ COST_CONFIG = {
     "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
     "gpt-4o": {"input": 2.50, "output": 10.00},
     "gpt-4o-mini": {"input": 0.15, "output": 0.60},
-    "gpt-4.1-mini": {"input": 0.40, "output": 1.60},
+    "gpt-5-nano": {"input": 0.05, "output": 0.40},
 }
 TOKENS_PER_M = 1_000_000  # 1M 토큰
 
@@ -128,8 +128,8 @@ class BaseAIClient(ABC):
         Returns:
             float: 예상 비용 ($)
         """
-        # 모델별 비용 조회 (기본값: gpt-4o-mini 가격)
-        cost = COST_CONFIG.get(model, COST_CONFIG["gpt-4o-mini"])
+        # 모델별 비용 조회 (기본값: gpt-5-nano 가격)
+        cost = COST_CONFIG.get(model, COST_CONFIG["gpt-5-nano"])
 
         input_cost = (input_tokens / TOKENS_PER_M) * cost["input"]
         output_cost = (output_tokens / TOKENS_PER_M) * cost["output"]

@@ -22,7 +22,7 @@ UPBIT_RATE_LIMIT_QUERY = 30  # 초당 조회 요청 제한
 # === 재시도 설정 ===
 DEFAULT_MAX_RETRIES = 3  # 기본 재시도 횟수
 DEFAULT_RETRY_DELAY_SECONDS = 2  # 기본 재시도 대기 시간
-DEFAULT_TIMEOUT_SECONDS = 30  # 기본 타임아웃
+DEFAULT_TIMEOUT_SECONDS = 60  # 기본 타임아웃
 
 # === 로깅 설정 ===
 LOG_ROTATION_SIZE = "10MB"  # 로그 로테이션 크기
@@ -32,7 +32,7 @@ LOG_RETENTION_PERIOD = "1 week"  # loguru 형식
 # === AI 모델 비용 (USD per 1M tokens) ===
 AI_MODEL_COSTS = {
     "gemini-2.5-pro": {"input": 1.25, "output": 10.0},
-    "gpt-4.1-mini": {"input": 0.40, "output": 1.60},
+    "gpt-5-nano": {"input": 0.05, "output": 0.40},
 }
 
 # === 스케줄러 기본 주기 ===

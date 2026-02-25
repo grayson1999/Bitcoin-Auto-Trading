@@ -366,7 +366,8 @@ class SignalPerformanceTracker:
             recent_types = [o.signal_type for o in recent_5]
             if all(t == SignalType.HOLD.value for t in recent_types):
                 feedback_parts.append(
-                    "최근 5개 신호가 모두 HOLD - 명확한 추세 형성 시 적극적 신호 고려"
+                    "최근 5개 신호가 모두 HOLD → HOLD 편향을 경계하세요. "
+                    "약한 신호라도 방향이 있으면 BUY/SELL을 부여하세요"
                 )
             elif recent_types.count(SignalType.BUY.value) >= 4:
                 feedback_parts.append("최근 매수 신호 빈발 - 과매수 가능성 고려 필요")

@@ -294,7 +294,7 @@ VITE_API_URL=http://localhost:8000
 
 ### OpenAI (Fallback)
 - **문서**: https://platform.openai.com/docs
-- **모델**: gpt-4.1-mini
+- **모델**: gpt-5-nano
 
 ---
 

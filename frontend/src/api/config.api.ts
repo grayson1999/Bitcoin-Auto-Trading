@@ -103,7 +103,7 @@ export const CONFIG_VALIDATION_RULES: Record<
 export const AI_MODEL_OPTIONS = [
   { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-  { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini (Fallback)' },
+  { value: 'gpt-5-nano', label: 'GPT-5 Nano (Fallback)' },
 ] as const
 
 // ============================================================================

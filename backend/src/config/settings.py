@@ -113,7 +113,7 @@ class Settings(BaseSettings):
         description="AI 신호 생성 모델 [DB 오버라이드 가능]",
     )
     ai_fallback_model: str = Field(
-        default="gpt-4.1-mini", description="AI Fallback 모델 (Gemini 실패 시)"
+        default="gpt-5-nano", description="AI Fallback 모델 (Gemini 실패 시)"
     )
 
     # === 거래 대상 설정 (환경변수 전용) ===

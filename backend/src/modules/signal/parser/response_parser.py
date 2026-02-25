@@ -1,15 +1,15 @@
 """
-신호 응답 파서 모듈 v2.4 (하락장 전략 최적화)
+신호 응답 파서 모듈 v2.5 (균형 잡힌 전략)
 
 이 모듈은 AI 응답 파싱을 담당합니다.
 - JSON 파싱
-- action_score 기반 신호 결정 (v2.4 BEARISH 임계값 강화)
+- action_score 기반 신호 결정 (v2.5 BEARISH 임계값 완화)
 - 시장 레짐 파싱 (BEARISH 레짐 BUY/SELL 차별화)
 - 근거(reasoning) 포맷팅
 
-v2.4 변경사항:
-- BEARISH BUY 임계값 강화: 0.4 → 0.5
-- BEARISH SELL 임계값 완화: -0.2 → -0.15 (매도 적극화)
+v2.5 변경사항:
+- BEARISH BUY 임계값 완화: 0.5 → 0.4 (HOLD 지옥 탈출)
+- BEARISH SELL 임계값 유지: -0.15
 - 일반 BUY/SELL 임계값 유지: 0.3 / -0.2
 - 거래량 분석 필드 표시 추가
 """
@@ -27,9 +27,9 @@ from src.config.constants import (
 )
 from src.entities.trading_signal import SignalType
 
-# action_score 임계값 상수 (v2.4: BEARISH 차별화 강화)
+# action_score 임계값 상수 (v2.5: BEARISH 균형 조정)
 ACTION_SCORE_BUY_THRESHOLD = 0.3
-ACTION_SCORE_BUY_THRESHOLD_BEARISH = 0.5  # v2.4: 0.4 → 0.5 강화
+ACTION_SCORE_BUY_THRESHOLD_BEARISH = 0.4  # v2.5: 0.5 → 0.4 완화 (HOLD 지옥 탈출)
 ACTION_SCORE_SELL_THRESHOLD = -0.2
 ACTION_SCORE_SELL_THRESHOLD_BEARISH = -0.15  # v2.4: 하락장 매도 적극화
 ACTION_SCORE_STOP_LOSS = -0.95  # 손절 신호 임계값
@@ -153,11 +153,11 @@ class SignalResponseParser:
         market_regime: str,
     ) -> str:
         """
-        action_score 기반으로 신호 결정 (v2.4 하락장 전략 최적화)
+        action_score 기반으로 신호 결정 (v2.5 균형 잡힌 전략)
 
-        v2.4 변경사항:
-        - BEARISH BUY 임계값 강화: score >= 0.5 → BUY (기존 0.4)
-        - BEARISH SELL 임계값 완화: score <= -0.15 → SELL (기존 -0.2)
+        v2.5 변경사항:
+        - BEARISH BUY 임계값 완화: score >= 0.4 → BUY (기존 0.5)
+        - BEARISH SELL 임계값 유지: score <= -0.15 → SELL
         - 일반 BUY/SELL 유지: 0.3 / -0.2
         """
         # BUY 임계값: BEARISH에서는 더 높은 기준 적용

@@ -11,6 +11,7 @@ from src.clients.ai.base import AIClientError, AIResponse
 from src.clients.ai.gemini_client import GeminiClient
 from src.clients.ai.openai_client import OpenAIClient
 from src.config import settings
+from src.config.constants import DEFAULT_TIMEOUT_SECONDS
 
 
 class AIClient:
@@ -32,7 +33,7 @@ class AIClient:
         openai_api_key: str | None = None,
         model: str | None = None,
         fallback_model: str | None = None,
-        timeout: float = 30.0,
+        timeout: float = DEFAULT_TIMEOUT_SECONDS,
     ):
         """
         AI 통합 클라이언트 초기화
@@ -112,7 +113,7 @@ class AIClient:
                 prompt=prompt,
                 system_instruction=system_instruction,
                 temperature=temperature,
-                max_output_tokens=max(max_output_tokens, 4096),
+                max_output_tokens=max(max_output_tokens, 8192),
             )
             logger.debug(
                 f"OpenAI fallback 응답 (처음 200자): {result.text[:200]}"
