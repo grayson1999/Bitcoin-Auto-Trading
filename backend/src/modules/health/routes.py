@@ -69,7 +69,7 @@ async def health_check_detail(
     6개 핵심 구성요소의 상태를 확인합니다:
     1. database: DB 연결 (SELECT 1)
     2. upbit_api: Upbit API 연결
-    3. gemini_api: Gemini AI API 연결
+    3. ai_api: AI API 연결 (OpenAI GPT-5 Nano)
     4. scheduler: 스케줄러 상태
     5. recent_signal: 최근 1시간 내 신호 존재 여부
     6. recent_order: 활성 주문 상태

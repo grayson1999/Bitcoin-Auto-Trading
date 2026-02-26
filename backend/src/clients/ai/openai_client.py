@@ -2,7 +2,7 @@
 OpenAI 클라이언트 모듈
 
 OpenAI API를 사용한 텍스트 생성 클라이언트입니다.
-Gemini API 실패 시 fallback으로 사용됩니다.
+GPT-5 Nano를 Primary AI 모델로 사용합니다.
 """
 
 import asyncio
@@ -26,7 +26,7 @@ class OpenAIClient(BaseAIClient):
     OpenAI 클라이언트
 
     OpenAI API를 사용하여 텍스트 생성 기능을 제공합니다.
-    주로 Gemini API 실패 시 fallback으로 사용됩니다.
+    GPT-5 Nano를 Primary AI 모델로 사용합니다.
 
     사용 예시:
         client = OpenAIClient()
@@ -48,7 +48,7 @@ class OpenAIClient(BaseAIClient):
             model: 모델 이름 (기본값: 설정 파일에서 로드)
             timeout: 요청 타임아웃 (초)
         """
-        model = model or settings.ai_fallback_model
+        model = model or settings.ai_model
         super().__init__(model=model, timeout=timeout)
 
         self.api_key = api_key or settings.openai_api_key
@@ -210,7 +210,6 @@ class OpenAIClient(BaseAIClient):
             output_tokens=output_tokens,
             total_tokens=total_tokens,
             estimated_cost=estimated_cost,
-            is_fallback=True,  # OpenAI는 항상 fallback으로 표시
         )
 
     def _log_token_usage(
@@ -228,7 +227,7 @@ class OpenAIClient(BaseAIClient):
             cost: 예상 비용 ($)
         """
         logger.info(
-            f"AI 토큰 사용량 [{self.model}] (Fallback) - "
+            f"AI 토큰 사용량 [{self.model}] - "
             f"입력: {input_tokens:,}, "
             f"출력: {output_tokens:,}, "
             f"총: {input_tokens + output_tokens:,}, "

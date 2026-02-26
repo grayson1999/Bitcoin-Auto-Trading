@@ -3,7 +3,7 @@ External API clients module
 
 Clients for external service communication.
 - Upbit: Exchange API (public/private)
-- AI: Gemini, OpenAI clients
+- AI: OpenAI GPT-5 Nano client
 - Slack: Notification service
 - Auth: Authentication server client
 """
@@ -14,10 +14,8 @@ from src.clients.ai import (
     AIClientError,
     AIResponse,
     BaseAIClient,
-    GeminiClient,
     OpenAIClient,
     get_ai_client,
-    get_gemini_client,
     get_openai_client,
 )
 
@@ -74,8 +72,6 @@ __all__ = [
     "AuthError",
     "AuthUser",
     "BaseAIClient",
-    # AI - Gemini
-    "GeminiClient",
     # Slack - backward compatibility
     "Notifier",
     "NotifierError",
@@ -101,7 +97,6 @@ __all__ = [
     # Singleton getters
     "get_ai_client",
     "get_auth_client",
-    "get_gemini_client",
     "get_notifier",
     "get_openai_client",
     "get_slack_client",

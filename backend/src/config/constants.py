@@ -31,7 +31,6 @@ LOG_RETENTION_PERIOD = "1 week"  # loguru 형식
 
 # === AI 모델 비용 (USD per 1M tokens) ===
 AI_MODEL_COSTS = {
-    "gemini-2.5-pro": {"input": 1.25, "output": 10.0},
     "gpt-5-nano": {"input": 0.05, "output": 0.40},
 }
 

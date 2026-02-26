@@ -1,7 +1,7 @@
 """
 AI 매매 신호 엔티티
 
-이 모듈은 Gemini AI가 생성한 매매 신호를 저장하는 SQLAlchemy 모델을 정의합니다.
+이 모듈은 AI가 생성한 매매 신호를 저장하는 SQLAlchemy 모델을 정의합니다.
 - BUY/HOLD/SELL 신호 타입
 - 신뢰도 점수 (0~1)
 - AI 분석 근거
@@ -53,7 +53,7 @@ class TradingSignal(Base, AuditMixin):
     """
     AI 매매 신호 모델
 
-    1시간 주기로 Gemini AI가 생성하는 매매 신호를 저장합니다.
+    1시간 주기로 AI가 생성하는 매매 신호를 저장합니다.
     시장 데이터 분석 결과와 신뢰도, 분석 근거를 포함합니다.
 
     Attributes:
@@ -65,7 +65,7 @@ class TradingSignal(Base, AuditMixin):
         reasoning: AI 분석 근거 (한국어)
         created_at: 신호 생성 시간
         updated_at: 신호 수정 시간
-        model_name: 사용된 AI 모델명 (예: gemini-2.5-flash)
+        model_name: 사용된 AI 모델명 (예: gpt-5-nano-ensemble-3)
         input_tokens: 입력 토큰 수 (비용 추적)
         output_tokens: 출력 토큰 수 (비용 추적)
         created_by: 생성자 사용자 ID

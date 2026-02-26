@@ -67,7 +67,7 @@ class TestHealthService:
         expected_names = {
             "database",
             "upbit_api",
-            "gemini_api",
+            "ai_api",
             "scheduler",
             "recent_signal",
             "recent_order",
@@ -124,7 +124,7 @@ class TestHealthServiceStatusDetermination:
         components = [
             ComponentHealth(name="database", status="healthy"),
             ComponentHealth(name="upbit_api", status="healthy"),
-            ComponentHealth(name="gemini_api", status="healthy"),
+            ComponentHealth(name="ai_api", status="healthy"),
             ComponentHealth(name="scheduler", status="healthy"),
             ComponentHealth(name="recent_signal", status="healthy"),
             ComponentHealth(name="recent_order", status="healthy"),
@@ -140,7 +140,7 @@ class TestHealthServiceStatusDetermination:
         components = [
             ComponentHealth(name="database", status="unhealthy"),
             ComponentHealth(name="upbit_api", status="healthy"),
-            ComponentHealth(name="gemini_api", status="healthy"),
+            ComponentHealth(name="ai_api", status="healthy"),
             ComponentHealth(name="scheduler", status="healthy"),
             ComponentHealth(name="recent_signal", status="healthy"),
             ComponentHealth(name="recent_order", status="healthy"),
@@ -156,7 +156,7 @@ class TestHealthServiceStatusDetermination:
         components = [
             ComponentHealth(name="database", status="healthy"),
             ComponentHealth(name="upbit_api", status="healthy"),
-            ComponentHealth(name="gemini_api", status="healthy"),
+            ComponentHealth(name="ai_api", status="healthy"),
             ComponentHealth(name="scheduler", status="unhealthy"),
             ComponentHealth(name="recent_signal", status="healthy"),
             ComponentHealth(name="recent_order", status="healthy"),
@@ -172,7 +172,7 @@ class TestHealthServiceStatusDetermination:
         components = [
             ComponentHealth(name="database", status="healthy"),
             ComponentHealth(name="upbit_api", status="unhealthy"),
-            ComponentHealth(name="gemini_api", status="healthy"),
+            ComponentHealth(name="ai_api", status="healthy"),
             ComponentHealth(name="scheduler", status="healthy"),
             ComponentHealth(name="recent_signal", status="healthy"),
             ComponentHealth(name="recent_order", status="healthy"),
@@ -188,7 +188,7 @@ class TestHealthServiceStatusDetermination:
         components = [
             ComponentHealth(name="database", status="healthy"),
             ComponentHealth(name="upbit_api", status="healthy"),
-            ComponentHealth(name="gemini_api", status="warning"),
+            ComponentHealth(name="ai_api", status="warning"),
             ComponentHealth(name="scheduler", status="healthy"),
             ComponentHealth(name="recent_signal", status="warning"),
             ComponentHealth(name="recent_order", status="healthy"),

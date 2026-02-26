@@ -1,10 +1,9 @@
 """
 AI client module
 
-AI API clients.
-- Gemini client: Google Gemini AI
-- OpenAI client: OpenAI API (Fallback)
-- Unified client: Gemini first, OpenAI Fallback
+OpenAI GPT-5 Nano AI 클라이언트.
+- OpenAI client: GPT-5 Nano (Primary)
+- Unified client: 앙상블 지원
 """
 
 from src.clients.ai.base import (
@@ -15,7 +14,6 @@ from src.clients.ai.base import (
     BaseAIClient,
 )
 from src.clients.ai.client import AIClient, get_ai_client
-from src.clients.ai.gemini_client import GeminiClient, get_gemini_client
 from src.clients.ai.openai_client import OpenAIClient, get_openai_client
 from src.config.constants import DEFAULT_MAX_RETRIES as MAX_RETRIES
 from src.config.constants import DEFAULT_RETRY_DELAY_SECONDS as RETRY_DELAY
@@ -27,17 +25,14 @@ __all__ = [
     "MAX_RETRIES",
     "RETRY_DELAY",
     "TOKENS_PER_M",
-    # Unified Client (with fallback)
+    # Unified Client (with ensemble)
     "AIClient",
     # Base
     "AIClientError",
     "AIResponse",
     "BaseAIClient",
-    # Gemini
-    "GeminiClient",
     # OpenAI
     "OpenAIClient",
     "get_ai_client",
-    "get_gemini_client",
     "get_openai_client",
 ]

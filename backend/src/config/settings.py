@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 
     환경변수 전용 (민감 정보):
         - database_url, upbit_access_key, upbit_secret_key
-        - gemini_api_key, openai_api_key
+        - openai_api_key
         - slack_webhook_url, auth_server_url
         - trading_ticker (거래 대상 변경은 배포 레벨)
     """
@@ -35,6 +35,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     # === 데이터베이스 설정 (환경변수 전용) ===
@@ -47,11 +48,8 @@ class Settings(BaseSettings):
     upbit_access_key: str = Field(default="", description="Upbit API 접근 키")
     upbit_secret_key: str = Field(default="", description="Upbit API 비밀 키")
 
-    # === Google Gemini API 설정 (환경변수 전용) ===
-    gemini_api_key: str = Field(default="", description="Google Gemini API 키")
-
     # === OpenAI API 설정 (환경변수 전용) ===
-    openai_api_key: str = Field(default="", description="OpenAI API 키 (백업용)")
+    openai_api_key: str = Field(default="", description="OpenAI API 키")
 
     # === Slack 웹훅 설정 (환경변수 전용) ===
     slack_webhook_url: str | None = Field(
@@ -158,10 +156,10 @@ class Settings(BaseSettings):
         description="트레일링 스탑 하락 비율 (%) [DB 오버라이드 가능]",
     )
 
-    # === AI Fallback 앙상블 설정 ===
-    ai_fallback_ensemble: bool = Field(
+    # === AI 앙상블 설정 ===
+    ai_ensemble: bool = Field(
         default=True,
-        description="소형 모델 3x 앙상블 활성화",
+        description="GPT-5 Nano 3x 앙상블 활성화",
     )
 
     # === 환경 설정 ===
@@ -169,11 +167,8 @@ class Settings(BaseSettings):
 
     # === AI 모델 설정 (DB 오버라이드 가능) ===
     ai_model: str = Field(
-        default="gemini-2.5-pro",
+        default="gpt-5-nano",
         description="AI 신호 생성 모델 [DB 오버라이드 가능]",
-    )
-    ai_fallback_model: str = Field(
-        default="gpt-5-nano", description="AI Fallback 모델 (Gemini 실패 시)"
     )
 
     # === 거래 대상 설정 (환경변수 전용) ===

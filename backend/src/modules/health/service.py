@@ -4,7 +4,7 @@
 6개 구성요소의 상태를 확인하는 서비스입니다:
 1. DB 연결
 2. Upbit API
-3. Gemini API
+3. AI API (OpenAI GPT-5 Nano)
 4. 스케줄러
 5. 최근 신호
 6. 최근 주문
@@ -60,7 +60,7 @@ class HealthService:
         # 각 구성요소 체크 (순차 실행)
         components.append(await self._check_database())
         components.append(await self._check_upbit_api())
-        components.append(await self._check_gemini_api())
+        components.append(await self._check_ai_api())
         components.append(self._check_scheduler())
         components.append(await self._check_recent_signal())
         components.append(await self._check_recent_order())
@@ -120,35 +120,33 @@ class HealthService:
                 message=str(e),
             )
 
-    async def _check_gemini_api(self) -> ComponentHealth:
-        """Gemini API 연결 상태 확인"""
+    async def _check_ai_api(self) -> ComponentHealth:
+        """AI API (OpenAI) 연결 상태 확인"""
         # 순환 참조 방지를 위한 지연 임포트
         from src.clients.ai import get_ai_client
 
         start = time.perf_counter()
         try:
             client = get_ai_client()
-            # 간단한 생성 테스트
             await client.generate(prompt="Hello", max_output_tokens=5)
             latency_ms = (time.perf_counter() - start) * 1000
 
             return ComponentHealth(
-                name="gemini_api",
+                name="ai_api",
                 status="healthy",
                 latency_ms=round(latency_ms, 2),
             )
         except Exception as e:
             error_msg = str(e).lower()
-            # Rate Limit은 warning으로 처리
             if "rate" in error_msg or "quota" in error_msg or "429" in error_msg:
                 return ComponentHealth(
-                    name="gemini_api",
+                    name="ai_api",
                     status="warning",
                     message="Rate limit exceeded",
                 )
-            logger.warning(f"Gemini API 헬스체크 실패: {e}")
+            logger.warning(f"AI API 헬스체크 실패: {e}")
             return ComponentHealth(
-                name="gemini_api",
+                name="ai_api",
                 status="unhealthy",
                 message=str(e),
             )

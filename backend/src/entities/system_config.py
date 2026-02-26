@@ -108,6 +108,6 @@ DEFAULT_CONFIGS = {
     "stop_loss_pct": "5.0",
     "daily_loss_limit_pct": "5.0",
     "signal_interval_hours": "1",
-    "ai_model": '"gemini-2.5-pro"',
+    "ai_model": '"gpt-5-nano"',
     "volatility_threshold_pct": "3.0",
 }

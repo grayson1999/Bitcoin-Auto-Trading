@@ -11,8 +11,6 @@ from src.config.constants import DEFAULT_TIMEOUT_SECONDS
 
 # === 모델별 토큰 비용 ($ per 1M tokens) ===
 COST_CONFIG = {
-    "gemini-2.5-pro": {"input": 1.25, "output": 10.00},
-    "gemini-2.5-flash": {"input": 0.15, "output": 0.60},
     "gpt-4o": {"input": 2.50, "output": 10.00},
     "gpt-4o-mini": {"input": 0.15, "output": 0.60},
     "gpt-5-nano": {"input": 0.05, "output": 0.40},
@@ -41,7 +39,6 @@ class AIResponse:
     output_tokens: int
     total_tokens: int
     estimated_cost: float
-    is_fallback: bool = False
 
 
 class AIClientError(Exception):

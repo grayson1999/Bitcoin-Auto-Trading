@@ -1,9 +1,8 @@
 """
-AI 통합 클라이언트 모듈 (Gemini + OpenAI Fallback + 앙상블)
+OpenAI GPT-5 Nano AI 클라이언트 (앙상블 지원)
 
-Google Gemini AI를 기본으로 사용하고,
-실패 시 OpenAI로 자동 fallback하는 통합 클라이언트입니다.
-소형 모델 fallback 시 전용 프롬프트 + 3x 앙상블을 지원합니다.
+GPT-5 Nano를 사용하여 매매 신호를 생성합니다.
+3x 앙상블 self-consistency로 신호 안정성을 높입니다.
 """
 
 import asyncio
@@ -13,7 +12,6 @@ import statistics
 from loguru import logger
 
 from src.clients.ai.base import AIClientError, AIResponse
-from src.clients.ai.gemini_client import GeminiClient
 from src.clients.ai.openai_client import OpenAIClient
 from src.config import settings
 from src.config.constants import DEFAULT_TIMEOUT_SECONDS
@@ -23,117 +21,60 @@ ENSEMBLE_COUNT = 3
 
 class AIClient:
     """
-    AI 통합 클라이언트 (Gemini + OpenAI Fallback + 앙상블)
+    OpenAI GPT-5 Nano AI 클라이언트 (앙상블 지원)
 
-    Google Gemini AI를 기본으로 사용하고, 실패 시 OpenAI로 fallback합니다.
-    소형 모델 fallback 시 전용 프롬프트와 3x 앙상블을 지원합니다.
+    GPT-5 Nano를 사용하여 매매 신호를 생성합니다.
+    ai_ensemble 설정 시 3x 병렬 호출 후 self-consistency로 최종 결과를 선택합니다.
     """
 
     def __init__(
         self,
-        gemini_api_key: str | None = None,
         openai_api_key: str | None = None,
         model: str | None = None,
-        fallback_model: str | None = None,
         timeout: float = DEFAULT_TIMEOUT_SECONDS,
     ):
-        self.openai_api_key = openai_api_key or settings.openai_api_key
-
-        self._gemini_client = GeminiClient(
-            api_key=gemini_api_key,
+        self._openai_client = OpenAIClient(
+            api_key=openai_api_key,
             model=model,
             timeout=timeout,
         )
-        self._openai_client: OpenAIClient | None = None
-        if self.openai_api_key:
-            self._openai_client = OpenAIClient(
-                api_key=openai_api_key,
-                model=fallback_model,
-                timeout=timeout,
-            )
 
     async def generate(
         self,
         prompt: str,
         system_instruction: str | None = None,
         temperature: float = 0.7,
-        max_output_tokens: int = 1024,
-        fallback_prompt: str | None = None,
-        fallback_system_instruction: str | None = None,
-        fallback_max_output_tokens: int = 4096,
+        max_output_tokens: int = 4096,
     ) -> AIResponse:
         """
-        텍스트 생성 요청 (Gemini 우선, 실패 시 OpenAI fallback)
+        텍스트 생성 요청 (앙상블 모드 지원)
 
         Args:
             prompt: 사용자 프롬프트
             system_instruction: 시스템 지시 (선택)
             temperature: 창의성 파라미터 (0~1)
             max_output_tokens: 최대 출력 토큰 수
-            fallback_prompt: 소형 모델 전용 프롬프트 (없으면 기존 prompt 사용)
-            fallback_system_instruction: 소형 모델 전용 시스템 지시
-            fallback_max_output_tokens: 소형 모델 최대 출력 토큰 수
 
         Returns:
             AIResponse: AI 응답 (텍스트, 토큰 사용량 포함)
 
         Raises:
-            AIClientError: Gemini와 OpenAI 모두 실패 시
+            AIClientError: API 호출 실패 시
         """
-        gemini_error: Exception | None = None
-
-        # 1. Gemini API 시도
-        try:
-            return await self._gemini_client.generate(
-                prompt=prompt,
-                system_instruction=system_instruction,
-                temperature=temperature,
-                max_output_tokens=max_output_tokens,
-            )
-        except AIClientError as e:
-            gemini_error = e
-            logger.warning(f"Gemini API 실패, OpenAI fallback 시도: {e.message}")
-
-        # 2. OpenAI fallback
-        if not self._openai_client:
-            raise AIClientError(
-                f"Gemini 실패 후 OpenAI fallback 불가: OpenAI API 키 미설정. "
-                f"원인: {gemini_error}",
-                is_retryable=False,
+        if settings.ai_ensemble:
+            logger.info(f"앙상블 ({ENSEMBLE_COUNT}x) 실행")
+            return await self._generate_ensemble(
+                prompt, system_instruction, temperature, max_output_tokens
             )
 
-        # 소형 모델 전용 프롬프트 사용
-        fb_prompt = fallback_prompt or prompt
-        fb_system = fallback_system_instruction or system_instruction
-        fb_max_tokens = fallback_max_output_tokens
-
-        try:
-            # 앙상블 모드
-            if settings.ai_fallback_ensemble and fallback_prompt:
-                logger.info(
-                    f"OpenAI fallback 앙상블 ({ENSEMBLE_COUNT}x) 실행"
-                )
-                return await self._generate_ensemble(
-                    fb_prompt, fb_system, temperature, fb_max_tokens
-                )
-
-            # 단일 호출
-            logger.info("OpenAI fallback 사용됨 (전용 프롬프트)")
-            result = await self._openai_client.generate(
-                prompt=fb_prompt,
-                system_instruction=fb_system,
-                temperature=temperature,
-                max_output_tokens=fb_max_tokens,
-            )
-            logger.debug(
-                f"OpenAI fallback 응답 (처음 200자): {result.text[:200]}"
-            )
-            return result
-        except Exception as e:
-            raise AIClientError(
-                f"Gemini와 OpenAI 모두 실패. Gemini: {gemini_error}, OpenAI: {e}",
-                is_retryable=False,
-            ) from e
+        result = await self._openai_client.generate(
+            prompt=prompt,
+            system_instruction=system_instruction,
+            temperature=temperature,
+            max_output_tokens=max_output_tokens,
+        )
+        logger.debug(f"AI 응답 (처음 200자): {result.text[:200]}")
+        return result
 
     async def _generate_ensemble(
         self,
@@ -143,14 +84,11 @@ class AIClient:
         max_output_tokens: int,
     ) -> AIResponse:
         """
-        소형 모델 3x 병렬 앙상블 (self-consistency)
+        3x 병렬 앙상블 (self-consistency)
 
         action_score 중앙값으로 최종 결과를 선택합니다.
         모든 결과가 다른 방향이면 HOLD로 기본값 설정합니다.
         """
-        assert self._openai_client is not None
-
-        # 3x 병렬 호출
         tasks = [
             self._openai_client.generate(
                 prompt=prompt,
@@ -185,7 +123,6 @@ class AIClient:
                 scores.append((score, r))
 
         if not scores:
-            # action_score 추출 실패 시 첫 번째 결과 반환
             logger.warning("앙상블: action_score 추출 실패, 첫 번째 결과 사용")
             return self._merge_ensemble_result(results[0], results)
 
@@ -204,7 +141,6 @@ class AIClient:
             logger.warning(
                 "앙상블: 3개 결과 모두 다른 방향 → HOLD 선택"
             )
-            # HOLD에 가장 가까운 결과 선택
             hold_candidates = [
                 (s, r) for s, r in scores if -0.2 < s < 0.3
             ]
@@ -227,7 +163,6 @@ class AIClient:
     def _extract_action_score(self, text: str) -> float | None:
         """응답 텍스트에서 action_score 추출"""
         try:
-            # JSON 블록 추출
             import re
 
             json_match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
@@ -255,14 +190,11 @@ class AIClient:
             output_tokens=total_output,
             total_tokens=total_input + total_output,
             estimated_cost=total_cost,
-            is_fallback=True,
         )
 
     async def health_check(self) -> bool:
         """API 연결 상태 확인"""
-        return await self._gemini_client.health_check() or (
-            self._openai_client is not None and await self._openai_client.health_check()
-        )
+        return await self._openai_client.health_check()
 
 
 # === 싱글톤 인스턴스 ===
@@ -270,7 +202,7 @@ _ai_client: AIClient | None = None
 
 
 def get_ai_client() -> AIClient:
-    """AI 통합 클라이언트 싱글톤 반환"""
+    """AI 클라이언트 싱글톤 반환"""
     global _ai_client
     if _ai_client is None:
         _ai_client = AIClient()

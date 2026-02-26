@@ -1,12 +1,11 @@
 """
 AI 매매 신호 생성 서비스 (동적 코인 지원 버전)
 
-이 모듈은 Gemini AI를 사용하여 암호화폐 매매 신호를 생성하는 서비스를 제공합니다.
+이 모듈은 GPT-5 Nano AI를 사용하여 암호화폐 매매 신호를 생성하는 서비스를 제공합니다.
 - 동적 코인 설정 (환경변수 TRADING_TICKER, TRADING_CURRENCY)
-- 코인 유형별 프롬프트 템플릿 (메이저/밈코인/알트코인)
+- 카테고리컬 신호 변환 + 3x 앙상블 self-consistency
 - 기술적 지표 분석 (RSI, MACD, 볼린저밴드, EMA, ATR)
 - 멀티 타임프레임 분석 (1H, 4H, 1D, 1W)
-- 시장 데이터 샘플링 (토큰 절감)
 """
 
 import time
@@ -18,7 +17,6 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.clients.ai import AIClient, AIClientError, get_ai_client
-from src.clients.sentiment import FearGreedData, get_fear_greed_client
 from src.clients.upbit import (
     UpbitPrivateAPIError,
     UpbitPublicAPIError,
@@ -39,13 +37,11 @@ from src.modules.signal.parser import SignalResponseParser
 from src.modules.signal.prompt import (
     PromptConfig,
     SignalPromptBuilder,
-    build_small_model_prompt,
+    build_prompt,
     get_config_for_coin,
-    get_small_model_system_instruction,
     get_system_instruction,
     pre_compute_signals,
 )
-from src.modules.signal.sampler import MarketDataSampler
 from src.repositories.signal_repository import SignalRepository
 from src.utils import UTC
 
@@ -60,15 +56,14 @@ class SignalService:
     """
     AI 매매 신호 생성 서비스 (동적 코인 지원)
 
-    Gemini AI를 사용하여 설정된 코인의 시장 데이터를 분석하고
+    GPT-5 Nano AI를 사용하여 설정된 코인의 시장 데이터를 분석하고
     Buy/Hold/Sell 신호를 생성합니다.
 
     특징:
     - 동적 코인 설정 (환경변수 기반)
-    - 코인 유형별 최적화된 프롬프트 템플릿
+    - 카테고리컬 신호 변환 + 3x 앙상블 self-consistency
     - 기술적 지표 분석 (RSI, MACD, 볼린저밴드, EMA, ATR)
     - 멀티 타임프레임 분석 (1H, 4H, 1D, 1W)
-    - 시장 데이터 샘플링 (토큰 절감)
 
     사용 예시:
         service = SignalService(db_session)
@@ -119,8 +114,6 @@ class SignalService:
         )
         self._response_parser = SignalResponseParser()
         self._signal_repo = SignalRepository(db)
-        self._sampler = MarketDataSampler()
-        self._fear_greed_client = get_fear_greed_client()
 
         logger.info(
             f"SignalService 초기화: {self.currency} ({self.coin_type.value}), "
@@ -152,21 +145,11 @@ class SignalService:
         if not force:
             await self._check_cooldown()
 
-        # 1. 시장 데이터 수집 및 샘플링
+        # 1. 시장 데이터 확인 (최신 가격 기준)
         raw_market_data = await self._get_recent_market_data()
         if not raw_market_data:
             raise SignalServiceError("분석할 시장 데이터가 없습니다")
 
-        # 샘플링 적용 (토큰 절감)
-        sampled_data = self._sampler.get_sampled_data(raw_market_data)
-        sampling_stats = self._sampler.get_statistics(sampled_data)
-        logger.info(
-            f"시장 데이터 샘플링: {len(raw_market_data)}개 → {sampling_stats['total']}개 "
-            f"(장기: {sampling_stats['long_term']}, 중기: {sampling_stats['mid_term']}, "
-            f"단기: {sampling_stats['short_term']})"
-        )
-
-        # 최신 데이터는 raw에서 가져옴 (샘플링 전)
         latest_data = raw_market_data[0]
         current_price = float(latest_data.price)
 
@@ -180,31 +163,13 @@ class SignalService:
         # 3. 잔고 정보 조회
         balance_info = await self._get_balance_info()
 
-        # 4. Fear & Greed Index 조회 (BTC 기반 시장 심리)
-        fear_greed = await self._get_fear_greed()
-
-        # 5. 성과 피드백 조회
-        performance_summary = await self._build_performance_summary()
-
-        # 6. 프롬프트 생성 (코인 유형별 템플릿 사용, 샘플링된 데이터 사용)
-        system_instruction = get_system_instruction(
-            self.currency, self.coin_type, self.prompt_config
-        )
-        prompt = self._prompt_builder.build_enhanced_prompt(
-            sampled_data=sampled_data,
-            mtf_result=mtf_result,
-            balance_info=balance_info,
-            performance_summary=performance_summary,
-            fear_greed=fear_greed,
-        )
-
-        # 6.5. 소형 모델 fallback용 프롬프트 생성
+        # 4. 프롬프트 생성 (카테고리컬 신호 변환 + Nano 전용 프롬프트)
         pre_computed = pre_compute_signals(mtf_result)
-        fallback_instruction = get_small_model_system_instruction(self.currency)
+        system_instruction = get_system_instruction(self.currency)
         # 24H 변동률은 MTF 1D 분석에서 추출
         analysis_1d = mtf_result.analyses.get("1d")
         price_change_pct_24h = analysis_1d.price_change_pct if analysis_1d else 0.0
-        fallback_prompt = build_small_model_prompt(
+        prompt = build_prompt(
             pre_computed=pre_computed,
             currency=self.currency,
             current_price=current_price,
@@ -213,19 +178,10 @@ class SignalService:
             stop_loss_pct=self.prompt_config.stop_loss_pct,
         )
 
-        # 디버그: 생성된 프롬프트 로깅 (민감 정보 마스킹)
-        fear_greed_log = (
-            f"Fear&Greed: {fear_greed.value} ({fear_greed.classification})"
-            if fear_greed
-            else "Fear&Greed: N/A"
-        )
-        logger.info(
-            f"AI 프롬프트 생성 완료 (Gemini: {len(prompt)}자, "
-            f"Fallback: {len(fallback_prompt)}자, {fear_greed_log})"
-        )
+        logger.info(f"AI 프롬프트 생성 완료 ({len(prompt)}자)")
         logger.debug(f"프롬프트:\n{mask_sensitive_data(prompt)}")
 
-        # 7. AI 호출 (fallback 시 소형 모델 전용 프롬프트 사용)
+        # 5. AI 호출
         ai_start_time = time.monotonic()
         try:
             response = await self.ai_client.generate(
@@ -233,9 +189,6 @@ class SignalService:
                 system_instruction=system_instruction,
                 temperature=0.7,
                 max_output_tokens=4096,
-                fallback_prompt=fallback_prompt,
-                fallback_system_instruction=fallback_instruction,
-                fallback_max_output_tokens=4096,
             )
         except AIClientError as e:
             logger.error(f"AI 신호 생성 실패: {e}")
@@ -257,16 +210,16 @@ class SignalService:
                 f"입력 토큰이 목표(4,000)를 초과했습니다: {response.input_tokens}"
             )
 
-        # 8. 응답 파싱
+        # 6. 응답 파싱
         parsed = self._response_parser.parse_response(
             response.text,
             balance_info=balance_info,
         )
 
-        # 9. 기술적 지표 스냅샷 생성
+        # 7. 기술적 지표 스냅샷 생성
         technical_snapshot = self._prompt_builder.create_technical_snapshot(mtf_result)
 
-        # 10. DB에 저장 (Repository 사용)
+        # 8. DB에 저장 (Repository 사용)
         signal = TradingSignal(
             market_data_id=latest_data.id,
             signal_type=parsed.signal_type,
@@ -291,94 +244,6 @@ class SignalService:
         )
 
         return signal
-
-    async def _get_fear_greed(self) -> FearGreedData | None:
-        """
-        Fear & Greed Index 조회 (BTC 기반 시장 심리)
-
-        실패 시 None을 반환하고 신호 생성은 계속됩니다.
-        이 지표는 필수가 아닌 보조 지표입니다.
-
-        Returns:
-            FearGreedData | None: 지표 데이터 또는 None (조회 실패 시)
-        """
-        try:
-            return await self._fear_greed_client.get_current()
-        except Exception as e:
-            logger.warning(f"Fear & Greed Index 조회 실패 (무시): {e}")
-            return None
-
-    async def _build_performance_summary(self) -> str:
-        """
-        최근 신호 성과 요약 생성 (Reflection 메커니즘 적용)
-
-        CryptoTrade의 Reflection Agent 방식을 적용하여
-        성과 기반 전략 조정 지시를 포함합니다.
-        """
-        try:
-            from src.modules.signal import SignalPerformanceTracker
-
-            tracker = SignalPerformanceTracker(self.db)
-            # 7일(168시간) 전체 신호로 정확도 계산 (단기 변동 민감도 감소)
-            summary = await tracker.generate_performance_summary(limit=100, hours=168)
-
-            if summary.total_signals == 0:
-                return "성과 데이터 축적 중 - 기술적 지표 기반으로 판단하세요"
-
-            lines = [
-                "### 최근 신호 성과 (Reflection)",
-                f"- 평가 완료: {summary.total_signals}건",
-                f"- **매수(BUY) 정확도: {summary.buy_accuracy:.0f}%**",
-                f"- **매도(SELL) 정확도: {summary.sell_accuracy:.0f}%**",
-            ]
-
-            if summary.avg_pnl_24h != 0:
-                lines.append(f"- 평균 24시간 수익률: {summary.avg_pnl_24h:+.2f}%")
-
-            # Reflection 기반 전략 조정 권고 (v2 균형 버전: 강제 → 권고)
-            lines.append("")
-            lines.append("### 전략 조정 권고 (참고 사항)")
-
-            # BUY 정확도 기반 조정 (v2.2: 악순환 방지, 매매 빈도 유지 유도)
-            if summary.buy_accuracy < 40:
-                lines.append(
-                    f"📊 매수 정확도 {summary.buy_accuracy:.0f}%"
-                )
-                lines.append(
-                    "→ 진입 근거를 명확히 하되 기회를 놓치지 마세요"
-                )
-            elif summary.buy_accuracy < 50:
-                lines.append(f"📊 매수 정확도 {summary.buy_accuracy:.0f}%")
-                lines.append(
-                    "→ 1H 추세 + 보조 지표 확인 후 진입"
-                )
-
-            # SELL 정확도 기반 조정 (v2.2: 매매 빈도 유지 유도)
-            if summary.sell_accuracy < 50:
-                lines.append(f"📊 매도 정확도 {summary.sell_accuracy:.0f}%")
-                lines.append("→ 1H 하락 추세 + 모멘텀 약화 확인 후 매도")
-
-            # 연속 실패 참고 (v2.2: 매매 빈도 유지 유도)
-            if summary.improvement_suggestions:
-                for suggestion in summary.improvement_suggestions[:2]:
-                    if "연속" in suggestion:
-                        lines.append(f"📊 {suggestion}")
-                        lines.append(
-                            "→ 진입 조건을 재점검하되 매매 빈도를 줄이지 마세요"
-                        )
-
-            # 피드백 요약
-            if summary.feedback_summary:
-                lines.append("")
-                lines.append(f"📊 상세: {summary.feedback_summary}")
-
-            lines.append("")
-
-            return "\n".join(lines)
-
-        except Exception as e:
-            logger.warning(f"성과 요약 생성 실패 (무시): {e}")
-            return ""
 
     async def _check_cooldown(self) -> None:
         """쿨다운 체크 (Repository 사용)"""
