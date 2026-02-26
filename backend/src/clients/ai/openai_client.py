@@ -176,8 +176,9 @@ class OpenAIClient(BaseAIClient):
 
         # finish_reason 로깅 (length = 토큰 부족으로 잘림)
         if choice.finish_reason == "length":
-            logger.error(
-                "OpenAI 응답이 토큰 제한으로 잘림 (finish_reason=length)"
+            logger.warning(
+                "OpenAI 응답이 토큰 제한으로 잘림 (finish_reason=length), "
+                "잘린 텍스트로 파싱 시도"
             )
         elif choice.finish_reason != "stop":
             logger.warning(f"OpenAI finish_reason: {choice.finish_reason}")

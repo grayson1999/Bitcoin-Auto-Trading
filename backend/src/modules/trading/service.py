@@ -27,7 +27,11 @@ from src.clients.upbit import (
     UpbitPublicAPIError,
 )
 from src.config import settings
-from src.config.constants import ORDER_MAX_RETRIES, ORDER_RETRY_DELAY_SECONDS
+from src.config.constants import (
+    ORDER_MAX_RETRIES,
+    ORDER_RETRY_DELAY_SECONDS,
+    UPBIT_MIN_ORDER_KRW,
+)
 from src.entities import (
     AdjustmentType,
     BalanceAdjustment,
@@ -208,7 +212,7 @@ class TradingService:
         balance_info: BalanceInfo,
         user_id: int | None = None,
     ) -> OrderResult:
-        """매도 주문 실행"""
+        """매도 주문 실행 (action_score 기반 부분 매도)"""
         logger.info("매도 주문 처리 시작")
 
         # 포지션 조회
@@ -226,8 +230,30 @@ class TradingService:
                 blocked_reason=sell_validation.blocked_reason,
             )
 
-        # 전량 매도
-        sell_volume = balance_info.coin_available
+        # action_score 기반 매도 비율 결정
+        sell_ratio = self._calculate_sell_ratio(signal)
+        sell_volume = balance_info.coin_available * Decimal(str(sell_ratio))
+
+        # 최소 주문금액 체크: 부분 매도가 최소 미달이면 전량 매도
+        try:
+            ticker = await self._public_api.get_ticker(settings.trading_ticker)
+            current_price = ticker.trade_price
+            order_value = sell_volume * current_price
+            if order_value < UPBIT_MIN_ORDER_KRW and sell_ratio < 1.0:
+                logger.info(
+                    f"부분 매도 금액 {order_value:,.0f}원 < "
+                    f"최소 {UPBIT_MIN_ORDER_KRW}원 → 전량 매도"
+                )
+                sell_volume = balance_info.coin_available
+        except (UpbitPublicAPIError, Exception):
+            # 가격 조회 실패 시 안전하게 전량 매도
+            sell_volume = balance_info.coin_available
+
+        logger.info(
+            f"매도 비율: {sell_ratio * 100:.0f}% "
+            f"(action_score={getattr(signal, 'action_score', None)}), "
+            f"수량: {sell_volume}"
+        )
 
         # 주문 실행
         return await self._place_order_with_retry(
@@ -236,6 +262,30 @@ class TradingService:
             signal_id=signal.id,
             user_id=user_id,
         )
+
+    def _calculate_sell_ratio(self, signal: TradingSignal) -> float:
+        """
+        action_score 기반 매도 비율 계산
+
+        - <= -0.95 (손절): 100%
+        - <= -0.7 (강한 매도): 100%
+        - <= -0.5 (중간 매도): 50%
+        - <= -0.2 (약한 매도): 30%
+        - 기타: 100% (fallback)
+        """
+        action_score = getattr(signal, "action_score", None)
+        if action_score is None:
+            return 1.0  # action_score 없으면 기존 동작 (전량 매도)
+
+        if action_score <= -0.95:
+            return 1.0  # 손절
+        if action_score <= -0.7:
+            return 1.0  # 강한 매도
+        if action_score <= -0.5:
+            return 0.5  # 중간 매도
+        if action_score <= -0.2:
+            return 0.3  # 약한 매도
+        return 1.0  # 기본값
 
     async def _place_order_with_retry(
         self,

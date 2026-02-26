@@ -37,6 +37,11 @@ class TradingSignalResponse(BaseModel):
     input_tokens: int = Field(description="입력 토큰 수")
     output_tokens: int = Field(description="출력 토큰 수")
 
+    # AI 점수
+    action_score: float | None = Field(
+        default=None, description="AI action_score (-1.0~+1.0)"
+    )
+
     # 성과 추적 필드
     price_at_signal: Decimal | None = Field(
         default=None, description="신호 생성 시 가격"

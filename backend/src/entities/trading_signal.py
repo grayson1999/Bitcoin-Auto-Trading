@@ -17,6 +17,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Numeric,
@@ -160,6 +161,13 @@ class TradingSignal(Base, AuditMixin):
         nullable=False,
         default=0,
         comment="출력 토큰 수",
+    )
+
+    # === AI action_score ===
+    action_score: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        comment="AI action_score (-1.0~+1.0)",
     )
 
     # === 성과 추적 필드 ===

@@ -20,6 +20,14 @@ const TRADING_CONFIG_KEYS = [
   'stop_loss_pct',
   'daily_loss_limit_pct',
   'volatility_threshold_pct',
+  'profit_tier_1_pct',
+  'profit_tier_1_sell_pct',
+  'profit_tier_2_pct',
+  'profit_tier_2_sell_pct',
+  'profit_tier_3_pct',
+  'profit_tier_3_sell_pct',
+  'trailing_stop_activation_pct',
+  'trailing_stop_distance_pct',
 ] as const
 
 interface TradingSettingsFormProps {
@@ -190,6 +198,61 @@ export function TradingSettingsForm({
             value={localValues.volatility_threshold_pct || 0}
             onChange={(v) => handleValueChange('volatility_threshold_pct', v)}
             error={errors.volatility_threshold_pct}
+          />
+        </div>
+
+        {/* Profit Taking Section */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-medium text-gray-300 border-b border-gray-700 pb-2">
+            익절 자동화
+          </h4>
+          <SettingField
+            configKey="profit_tier_1_pct"
+            value={localValues.profit_tier_1_pct || 0}
+            onChange={(v) => handleValueChange('profit_tier_1_pct', v)}
+            error={errors.profit_tier_1_pct}
+          />
+          <SettingField
+            configKey="profit_tier_1_sell_pct"
+            value={localValues.profit_tier_1_sell_pct || 0}
+            onChange={(v) => handleValueChange('profit_tier_1_sell_pct', v)}
+            error={errors.profit_tier_1_sell_pct}
+          />
+          <SettingField
+            configKey="profit_tier_2_pct"
+            value={localValues.profit_tier_2_pct || 0}
+            onChange={(v) => handleValueChange('profit_tier_2_pct', v)}
+            error={errors.profit_tier_2_pct}
+          />
+          <SettingField
+            configKey="profit_tier_2_sell_pct"
+            value={localValues.profit_tier_2_sell_pct || 0}
+            onChange={(v) => handleValueChange('profit_tier_2_sell_pct', v)}
+            error={errors.profit_tier_2_sell_pct}
+          />
+          <SettingField
+            configKey="profit_tier_3_pct"
+            value={localValues.profit_tier_3_pct || 0}
+            onChange={(v) => handleValueChange('profit_tier_3_pct', v)}
+            error={errors.profit_tier_3_pct}
+          />
+          <SettingField
+            configKey="profit_tier_3_sell_pct"
+            value={localValues.profit_tier_3_sell_pct || 0}
+            onChange={(v) => handleValueChange('profit_tier_3_sell_pct', v)}
+            error={errors.profit_tier_3_sell_pct}
+          />
+          <SettingField
+            configKey="trailing_stop_activation_pct"
+            value={localValues.trailing_stop_activation_pct || 0}
+            onChange={(v) => handleValueChange('trailing_stop_activation_pct', v)}
+            error={errors.trailing_stop_activation_pct}
+          />
+          <SettingField
+            configKey="trailing_stop_distance_pct"
+            value={localValues.trailing_stop_distance_pct || 0}
+            onChange={(v) => handleValueChange('trailing_stop_distance_pct', v)}
+            error={errors.trailing_stop_distance_pct}
           />
         </div>
       </div>

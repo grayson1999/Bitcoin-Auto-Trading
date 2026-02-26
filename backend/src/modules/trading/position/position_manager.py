@@ -92,6 +92,7 @@ class PositionManager:
             # 매수: 수량 증가, 평균 매수가 재계산
             if order.executed_amount and order.executed_price:
                 # 시장가 매수의 경우 executed_amount는 KRW, 실제 코인 수량 계산 필요
+                was_empty = position.quantity <= 0
                 coin_quantity = order.executed_amount / order.executed_price
                 new_quantity = position.quantity + coin_quantity
 
@@ -103,15 +104,29 @@ class PositionManager:
 
                 position.quantity = new_quantity
 
+                if was_empty:
+                    # 신규 포지션: 익절 필드 완전 초기화
+                    position.original_quantity = new_quantity
+                    position.profit_tier_reached = 0
+                    position.peak_price = None
+                    position.trailing_stop_active = False
+                else:
+                    # 분할매수: original_quantity를 새 총량으로 업데이트
+                    position.original_quantity = new_quantity
+
         elif order.is_sell and order.executed_amount:
             # 매도: 수량 감소 (평균 매수가는 유지)
             position.quantity = max(
                 Decimal("0"), position.quantity - order.executed_amount
             )
 
-            # 수량이 0이면 평균 매수가 초기화
+            # 수량이 0이면 포지션 완전 초기화
             if position.quantity == 0:
                 position.avg_buy_price = Decimal("0")
+                position.profit_tier_reached = 0
+                position.peak_price = None
+                position.trailing_stop_active = False
+                position.original_quantity = None
 
         # 현재가로 평가금액 업데이트
         try:
@@ -149,8 +164,13 @@ class PositionManager:
         if balance_info.coin_available <= 0 and balance_info.coin_locked <= 0:
             if position:
                 position.quantity = Decimal("0")
+                position.avg_buy_price = Decimal("0")
                 position.current_value = Decimal("0")
                 position.unrealized_pnl = Decimal("0")
+                position.profit_tier_reached = 0
+                position.peak_price = None
+                position.trailing_stop_active = False
+                position.original_quantity = None
                 position.updated_at = datetime.now(UTC)
                 logger.info(
                     f"포지션 동기화: {settings.trading_currency} 보유량 없음 - 포지션 초기화"

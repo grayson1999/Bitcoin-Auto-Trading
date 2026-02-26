@@ -93,6 +93,42 @@ export function PositionCard({ position, isLoading, className }: PositionCardPro
             </p>
           </div>
         </div>
+
+        {/* Profit Taking Status */}
+        {(position.profit_tier_reached > 0 || position.trailing_stop_active) && (
+          <div className="p-3 rounded-lg bg-black/20 border border-white/5 space-y-2">
+            <p className="text-xs text-zinc-500 font-medium">익절 현황</p>
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3].map((tier) => (
+                <Badge
+                  key={tier}
+                  variant="outline"
+                  className={cn(
+                    'text-xs px-2 py-0.5',
+                    position.profit_tier_reached >= tier
+                      ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
+                      : 'border-zinc-700 text-zinc-600 bg-transparent'
+                  )}
+                >
+                  Tier {tier}
+                </Badge>
+              ))}
+              {position.trailing_stop_active && (
+                <Badge
+                  variant="outline"
+                  className="text-xs px-2 py-0.5 border-amber-500/30 text-amber-400 bg-amber-500/10"
+                >
+                  트레일링 스탑
+                </Badge>
+              )}
+            </div>
+            {position.peak_price != null && (
+              <p className="text-xs text-zinc-500">
+                최고가: <span className="text-zinc-300 font-mono-num">{formatCurrency(position.peak_price)}</span>
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </CommonCard>
   )

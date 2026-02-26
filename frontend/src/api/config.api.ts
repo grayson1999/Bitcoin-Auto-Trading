@@ -64,6 +64,15 @@ export const CONFIG_KEY_LABELS: Record<string, string> = {
   signal_interval_minutes: 'AI 신호 주기 (분)',
   volatility_threshold_pct: '변동성 임계값 (%)',
   ai_model: 'AI 모델',
+  profit_take_enabled: '익절 자동화 활성화',
+  profit_tier_1_pct: '1단계 익절 수익률 (%)',
+  profit_tier_1_sell_pct: '1단계 매도 비율 (%)',
+  profit_tier_2_pct: '2단계 익절 수익률 (%)',
+  profit_tier_2_sell_pct: '2단계 매도 비율 (%)',
+  profit_tier_3_pct: '3단계 익절 수익률 (%)',
+  profit_tier_3_sell_pct: '3단계 매도 비율 (%)',
+  trailing_stop_activation_pct: '트레일링 스탑 활성화 수익률 (%)',
+  trailing_stop_distance_pct: '트레일링 스탑 거리 (%)',
 }
 
 // ============================================================================
@@ -78,6 +87,15 @@ export const CONFIG_KEY_DESCRIPTIONS: Record<string, string> = {
   signal_interval_minutes: 'AI 신호 생성 주기',
   volatility_threshold_pct: '거래 중단 변동성 임계값',
   ai_model: '사용할 AI 모델',
+  profit_take_enabled: '자동 익절 시스템 ON/OFF',
+  profit_tier_1_pct: '1단계 부분 매도 트리거 수익률',
+  profit_tier_1_sell_pct: '1단계 매도할 원래 수량 대비 비율',
+  profit_tier_2_pct: '2단계 부분 매도 트리거 수익률',
+  profit_tier_2_sell_pct: '2단계 매도할 원래 수량 대비 비율',
+  profit_tier_3_pct: '3단계 부분 매도 트리거 수익률',
+  profit_tier_3_sell_pct: '3단계 매도할 원래 수량 대비 비율',
+  trailing_stop_activation_pct: '트레일링 스탑이 활성화되는 수익률',
+  trailing_stop_distance_pct: '최고가 대비 하락 시 전량 매도 비율',
 }
 
 // ============================================================================
@@ -94,6 +112,14 @@ export const CONFIG_VALIDATION_RULES: Record<
   daily_loss_limit_pct: { min: 0.1, max: 50, step: 0.1 },
   signal_interval_minutes: { min: 1, max: 1440, step: 1 },
   volatility_threshold_pct: { min: 0.1, max: 100, step: 0.1 },
+  profit_tier_1_pct: { min: 0.5, max: 30, step: 0.5 },
+  profit_tier_1_sell_pct: { min: 5, max: 100, step: 5 },
+  profit_tier_2_pct: { min: 1, max: 50, step: 0.5 },
+  profit_tier_2_sell_pct: { min: 5, max: 100, step: 5 },
+  profit_tier_3_pct: { min: 2, max: 100, step: 0.5 },
+  profit_tier_3_sell_pct: { min: 5, max: 100, step: 5 },
+  trailing_stop_activation_pct: { min: 1, max: 50, step: 0.5 },
+  trailing_stop_distance_pct: { min: 0.5, max: 20, step: 0.5 },
 }
 
 // ============================================================================

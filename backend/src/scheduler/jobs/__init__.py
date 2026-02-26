@@ -13,6 +13,7 @@ from src.scheduler.jobs.cleanup import cleanup_old_data_job
 from src.scheduler.jobs.daily_stats import ensure_daily_stats_job
 from src.scheduler.jobs.data_collection import collect_market_data_job
 from src.scheduler.jobs.order_sync import sync_pending_orders_job
+from src.scheduler.jobs.profit_taking import profit_taking_check_job
 from src.scheduler.jobs.signal_generation import (
     check_volatility_job,
     evaluate_signal_performance_job,
@@ -34,6 +35,8 @@ __all__ = [
     "execute_trading_from_signal_job",
     # 신호 생성
     "generate_trading_signal_job",
+    # 익절 체크
+    "profit_taking_check_job",
     # 미실행 신호 복구
     "recover_unexecuted_signals_job",
     # 주문 동기화

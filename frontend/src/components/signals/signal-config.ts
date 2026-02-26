@@ -53,5 +53,10 @@ export const SIGNAL_CONFIG_TIMELINE: Record<SignalType, SignalConfig> = {
   },
 }
 
+/** Check if signal is rule-based (e.g. auto profit-taking) */
+export function isRuleBasedSignal(modelName: string): boolean {
+  return modelName.startsWith('rule-')
+}
+
 /** Confidence display multiplier (backend returns 0~1, display as percentage) */
 export const CONFIDENCE_MULTIPLIER = 100

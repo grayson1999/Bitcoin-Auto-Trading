@@ -7,6 +7,7 @@ import { SignalDetailModal } from '@/components/signals/SignalDetailModal'
 import type { TradingSignal } from '@/core/types'
 import { formatDateTime } from '@/core/utils/formatters'
 import { cn } from '@/core/utils/cn'
+import { isRuleBasedSignal } from '@/components/signals/signal-config'
 
 interface LatestSignalCardProps {
   signal: TradingSignal | null
@@ -72,12 +73,13 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
 
   const config = SIGNAL_CONFIG[signal.signal_type]
   const Icon = config.icon
+  const isRuleBased = isRuleBasedSignal(signal.model_name)
   // confidence는 0~1 범위이므로 100을 곱해서 퍼센트로 표시
   const confidencePercent = Math.round(signal.confidence * 100)
 
   return (
     <CommonCard
-      title="최신 AI 신호"
+      title={isRuleBased ? '최신 신호 (자동 익절)' : '최신 AI 신호'}
       headerAction={
         <button
           type="button"
@@ -148,7 +150,7 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
         {/* Reasoning */}
         {signal.reasoning && (
           <div className="rounded-lg bg-black/20 p-3.5 border border-white/5">
-            <p className="text-xs text-zinc-500 mb-1.5 font-medium">분석 근거</p>
+            <p className="text-xs text-zinc-500 mb-1.5 font-medium">{isRuleBased ? '실행 내역' : '분석 근거'}</p>
             <p className="text-sm text-zinc-300 line-clamp-3 leading-relaxed">{signal.reasoning}</p>
           </div>
         )}

@@ -104,6 +104,66 @@ class Settings(BaseSettings):
         description="거래 중단 변동성 임계값 (1-10%) [DB 오버라이드 가능]",
     )
 
+    # === 익절 (Profit Taking) 설정 (DB 오버라이드 가능) ===
+    profit_take_enabled: bool = Field(
+        default=True,
+        description="익절 자동화 활성화 여부 [DB 오버라이드 가능]",
+    )
+    profit_tier_1_pct: float = Field(
+        default=2.0,
+        ge=1.0,
+        le=20.0,
+        description="익절 1단계 수익률 (%) [DB 오버라이드 가능]",
+    )
+    profit_tier_1_sell_pct: int = Field(
+        default=30,
+        ge=10,
+        le=100,
+        description="익절 1단계 매도 비율 (%) [DB 오버라이드 가능]",
+    )
+    profit_tier_2_pct: float = Field(
+        default=5.0,
+        ge=2.0,
+        le=30.0,
+        description="익절 2단계 수익률 (%) [DB 오버라이드 가능]",
+    )
+    profit_tier_2_sell_pct: int = Field(
+        default=30,
+        ge=10,
+        le=100,
+        description="익절 2단계 매도 비율 (%) [DB 오버라이드 가능]",
+    )
+    profit_tier_3_pct: float = Field(
+        default=8.0,
+        ge=3.0,
+        le=50.0,
+        description="익절 3단계 수익률 (%) [DB 오버라이드 가능]",
+    )
+    profit_tier_3_sell_pct: int = Field(
+        default=40,
+        ge=10,
+        le=100,
+        description="익절 3단계 매도 비율 (%) [DB 오버라이드 가능]",
+    )
+    trailing_stop_activation_pct: float = Field(
+        default=3.0,
+        ge=1.0,
+        le=20.0,
+        description="트레일링 스탑 활성화 수익률 (%) [DB 오버라이드 가능]",
+    )
+    trailing_stop_distance_pct: float = Field(
+        default=2.5,
+        ge=0.5,
+        le=10.0,
+        description="트레일링 스탑 하락 비율 (%) [DB 오버라이드 가능]",
+    )
+
+    # === AI Fallback 앙상블 설정 ===
+    ai_fallback_ensemble: bool = Field(
+        default=True,
+        description="소형 모델 3x 앙상블 활성화",
+    )
+
     # === 환경 설정 ===
     debug: bool = Field(default=False, description="디버그 모드 활성화")
 
@@ -184,6 +244,15 @@ DB_OVERRIDABLE_KEYS = frozenset(
         "signal_interval_minutes",
         "volatility_threshold_pct",
         "ai_model",
+        "profit_take_enabled",
+        "profit_tier_1_pct",
+        "profit_tier_1_sell_pct",
+        "profit_tier_2_pct",
+        "profit_tier_2_sell_pct",
+        "profit_tier_3_pct",
+        "profit_tier_3_sell_pct",
+        "trailing_stop_activation_pct",
+        "trailing_stop_distance_pct",
     }
 )
 

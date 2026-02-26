@@ -1,8 +1,9 @@
 import { cn } from '@core/utils'
 import { formatDateTime, formatPercent } from '@core/utils/formatters'
+import { Badge } from '@core/components/ui/badge'
 import type { TradingSignal } from '@/core/types'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import { SIGNAL_CONFIG, CONFIDENCE_MULTIPLIER } from './signal-config'
+import { SIGNAL_CONFIG, CONFIDENCE_MULTIPLIER, isRuleBasedSignal } from './signal-config'
 
 interface SignalCardProps {
   signal: TradingSignal
@@ -36,6 +37,11 @@ export function SignalCard({ signal, onClick, className }: SignalCardProps) {
             {icon}
           </div>
           <span className="font-heading font-semibold text-lg tracking-tight">{signal.signal_type}</span>
+          {isRuleBasedSignal(signal.model_name) && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/30 text-amber-400 bg-amber-500/10">
+              자동
+            </Badge>
+          )}
         </div>
         <div className={cn('flex items-center px-2.5 py-1 rounded-md bg-black/20 border', config.borderColor)}>
           <span className={cn('text-sm font-mono-num font-medium', config.color)}>

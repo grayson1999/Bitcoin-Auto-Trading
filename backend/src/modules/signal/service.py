@@ -39,8 +39,11 @@ from src.modules.signal.parser import SignalResponseParser
 from src.modules.signal.prompt import (
     PromptConfig,
     SignalPromptBuilder,
+    build_small_model_prompt,
     get_config_for_coin,
+    get_small_model_system_instruction,
     get_system_instruction,
+    pre_compute_signals,
 )
 from src.modules.signal.sampler import MarketDataSampler
 from src.repositories.signal_repository import SignalRepository
@@ -195,23 +198,44 @@ class SignalService:
             fear_greed=fear_greed,
         )
 
+        # 6.5. 소형 모델 fallback용 프롬프트 생성
+        pre_computed = pre_compute_signals(mtf_result)
+        fallback_instruction = get_small_model_system_instruction(self.currency)
+        # 24H 변동률은 MTF 1D 분석에서 추출
+        analysis_1d = mtf_result.analyses.get("1d")
+        price_change_pct_24h = analysis_1d.price_change_pct if analysis_1d else 0.0
+        fallback_prompt = build_small_model_prompt(
+            pre_computed=pre_computed,
+            currency=self.currency,
+            current_price=current_price,
+            price_change_pct=price_change_pct_24h,
+            balance_info=balance_info,
+            stop_loss_pct=self.prompt_config.stop_loss_pct,
+        )
+
         # 디버그: 생성된 프롬프트 로깅 (민감 정보 마스킹)
         fear_greed_log = (
             f"Fear&Greed: {fear_greed.value} ({fear_greed.classification})"
             if fear_greed
             else "Fear&Greed: N/A"
         )
-        logger.info(f"AI 프롬프트 생성 완료 (길이: {len(prompt)}자, {fear_greed_log})")
+        logger.info(
+            f"AI 프롬프트 생성 완료 (Gemini: {len(prompt)}자, "
+            f"Fallback: {len(fallback_prompt)}자, {fear_greed_log})"
+        )
         logger.debug(f"프롬프트:\n{mask_sensitive_data(prompt)}")
 
-        # 7. AI 호출
+        # 7. AI 호출 (fallback 시 소형 모델 전용 프롬프트 사용)
         ai_start_time = time.monotonic()
         try:
             response = await self.ai_client.generate(
                 prompt=prompt,
                 system_instruction=system_instruction,
                 temperature=0.7,
-                max_output_tokens=1024,
+                max_output_tokens=4096,
+                fallback_prompt=fallback_prompt,
+                fallback_system_instruction=fallback_instruction,
+                fallback_max_output_tokens=4096,
             )
         except AIClientError as e:
             logger.error(f"AI 신호 생성 실패: {e}")
@@ -255,6 +279,7 @@ class SignalService:
             price_at_signal=Decimal(str(current_price)),
             technical_snapshot=technical_snapshot,
             user_id=user_id,
+            action_score=parsed.action_score,
         )
         await self._signal_repo.save(signal)
         await self.db.flush()

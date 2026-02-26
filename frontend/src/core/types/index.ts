@@ -110,6 +110,10 @@ export interface Position {
   unrealized_pnl: number
   unrealized_pnl_pct: number
   updated_at: ISOTimestamp
+  profit_tier_reached: number
+  peak_price: number | null
+  trailing_stop_active: boolean
+  original_quantity: number | null
 }
 
 /** Account balance */
@@ -163,6 +167,7 @@ export interface TradingSignal {
   outcome_evaluated: boolean
   outcome_correct: boolean | null
   technical_snapshot: Record<string, unknown> | null
+  action_score: number | null
 }
 
 export interface TradingSignalListResponse extends PaginatedResponse<TradingSignal> {}
@@ -254,6 +259,15 @@ export type ConfigKey =
   | 'DAILY_LOSS_LIMIT_PCT'
   | 'AI_MODEL'
   | 'SIGNAL_INTERVAL_HOURS'
+  | 'PROFIT_TAKE_ENABLED'
+  | 'PROFIT_TIER_1_PCT'
+  | 'PROFIT_TIER_1_SELL_PCT'
+  | 'PROFIT_TIER_2_PCT'
+  | 'PROFIT_TIER_2_SELL_PCT'
+  | 'PROFIT_TIER_3_PCT'
+  | 'PROFIT_TIER_3_SELL_PCT'
+  | 'TRAILING_STOP_ACTIVATION_PCT'
+  | 'TRAILING_STOP_DISTANCE_PCT'
 
 // ============================================================================
 // Risk Domain

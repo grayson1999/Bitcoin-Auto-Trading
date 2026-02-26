@@ -13,8 +13,10 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     Index,
+    Integer,
     Numeric,
     String,
     UniqueConstraint,
@@ -85,6 +87,35 @@ class Position(Base, UserOwnedMixin, AuditMixin):
         nullable=False,
         default=Decimal("0"),
         comment="평균 매수가",
+    )
+
+    # === 익절 추적 필드 ===
+    profit_tier_reached: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+        comment="최고 익절 단계 (0=미실행, 1/2/3)",
+    )
+
+    peak_price: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True,
+        comment="진입 후 최고가 (트레일링 스탑용)",
+    )
+
+    trailing_stop_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="트레일링 스탑 활성 여부",
+    )
+
+    original_quantity: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True,
+        comment="진입 시 원래 수량 (부분 매도 기준)",
     )
 
     # === 평가 정보 ===

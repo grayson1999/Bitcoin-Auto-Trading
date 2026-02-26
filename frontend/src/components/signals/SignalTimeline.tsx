@@ -3,7 +3,7 @@ import { formatDateTime, formatPercent, formatRelativeTime } from '@core/utils/f
 import { Badge } from '@core/components/ui/badge'
 import type { TradingSignal } from '@/core/types'
 import { TrendingUp, TrendingDown, Minus, Circle } from 'lucide-react'
-import { SIGNAL_CONFIG_TIMELINE, CONFIDENCE_MULTIPLIER } from './signal-config'
+import { SIGNAL_CONFIG_TIMELINE, CONFIDENCE_MULTIPLIER, isRuleBasedSignal } from './signal-config'
 
 interface SignalTimelineProps {
   signals: TradingSignal[]
@@ -66,6 +66,11 @@ export function SignalTimeline({ signals, onSignalClick, className }: SignalTime
                     >
                       {signal.signal_type}
                     </Badge>
+                    {isRuleBasedSignal(signal.model_name) && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/30 text-amber-400 bg-amber-500/10">
+                        자동
+                      </Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {formatRelativeTime(signal.created_at)}
                     </span>
