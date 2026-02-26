@@ -156,7 +156,7 @@ class ProfitTaker:
             logger.info(
                 f"[ProfitTaker] 익절 Tier {tier_num} 실행: "
                 f"PnL={pnl_pct:+.2f}% >= {profit_pct}%, "
-                f"매도 {sell_pct}% = {sell_volume}"
+                f"매도 {sell_pct}% = {sell_volume} ({sell_volume * current_price:,.0f}원)"
             )
 
             success = await self._execute_partial_sell(
@@ -254,7 +254,7 @@ class ProfitTaker:
             signal = TradingSignal(
                 signal_type="SELL",
                 confidence=Decimal("0.90"),
-                reasoning=f"[시스템] 자동 익절 ({reason}): {sell_volume} 매도",
+                reasoning=f"[시스템] 자동 익절 ({reason}): {sell_volume} BTC ({sell_volume * current_price:,.0f}원) 매도",
                 created_at=datetime.now(UTC),
                 model_name=f"rule-{reason}",
                 input_tokens=0,
@@ -314,8 +314,8 @@ class ProfitTaker:
 
             logger.info(
                 f"[ProfitTaker] 매도 완료: {reason}, "
-                f"volume={sell_volume}, price={current_price:,.0f}, "
-                f"remaining={position.quantity}"
+                f"volume={sell_volume} ({sell_volume * current_price:,.0f}원), "
+                f"price={current_price:,.0f}, remaining={position.quantity}"
             )
             return True
 
