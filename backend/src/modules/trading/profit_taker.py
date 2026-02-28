@@ -23,7 +23,7 @@ from src.clients.upbit import (
     UpbitPublicAPIError,
 )
 from src.config import settings
-from src.config.constants import UPBIT_MIN_ORDER_KRW
+from src.config.constants import UPBIT_FEE_RATE, UPBIT_MIN_ORDER_KRW
 from src.entities import (
     DailyStats,
     Order,
@@ -290,9 +290,11 @@ class ProfitTaker:
             )
 
             order.upbit_uuid = upbit_response.uuid
-            order.status = OrderStatus.EXECUTED.value
-            order.executed_price = current_price
-            order.executed_amount = sell_volume
+            order.mark_executed(
+                executed_price=current_price,
+                executed_amount=sell_volume,
+                fee=sell_volume * current_price * UPBIT_FEE_RATE,
+            )
 
             # 4. 포지션 업데이트
             position.quantity = max(
