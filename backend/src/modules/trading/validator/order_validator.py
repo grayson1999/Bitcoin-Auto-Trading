@@ -210,16 +210,25 @@ class OrderValidator:
             f"amount={order_amount:,.0f}원"
         )
 
-        # 최소 주문 금액 확인
+        # 최소 주문 금액 확인 → 가용 잔고가 충분하면 최소 금액으로 올림
         if order_amount < MIN_ORDER_AMOUNT_KRW:
-            logger.warning(
-                f"주문 금액 부족: {order_amount:,.0f}원 < {MIN_ORDER_AMOUNT_KRW:,.0f}원"
-            )
-            return ValidationResult(
-                is_valid=False,
-                blocked_reason=OrderBlockedReason.INSUFFICIENT_BALANCE,
-                message=f"주문 금액 부족: {order_amount:,.0f}원",
-            )
+            if balance_info.krw_available >= MIN_ORDER_AMOUNT_KRW:
+                order_amount = MIN_ORDER_AMOUNT_KRW
+                logger.info(
+                    f"포지션 비율 기준 금액 미달 → 최소 주문 금액으로 조정: "
+                    f"{order_amount:,.0f}원"
+                )
+            else:
+                logger.warning(
+                    f"가용 잔고 부족: {balance_info.krw_available:,.0f}원 "
+                    f"< {MIN_ORDER_AMOUNT_KRW:,.0f}원"
+                )
+                return ValidationResult(
+                    is_valid=False,
+                    blocked_reason=OrderBlockedReason.INSUFFICIENT_BALANCE,
+                    message=f"가용 잔고 부족: {balance_info.krw_available:,.0f}원 "
+                    f"(최소 {MIN_ORDER_AMOUNT_KRW:,.0f}원 필요)",
+                )
 
         # 가용 잔고 확인
         if order_amount > balance_info.krw_available:
