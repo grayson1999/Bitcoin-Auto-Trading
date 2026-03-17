@@ -1,7 +1,7 @@
 """
-Slack 클라이언트 모듈
+Telegram 클라이언트 모듈
 
-Slack 웹훅을 통해 알림을 전송하는 클라이언트를 제공합니다.
+Telegram Bot API를 통해 알림을 전송하는 클라이언트를 제공합니다.
 - 리스크 이벤트 알림
 - 거래 체결 알림
 - 시스템 오류 알림
@@ -20,7 +20,9 @@ from src.config.constants import DEFAULT_MAX_RETRIES, DEFAULT_RETRY_DELAY_SECOND
 from src.utils import UTC
 
 # === 상수 ===
-SLACK_TIMEOUT_SECONDS = 10  # Slack API 타임아웃
+TELEGRAM_TIMEOUT_SECONDS = 10
+TELEGRAM_API_BASE = "https://api.telegram.org/bot"
+TELEGRAM_MAX_MESSAGE_LENGTH = 4096
 
 
 class AlertLevel(str, Enum):
@@ -43,43 +45,39 @@ class AlertMessage:
     timestamp: datetime | None = None
 
 
-class SlackClientError(Exception):
-    """Slack 클라이언트 오류"""
+class TelegramClientError(Exception):
+    """Telegram 클라이언트 오류"""
 
     pass
 
 
-class SlackClient:
+class TelegramClient:
     """
-    Slack 클라이언트
+    Telegram 클라이언트
 
-    Slack 웹훅을 통해 알림을 전송합니다.
-    웹훅 URL이 설정되지 않은 경우 로그만 출력합니다.
+    Telegram Bot API를 통해 알림을 전송합니다.
+    봇 토큰이 설정되지 않은 경우 로그만 출력합니다.
 
     Attributes:
-        _webhook_url: Slack 웹훅 URL
+        _bot_token: Telegram Bot 토큰
+        _chat_id: Telegram Chat ID
         _client: httpx 비동기 클라이언트
     """
 
     def __init__(
         self,
-        webhook_url: str | None = None,
+        bot_token: str | None = None,
+        chat_id: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        """
-        SlackClient 초기화
-
-        Args:
-            webhook_url: Slack 웹훅 URL (기본: 설정에서 로드)
-            client: httpx 클라이언트 (기본: 새로 생성)
-        """
-        self._webhook_url = webhook_url or settings.slack_webhook_url
+        self._bot_token = bot_token or settings.telegram_bot_token
+        self._chat_id = chat_id or settings.telegram_chat_id
         self._client = client
 
     async def _get_client(self) -> httpx.AsyncClient:
         """httpx 클라이언트 반환 (지연 초기화)"""
         if self._client is None:
-            self._client = httpx.AsyncClient(timeout=SLACK_TIMEOUT_SECONDS)
+            self._client = httpx.AsyncClient(timeout=TELEGRAM_TIMEOUT_SECONDS)
         return self._client
 
     async def close(self) -> None:
@@ -88,54 +86,45 @@ class SlackClient:
             await self._client.aclose()
             self._client = None
 
-    def _get_color_for_level(self, level: AlertLevel) -> str:
-        """알림 수준에 따른 색상 반환"""
-        colors = {
-            AlertLevel.INFO: "#36a64f",  # 녹색
-            AlertLevel.WARNING: "#ffcc00",  # 노란색
-            AlertLevel.ERROR: "#ff6600",  # 주황색
-            AlertLevel.CRITICAL: "#ff0000",  # 빨간색
-        }
-        return colors.get(level, "#808080")
-
     def _get_emoji_for_level(self, level: AlertLevel) -> str:
         """알림 수준에 따른 이모지 반환"""
         emojis = {
-            AlertLevel.INFO: "ℹ️",
-            AlertLevel.WARNING: "⚠️",
-            AlertLevel.ERROR: "🔴",
-            AlertLevel.CRITICAL: "🚨",
+            AlertLevel.INFO: "\u2139\ufe0f",
+            AlertLevel.WARNING: "\u26a0\ufe0f",
+            AlertLevel.ERROR: "\U0001f534",
+            AlertLevel.CRITICAL: "\U0001f6a8",
         }
-        return emojis.get(level, "📢")
+        return emojis.get(level, "\U0001f4e2")
 
-    def _build_slack_payload(self, alert: AlertMessage) -> dict:
-        """Slack 메시지 페이로드 생성"""
+    def _build_telegram_message(self, alert: AlertMessage) -> str:
+        """Telegram HTML 메시지 생성"""
         timestamp = alert.timestamp or datetime.now(UTC)
-        color = self._get_color_for_level(alert.level)
         emoji = self._get_emoji_for_level(alert.level)
 
-        attachment: dict = {
-            "color": color,
-            "title": f"{emoji} {alert.title}",
-            "text": alert.message,
-            "footer": "Bitcoin Auto-Trading",
-            "ts": int(timestamp.timestamp()),
-        }
+        lines = [
+            f"<b>{emoji} {_escape_html(alert.title)}</b>",
+            f"{_escape_html(alert.message)}",
+        ]
 
-        # 추가 필드가 있는 경우
         if alert.fields:
-            attachment["fields"] = [
-                {"title": k, "value": v, "short": True} for k, v in alert.fields.items()
-            ]
+            lines.append("")
+            for key, value in alert.fields.items():
+                lines.append(f"{_escape_html(key)}: <code>{_escape_html(value)}</code>")
 
-        return {"attachments": [attachment]}
+        lines.append("")
+        lines.append(
+            f"<i>Bitcoin Auto-Trading \u00b7 {timestamp.strftime('%Y-%m-%d %H:%M:%S')}</i>"
+        )
 
-    async def send_slack_message(
+        text = "\n".join(lines)
+        return text[:TELEGRAM_MAX_MESSAGE_LENGTH]
+
+    async def send_telegram_message(
         self,
         alert: AlertMessage,
     ) -> bool:
         """
-        Slack으로 메시지 전송
+        Telegram으로 메시지 전송
 
         Args:
             alert: 알림 메시지
@@ -143,37 +132,48 @@ class SlackClient:
         Returns:
             bool: 성공 여부
         """
-        if not self._webhook_url:
-            logger.debug(f"Slack 웹훅 미설정, 로그만 출력: {alert.title}")
+        if not self._bot_token or not self._chat_id:
+            logger.debug(f"Telegram 설정 미완료, 로그만 출력: {alert.title}")
             return False
 
-        payload = self._build_slack_payload(alert)
+        text = self._build_telegram_message(alert)
+        url = f"{TELEGRAM_API_BASE}{self._bot_token}/sendMessage"
+        payload = {
+            "chat_id": self._chat_id,
+            "text": text,
+            "parse_mode": "HTML",
+        }
         client = await self._get_client()
 
         for attempt in range(DEFAULT_MAX_RETRIES):
             try:
-                response = await client.post(
-                    self._webhook_url,
-                    json=payload,
-                )
+                response = await client.post(url, json=payload)
                 response.raise_for_status()
-                logger.debug(f"Slack 알림 전송 성공: {alert.title}")
-                return True
+
+                result = response.json()
+                if result.get("ok"):
+                    logger.debug(f"Telegram 알림 전송 성공: {alert.title}")
+                    return True
+
+                logger.warning(
+                    f"Telegram API 오류 (시도 {attempt + 1}/{DEFAULT_MAX_RETRIES}): "
+                    f"{result.get('description', 'Unknown error')}"
+                )
 
             except httpx.HTTPStatusError as e:
                 logger.warning(
-                    f"Slack API 오류 (시도 {attempt + 1}/{DEFAULT_MAX_RETRIES}): "
+                    f"Telegram API 오류 (시도 {attempt + 1}/{DEFAULT_MAX_RETRIES}): "
                     f"{e.response.status_code}"
                 )
             except httpx.RequestError as e:
                 logger.warning(
-                    f"Slack 요청 오류 (시도 {attempt + 1}/{DEFAULT_MAX_RETRIES}): {e}"
+                    f"Telegram 요청 오류 (시도 {attempt + 1}/{DEFAULT_MAX_RETRIES}): {e}"
                 )
 
             if attempt < DEFAULT_MAX_RETRIES - 1:
                 await asyncio.sleep(DEFAULT_RETRY_DELAY_SECONDS)
 
-        logger.error(f"Slack 알림 전송 실패: {alert.title}")
+        logger.error(f"Telegram 알림 전송 실패: {alert.title}")
         return False
 
     async def send_alert(
@@ -214,8 +214,7 @@ class SlackClient:
         else:
             logger.info(log_msg)
 
-        # Slack 전송
-        return await self.send_slack_message(alert)
+        return await self.send_telegram_message(alert)
 
     # === 편의 메서드 ===
 
@@ -225,17 +224,7 @@ class SlackClient:
         trigger_value: float,
         action: str,
     ) -> bool:
-        """
-        리스크 이벤트 알림
-
-        Args:
-            event_type: 이벤트 유형
-            trigger_value: 발동값
-            action: 수행된 조치
-
-        Returns:
-            bool: 성공 여부
-        """
+        """리스크 이벤트 알림"""
         return await self.send_alert(
             title=f"리스크 이벤트: {event_type}",
             message=action,
@@ -253,20 +242,9 @@ class SlackClient:
         price: float,
         symbol: str | None = None,
     ) -> bool:
-        """
-        거래 체결 알림
-
-        Args:
-            side: 매수/매도
-            amount: 거래량
-            price: 체결가
-            symbol: 심볼 (기본값: settings.trading_ticker)
-
-        Returns:
-            bool: 성공 여부
-        """
+        """거래 체결 알림"""
         symbol = symbol or settings.trading_ticker
-        emoji = "🟢" if side.upper() == "BUY" else "🔴"
+        emoji = "\U0001f7e2" if side.upper() == "BUY" else "\U0001f534"
         return await self.send_alert(
             title=f"{emoji} {side.upper()} 체결",
             message=f"{symbol} {amount:.8f} @ {price:,.0f}원",
@@ -284,17 +262,7 @@ class SlackClient:
         error_message: str,
         context: str | None = None,
     ) -> bool:
-        """
-        시스템 오류 알림
-
-        Args:
-            error_type: 오류 유형
-            error_message: 오류 메시지
-            context: 추가 컨텍스트 (선택)
-
-        Returns:
-            bool: 성공 여부
-        """
+        """시스템 오류 알림"""
         fields = {"오류 유형": error_type}
         if context:
             fields["컨텍스트"] = context
@@ -307,36 +275,32 @@ class SlackClient:
         )
 
 
+def _escape_html(text: str) -> str:
+    """Telegram HTML 특수 문자 이스케이프"""
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 # 싱글톤 인스턴스
-_slack_client: SlackClient | None = None
+_telegram_client: TelegramClient | None = None
 
 
-def get_slack_client() -> SlackClient:
-    """
-    SlackClient 싱글톤 인스턴스 반환
-
-    Returns:
-        SlackClient: Slack 클라이언트 인스턴스
-    """
-    global _slack_client
-    if _slack_client is None:
-        _slack_client = SlackClient()
-    return _slack_client
+def get_telegram_client() -> TelegramClient:
+    """TelegramClient 싱글톤 인스턴스 반환"""
+    global _telegram_client
+    if _telegram_client is None:
+        _telegram_client = TelegramClient()
+    return _telegram_client
 
 
-async def close_slack_client() -> None:
-    """
-    SlackClient 싱글톤 인스턴스 종료
-
-    애플리케이션 종료 시 호출하여 HTTP 연결을 정리합니다.
-    """
-    global _slack_client
-    if _slack_client is not None:
-        await _slack_client.close()
-        _slack_client = None
+async def close_telegram_client() -> None:
+    """TelegramClient 싱글톤 인스턴스 종료"""
+    global _telegram_client
+    if _telegram_client is not None:
+        await _telegram_client.close()
+        _telegram_client = None
 
 
 # 하위 호환성을 위한 별칭
-Notifier = SlackClient
-NotifierError = SlackClientError
-get_notifier = get_slack_client
+Notifier = TelegramClient
+NotifierError = TelegramClientError
+get_notifier = get_telegram_client

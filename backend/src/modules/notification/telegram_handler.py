@@ -1,8 +1,8 @@
 """
-Loguru Slack 핸들러 모듈
+Loguru Telegram 핸들러 모듈
 
-ERROR 레벨 이상의 로그를 자동으로 Slack으로 전송하는 커스텀 핸들러입니다.
-- 비동기 Slack 전송을 위한 백그라운드 이벤트 루프 관리
+ERROR 레벨 이상의 로그를 자동으로 Telegram으로 전송하는 커스텀 핸들러입니다.
+- 비동기 Telegram 전송을 위한 백그라운드 이벤트 루프 관리
 - 중복 알림 방지를 위한 throttling 메커니즘
 - 기존 Notifier 클래스 재사용
 """
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 DEFAULT_THROTTLE_SECONDS = 1800  # 동일 메시지 재전송 방지 시간 (30분)
 DEFAULT_MAX_MESSAGES_PER_MINUTE = 2  # 분당 최대 메시지 수
 MESSAGE_HASH_TTL_SECONDS = 3600  # 메시지 해시 캐시 TTL (1시간)
-MAX_MESSAGE_LENGTH = 1000  # Slack 메시지 최대 길이
+MAX_MESSAGE_LENGTH = 1000  # Telegram 메시지 최대 길이
 
 
 @dataclass
@@ -39,25 +39,25 @@ class ThrottleEntry:
     count: int = 1
 
 
-class SlackLogHandler:
+class TelegramLogHandler:
     """
-    Loguru Slack 핸들러
+    Loguru Telegram 핸들러
 
-    ERROR 레벨 이상의 로그를 Slack으로 전송합니다.
+    ERROR 레벨 이상의 로그를 Telegram으로 전송합니다.
     비동기 전송을 위해 별도의 이벤트 루프 스레드를 사용합니다.
 
     Attributes:
-        _notifier: Notifier 인스턴스
+        _notifier: TelegramClient 인스턴스
         _loop: 백그라운드 이벤트 루프
         _thread: 이벤트 루프 실행 스레드
         _throttle_cache: 메시지 throttling 캐시
         _message_timestamps: 분당 메시지 제한용 타임스탬프
     """
 
-    _instance: SlackLogHandler | None = None
+    _instance: TelegramLogHandler | None = None
     _lock = threading.Lock()
 
-    def __new__(cls) -> SlackLogHandler:
+    def __new__(cls) -> TelegramLogHandler:
         """싱글톤 패턴"""
         if cls._instance is None:
             with cls._lock:
@@ -71,13 +71,6 @@ class SlackLogHandler:
         throttle_seconds: int = DEFAULT_THROTTLE_SECONDS,
         max_messages_per_minute: int = DEFAULT_MAX_MESSAGES_PER_MINUTE,
     ) -> None:
-        """
-        핸들러 초기화
-
-        Args:
-            throttle_seconds: 동일 메시지 재전송 방지 시간 (초)
-            max_messages_per_minute: 분당 최대 메시지 수
-        """
         if getattr(self, "_initialized", False):
             return
 
@@ -104,7 +97,7 @@ class SlackLogHandler:
         self._thread = threading.Thread(
             target=self._run_loop,
             daemon=True,
-            name="slack-log-handler",
+            name="telegram-log-handler",
         )
         self._thread.start()
 
@@ -128,7 +121,6 @@ class SlackLogHandler:
         now = datetime.now(UTC)
 
         # 1. 분당 메시지 제한 체크
-        # 오래된 타임스탬프 제거
         cutoff = now.timestamp() - 60
         while (
             self._message_timestamps
@@ -172,7 +164,7 @@ class SlackLogHandler:
             last_sent=now,
         )
 
-    async def _send_to_slack(
+    async def _send_to_telegram(
         self,
         level: str,
         message: str,
@@ -181,7 +173,7 @@ class SlackLogHandler:
         line: int,
         timestamp: datetime,
     ) -> None:
-        """비동기 Slack 전송"""
+        """비동기 Telegram 전송"""
         from src.modules.notification.notifier import (
             AlertLevel,
             AlertMessage,
@@ -211,16 +203,16 @@ class SlackLogHandler:
             timestamp=timestamp,
         )
 
-        # Slack 전송 실패 시 무시 (로그 기록 시 무한 루프 방지)
+        # Telegram 전송 실패 시 무시 (로그 기록 시 무한 루프 방지)
         with contextlib.suppress(Exception):
-            await self._notifier.send_slack_message(alert)
+            await self._notifier.send_telegram_message(alert)
 
     def sink(self, message: Record) -> None:
         """
         Loguru 싱크 함수
 
         loguru.add()에 전달되는 콜백 함수입니다.
-        ERROR 레벨 이상의 로그를 Slack으로 전송합니다.
+        ERROR 레벨 이상의 로그를 Telegram으로 전송합니다.
 
         Args:
             message: loguru 로그 레코드
@@ -253,7 +245,7 @@ class SlackLogHandler:
         # 비동기 전송 스케줄링
         if self._loop is not None:
             asyncio.run_coroutine_threadsafe(
-                self._send_to_slack(
+                self._send_to_telegram(
                     level=level,
                     message=log_message,
                     module=module,
@@ -272,6 +264,6 @@ class SlackLogHandler:
             self._thread.join(timeout=5)
 
 
-def get_slack_log_handler() -> SlackLogHandler:
-    """SlackLogHandler 싱글톤 인스턴스 반환"""
-    return SlackLogHandler()
+def get_telegram_log_handler() -> TelegramLogHandler:
+    """TelegramLogHandler 싱글톤 인스턴스 반환"""
+    return TelegramLogHandler()

@@ -34,7 +34,7 @@ from src.modules.risk.event_manager import RiskEventManager
 from src.utils import UTC
 
 if TYPE_CHECKING:
-    from src.clients.slack_client import SlackClient
+    from src.clients.telegram_client import TelegramClient
 
 
 class RiskCheckResult(str, Enum):
@@ -102,7 +102,7 @@ class RiskService:
     def __init__(
         self,
         db: AsyncSession,
-        notifier: "SlackClient | None" = None,
+        notifier: "TelegramClient | None" = None,
     ) -> None:
         """
         RiskService 초기화
@@ -580,7 +580,7 @@ class RiskService:
 # === 팩토리 함수 ===
 def get_risk_service(
     db: AsyncSession,
-    notifier: "SlackClient | None" = None,
+    notifier: "TelegramClient | None" = None,
 ) -> RiskService:
     """
     RiskService 인스턴스 생성

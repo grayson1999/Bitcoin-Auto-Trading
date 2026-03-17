@@ -20,7 +20,7 @@ from loguru import logger
 from src.api import api_router
 from src.clients import (
     close_auth_client,
-    close_slack_client,
+    close_telegram_client,
     close_upbit_private_api,
     close_upbit_public_api,
     get_auth_client,
@@ -90,19 +90,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     stop_scheduler()
     logger.info("스케줄러 중지됨")
 
-    # Slack 로그 핸들러 종료
-    if settings.slack_webhook_url:
-        from src.modules.notification import get_slack_log_handler
+    # Telegram 로그 핸들러 종료
+    if settings.telegram_bot_token:
+        from src.modules.notification import get_telegram_log_handler
 
-        get_slack_log_handler().close()
-        logger.info("Slack 로그 핸들러 종료됨")
+        get_telegram_log_handler().close()
+        logger.info("Telegram 로그 핸들러 종료됨")
 
     # HTTP 클라이언트들 정리 (리소스 누수 방지)
     await close_auth_client()
     logger.info("Auth Client 종료됨")
 
-    await close_slack_client()
-    logger.info("Slack Client 종료됨")
+    await close_telegram_client()
+    logger.info("Telegram Client 종료됨")
 
     await close_upbit_private_api()
     await close_upbit_public_api()

@@ -5,7 +5,7 @@ loguru를 사용한 로깅 설정을 관리합니다.
 - 콘솔 출력 (색상)
 - 파일 로깅 (로테이션, 압축)
 - 민감 정보 마스킹
-- Slack 알림 (ERROR 레벨 이상)
+- Telegram 알림 (ERROR 레벨 이상)
 """
 
 import re
@@ -30,13 +30,11 @@ SENSITIVE_PATTERNS = [
         re.compile(r"(upbit_secret_key['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", re.I),
         r"\1***",
     ),
-    # Gemini API 키 마스킹
-    (re.compile(r"(gemini_api_key['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", re.I), r"\1***"),
     # OpenAI API 키 마스킹
     (re.compile(r"(openai_api_key['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", re.I), r"\1***"),
-    # Slack 웹훅 URL 마스킹
+    # Telegram Bot 토큰 마스킹
     (
-        re.compile(r"(slack_webhook_url['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", re.I),
+        re.compile(r"(telegram_bot_token['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", re.I),
         r"\1***",
     ),
     # Bearer 토큰 마스킹
@@ -134,17 +132,17 @@ def setup_logging() -> None:
         filter=mask_filter,
     )
 
-    # Slack 핸들러 추가 (ERROR 레벨 이상만)
-    if settings.slack_webhook_url:
-        from src.modules.notification import get_slack_log_handler
+    # Telegram 핸들러 추가 (ERROR 레벨 이상만)
+    if settings.telegram_bot_token:
+        from src.modules.notification import get_telegram_log_handler
 
-        slack_handler = get_slack_log_handler()
+        telegram_handler = get_telegram_log_handler()
         logger.add(
-            slack_handler.sink,
+            telegram_handler.sink,
             level="ERROR",
             filter=mask_filter,
             format="{message}",
         )
-        logger.info("Slack 로그 핸들러 활성화됨")
+        logger.info("Telegram 로그 핸들러 활성화됨")
 
     logger.info("로깅 설정 완료", debug_mode=settings.debug)

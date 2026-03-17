@@ -1,4 +1,4 @@
-"""Notification module - 알림 서비스 (Slack 웹훅, 로그 핸들러)."""
+"""Notification module - 알림 서비스 (Telegram Bot API, 로그 핸들러)."""
 
 from src.modules.notification.notifier import (
     AlertLevel,
@@ -7,9 +7,9 @@ from src.modules.notification.notifier import (
     NotifierError,
     get_notifier,
 )
-from src.modules.notification.slack_handler import (
-    SlackLogHandler,
-    get_slack_log_handler,
+from src.modules.notification.telegram_handler import (
+    TelegramLogHandler,
+    get_telegram_log_handler,
 )
 
 __all__ = [
@@ -18,8 +18,8 @@ __all__ = [
     # Notifier
     "Notifier",
     "NotifierError",
-    # Slack Log Handler
-    "SlackLogHandler",
+    # Telegram Log Handler
+    "TelegramLogHandler",
     "get_notifier",
-    "get_slack_log_handler",
+    "get_telegram_log_handler",
 ]

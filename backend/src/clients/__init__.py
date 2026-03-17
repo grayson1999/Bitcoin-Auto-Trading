@@ -4,7 +4,7 @@ External API clients module
 Clients for external service communication.
 - Upbit: Exchange API (public/private)
 - AI: OpenAI GPT-5 Nano client
-- Slack: Notification service
+- Telegram: Notification service
 - Auth: Authentication server client
 """
 
@@ -28,18 +28,18 @@ from src.clients.auth_client import (
     get_auth_client,
 )
 
-# Slack client
-from src.clients.slack_client import (
+# Telegram client
+from src.clients.telegram_client import (
     AlertLevel,
     AlertMessage,
     # Backward compatibility aliases
     Notifier,
     NotifierError,
-    SlackClient,
-    SlackClientError,
-    close_slack_client,
+    TelegramClient,
+    TelegramClientError,
+    close_telegram_client,
     get_notifier,
-    get_slack_client,
+    get_telegram_client,
 )
 
 # Upbit clients
@@ -64,7 +64,7 @@ __all__ = [
     # AI - Base
     "AIClientError",
     "AIResponse",
-    # Slack
+    # Telegram
     "AlertLevel",
     "AlertMessage",
     # Auth
@@ -72,13 +72,13 @@ __all__ = [
     "AuthError",
     "AuthUser",
     "BaseAIClient",
-    # Slack - backward compatibility
+    # Backward compatibility
     "Notifier",
     "NotifierError",
     # AI - OpenAI
     "OpenAIClient",
-    "SlackClient",
-    "SlackClientError",
+    "TelegramClient",
+    "TelegramClientError",
     "UpbitBalance",
     "UpbitCandleData",
     "UpbitOrderResponse",
@@ -91,7 +91,7 @@ __all__ = [
     "UpbitTickerData",
     # Singleton closers
     "close_auth_client",
-    "close_slack_client",
+    "close_telegram_client",
     "close_upbit_private_api",
     "close_upbit_public_api",
     # Singleton getters
@@ -99,7 +99,7 @@ __all__ = [
     "get_auth_client",
     "get_notifier",
     "get_openai_client",
-    "get_slack_client",
+    "get_telegram_client",
     "get_upbit_private_api",
     "get_upbit_public_api",
 ]

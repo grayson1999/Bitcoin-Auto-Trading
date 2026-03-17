@@ -4,7 +4,8 @@
 mask_sensitive_data 함수가 다양한 민감 정보를 올바르게 마스킹하는지 검증합니다.
 
 테스트 대상:
-- API 키 마스킹 (Upbit, Gemini, OpenAI)
+- API 키 마스킹 (Upbit, OpenAI)
+- Telegram Bot 토큰 마스킹
 - 토큰 마스킹 (Bearer, JWT)
 - 잔고 정보 마스킹 (JSON 형식)
 - 혼합 패턴 마스킹
@@ -35,11 +36,11 @@ class TestMaskSensitiveData:
         assert "secret456" not in result
         assert "***" in result
 
-    def test_mask_gemini_api_key(self) -> None:
-        """Gemini API key 마스킹"""
-        message = "gemini_api_key='AIzaSyB123abc'"
+    def test_mask_telegram_bot_token(self) -> None:
+        """Telegram Bot 토큰 마스킹"""
+        message = "telegram_bot_token='8649707402:AAFswSjwstEJkpKt1FATa9yADHB6rcJD0_s'"
         result = mask_sensitive_data(message)
-        assert "AIzaSyB123abc" not in result
+        assert "8649707402:AAFswSjwstEJkpKt1FATa9yADHB6rcJD0_s" not in result
         assert "***" in result
 
     def test_mask_openai_api_key(self) -> None:
@@ -56,11 +57,11 @@ class TestMaskSensitiveData:
         assert "test-api-key-12345" not in result
         assert "***" in result
 
-    def test_mask_slack_webhook_url(self) -> None:
-        """Slack webhook URL 마스킹"""
-        message = "slack_webhook_url=https://hooks.slack.com/services/T00/B00/xxx"
+    def test_mask_telegram_bot_token_env_format(self) -> None:
+        """Telegram Bot 토큰 마스킹 (환경변수 형식)"""
+        message = "telegram_bot_token=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
         result = mask_sensitive_data(message)
-        assert "hooks.slack.com" not in result
+        assert "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz" not in result
         assert "***" in result
 
     # === 토큰 마스킹 테스트 ===

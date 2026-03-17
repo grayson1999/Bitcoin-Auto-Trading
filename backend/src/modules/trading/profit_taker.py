@@ -35,6 +35,9 @@ from src.entities import (
 )
 from src.utils import UTC
 
+# Decimal 변환 상수 (order_monitor.py 패턴 동일)
+_UPBIT_FEE_RATE = Decimal(str(UPBIT_FEE_RATE))
+
 if TYPE_CHECKING:
     pass
 
@@ -250,6 +253,25 @@ class ProfitTaker:
         TradingSignal 생성 + Upbit 시장가 매도 + 포지션/통계 업데이트
         """
         try:
+            # 0. Upbit 실제 잔고 확인
+            actual_balance = await self._private_api.get_balance(settings.trading_currency)
+            if actual_balance <= 0:
+                logger.warning(
+                    f"[ProfitTaker] Upbit {settings.trading_currency} 잔고 없음 → 매도 스킵"
+                )
+                return False
+            if sell_volume > actual_balance:
+                logger.warning(
+                    f"[ProfitTaker] 매도 수량 조정: {sell_volume} → {actual_balance} "
+                    f"(Upbit 실제 잔고 기준)"
+                )
+                sell_volume = actual_balance
+                if sell_volume * current_price < UPBIT_MIN_ORDER_KRW:
+                    logger.warning(
+                        "[ProfitTaker] 조정 후 최소 주문금액 미달 → 매도 스킵"
+                    )
+                    return False
+
             # 1. TradingSignal 생성 (룰 기반)
             signal = TradingSignal(
                 signal_type="SELL",
@@ -293,7 +315,7 @@ class ProfitTaker:
             order.mark_executed(
                 executed_price=current_price,
                 executed_amount=sell_volume,
-                fee=sell_volume * current_price * UPBIT_FEE_RATE,
+                fee=sell_volume * current_price * _UPBIT_FEE_RATE,
             )
 
             # 4. 포지션 업데이트

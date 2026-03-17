@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     환경변수 전용 (민감 정보):
         - database_url, upbit_access_key, upbit_secret_key
         - openai_api_key
-        - slack_webhook_url, auth_server_url
+        - telegram_bot_token, telegram_chat_id, auth_server_url
         - trading_ticker (거래 대상 변경은 배포 레벨)
     """
 
@@ -51,9 +51,12 @@ class Settings(BaseSettings):
     # === OpenAI API 설정 (환경변수 전용) ===
     openai_api_key: str = Field(default="", description="OpenAI API 키")
 
-    # === Slack 웹훅 설정 (환경변수 전용) ===
-    slack_webhook_url: str | None = Field(
-        default=None, description="Slack 알림 웹훅 URL"
+    # === Telegram 설정 (환경변수 전용) ===
+    telegram_bot_token: str | None = Field(
+        default=None, description="Telegram Bot 토큰"
+    )
+    telegram_chat_id: str | None = Field(
+        default=None, description="Telegram Chat ID"
     )
 
     # === Auth Server 설정 (환경변수 전용) ===

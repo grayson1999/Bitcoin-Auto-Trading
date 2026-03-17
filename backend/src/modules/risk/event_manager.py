@@ -17,7 +17,7 @@ from src.entities import RiskEvent, RiskEventType, SystemConfig
 from src.utils import UTC
 
 if TYPE_CHECKING:
-    from src.clients.slack_client import SlackClient
+    from src.clients.telegram_client import TelegramClient
 
 
 class RiskEventManager:
@@ -28,20 +28,20 @@ class RiskEventManager:
 
     Attributes:
         _db: SQLAlchemy 비동기 세션
-        _notifier: Slack 알림 클라이언트 (선택)
+        _notifier: Telegram 알림 클라이언트 (선택)
     """
 
     def __init__(
         self,
         db: AsyncSession,
-        notifier: "SlackClient | None" = None,
+        notifier: "TelegramClient | None" = None,
     ) -> None:
         """
         RiskEventManager 초기화
 
         Args:
             db: SQLAlchemy 비동기 세션
-            notifier: Slack 알림 클라이언트 (선택)
+            notifier: Telegram 알림 클라이언트 (선택)
         """
         self._db = db
         self._notifier = notifier
