@@ -1,22 +1,27 @@
 """
-신호 응답 파서 모듈 v2.5 (균형 잡힌 전략)
+신호 응답 파서 모듈 v3.0 (보수적 전략)
 
 이 모듈은 AI 응답 파싱을 담당합니다.
 - JSON 파싱
-- action_score 기반 신호 결정 (v2.5 BEARISH 임계값 완화)
+- action_score 기반 신호 결정 (v3.0 보수적 임계값)
+- 기술적 확인 필터 (AI + 지표 합의 필수)
 - 시장 레짐 파싱 (BEARISH 레짐 BUY/SELL 차별화)
 - 근거(reasoning) 포맷팅
 
-v2.5 변경사항:
-- BEARISH BUY 임계값 완화: 0.5 → 0.4 (HOLD 지옥 탈출)
-- BEARISH SELL 임계값 유지: -0.15
-- 일반 BUY/SELL 임계값 유지: 0.3 / -0.2
-- 거래량 분석 필드 표시 추가
+v3.0 변경사항:
+- BUY 임계값 강화: 0.3 → 0.5 (확신 있을 때만 매수)
+- BEARISH BUY 임계값 강화: 0.4 → 0.65 (하락장 매수 극도로 제한)
+- SELL 임계값 완화: -0.2 → -0.15 (더 빠른 매도)
+- BEARISH SELL 임계값 완화: -0.15 → -0.10 (하락장 매도 적극화)
+- 기술적 확인 필터: BUY 시 지표 합의 필수
 """
+
+from __future__ import annotations
 
 import json
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
@@ -27,11 +32,14 @@ from src.config.constants import (
 )
 from src.entities.trading_signal import SignalType
 
-# action_score 임계값 상수 (v2.5: BEARISH 균형 조정)
-ACTION_SCORE_BUY_THRESHOLD = 0.3
-ACTION_SCORE_BUY_THRESHOLD_BEARISH = 0.4  # v2.5: 0.5 → 0.4 완화 (HOLD 지옥 탈출)
-ACTION_SCORE_SELL_THRESHOLD = -0.2
-ACTION_SCORE_SELL_THRESHOLD_BEARISH = -0.15  # v2.4: 하락장 매도 적극화
+if TYPE_CHECKING:
+    from src.modules.signal.prompt.signal_pre_processor import PreComputedSignals
+
+# action_score 임계값 상수 (v3.0: 보수적 전략)
+ACTION_SCORE_BUY_THRESHOLD = 0.5  # v3.0: 0.3 → 0.5 (확신 있을 때만 매수)
+ACTION_SCORE_BUY_THRESHOLD_BEARISH = 0.65  # v3.0: 0.4 → 0.65 (하락장 매수 극도로 제한)
+ACTION_SCORE_SELL_THRESHOLD = -0.15  # v3.0: -0.2 → -0.15 (더 빠른 매도)
+ACTION_SCORE_SELL_THRESHOLD_BEARISH = -0.10  # v3.0: -0.15 → -0.10 (하락장 매도 적극화)
 ACTION_SCORE_STOP_LOSS = -0.95  # 손절 신호 임계값
 
 
@@ -57,15 +65,18 @@ class SignalResponseParser:
         self,
         text: str,
         balance_info: dict | None = None,
+        pre_computed: PreComputedSignals | None = None,
     ) -> ParsedSignal:
         """
-        AI 응답 파싱 (v2 - action_score 기반)
+        AI 응답 파싱 (v3.0 - action_score + 기술적 확인 필터)
 
-        JSON 형식의 응답에서 action_score를 기반으로 신호를 결정합니다.
+        JSON 형식의 응답에서 action_score를 기반으로 신호를 결정하고,
+        BUY 신호에 대해 기술적 지표 합의를 검증합니다.
 
         Args:
             text: AI 응답 텍스트
             balance_info: 잔고 정보
+            pre_computed: 사전 계산된 기술적 신호 (BUY 확인 필터용)
 
         Returns:
             ParsedSignal: 파싱된 신호 정보
@@ -104,6 +115,22 @@ class SignalResponseParser:
             # 신호 타입 검증
             if signal not in [s.value for s in SignalType]:
                 signal = SignalType.HOLD.value
+
+            # v3.0: 기술적 확인 필터 - AI BUY + 지표 반대 → HOLD
+            # Note: SELL 신호는 필터링하지 않음 - 보수적 전략은 빠른 매도 우선
+            if signal == "BUY" and pre_computed is not None:
+                if pre_computed.sell_signals_count > pre_computed.buy_signals_count:
+                    logger.warning(
+                        f"기술적 확인 필터: BUY 차단 → HOLD "
+                        f"(sell={pre_computed.sell_signals_count} > "
+                        f"buy={pre_computed.buy_signals_count})"
+                    )
+                    signal = "HOLD"
+                elif pre_computed.overall_bias == "SELL":
+                    logger.warning(
+                        "기술적 확인 필터: BUY 차단 → HOLD (overall_bias=SELL)"
+                    )
+                    signal = "HOLD"
 
             # 신뢰도 범위 검증
             confidence = max(
@@ -153,12 +180,13 @@ class SignalResponseParser:
         market_regime: str,
     ) -> str:
         """
-        action_score 기반으로 신호 결정 (v2.5 균형 잡힌 전략)
+        action_score 기반으로 신호 결정 (v3.0 보수적 전략)
 
-        v2.5 변경사항:
-        - BEARISH BUY 임계값 완화: score >= 0.4 → BUY (기존 0.5)
-        - BEARISH SELL 임계값 유지: score <= -0.15 → SELL
-        - 일반 BUY/SELL 유지: 0.3 / -0.2
+        v3.0 변경사항:
+        - BUY 임계값 강화: score >= 0.5 (기존 0.3)
+        - BEARISH BUY 임계값 강화: score >= 0.65 (기존 0.4)
+        - SELL 임계값 완화: score <= -0.15 (기존 -0.2)
+        - BEARISH SELL 임계값 완화: score <= -0.10 (기존 -0.15)
         """
         # BUY 임계값: BEARISH에서는 더 높은 기준 적용
         buy_threshold = (

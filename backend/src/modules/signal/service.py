@@ -210,10 +210,11 @@ class SignalService:
                 f"입력 토큰이 목표(4,000)를 초과했습니다: {response.input_tokens}"
             )
 
-        # 6. 응답 파싱
+        # 6. 응답 파싱 (v3.0: 기술적 확인 필터 포함)
         parsed = self._response_parser.parse_response(
             response.text,
             balance_info=balance_info,
+            pre_computed=pre_computed,
         )
 
         # 7. 기술적 지표 스냅샷 생성

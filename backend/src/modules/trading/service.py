@@ -265,27 +265,26 @@ class TradingService:
 
     def _calculate_sell_ratio(self, signal: TradingSignal) -> float:
         """
-        action_score 기반 매도 비율 계산
+        action_score 기반 매도 비율 계산 (v3.0: 보수적 - 적극 매도)
 
-        - <= -0.95 (손절): 100%
-        - <= -0.7 (강한 매도): 100%
-        - <= -0.5 (중간 매도): 50%
-        - <= -0.2 (약한 매도): 30%
+        - <= -0.5 (중간~강한 매도): 100% 전량 (빠른 탈출)
+        - <= -0.3 (약-중간 매도): 70%
+        - <= -0.15 (약한 매도): 50%
         - 기타: 100% (fallback)
         """
         action_score = getattr(signal, "action_score", None)
         if action_score is None:
-            return 1.0  # action_score 없으면 기존 동작 (전량 매도)
+            return 1.0
 
-        if action_score <= -0.95:
-            return 1.0  # 손절
-        if action_score <= -0.7:
-            return 1.0  # 강한 매도
         if action_score <= -0.5:
-            return 0.5  # 중간 매도
-        if action_score <= -0.2:
-            return 0.3  # 약한 매도
-        return 1.0  # 기본값
+            return 1.0  # 중간~강한 매도: 전량 처분
+        if action_score <= -0.3:
+            return 0.7  # 약-중간 매도: 70%
+        if action_score <= -0.15:
+            return 0.5  # 약한 매도: 50%
+        # 이론상 SELL 신호는 action_score <= -0.15에서만 발생하므로 도달하지 않음
+        logger.warning(f"예상 외 SELL action_score: {action_score}")
+        return 1.0  # 방어적 fallback
 
     async def _place_order_with_retry(
         self,

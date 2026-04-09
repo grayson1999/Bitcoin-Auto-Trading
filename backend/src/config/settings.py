@@ -55,9 +55,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str | None = Field(
         default=None, description="Telegram Bot 토큰"
     )
-    telegram_chat_id: str | None = Field(
-        default=None, description="Telegram Chat ID"
-    )
+    telegram_chat_id: str | None = Field(default=None, description="Telegram Chat ID")
 
     # === Auth Server 설정 (환경변수 전용) ===
     auth_server_url: str = Field(
@@ -67,30 +65,30 @@ class Settings(BaseSettings):
 
     # === 거래 파라미터 (DB 오버라이드 가능) ===
     # 동적 포지션 사이징: AI 신뢰도에 따라 min~max 범위에서 계산
-    # v2.4: 하락장 자본 보존을 위해 25/50 → 10/25로 축소
+    # v3.0: 보수적 전략 전환 - 소액 투입, 빠른 손절
     position_size_min_pct: float = Field(
-        default=10.0,
+        default=3.0,
         ge=1.0,
         le=50.0,
         description="최소 포지션 크기 비율 (신뢰도 낮을 때) [DB 오버라이드 가능]",
     )
     position_size_max_pct: float = Field(
-        default=25.0,
+        default=8.0,
         ge=5.0,
         le=100.0,
         description="최대 포지션 크기 비율 (신뢰도 높을 때) [DB 오버라이드 가능]",
     )
     stop_loss_pct: float = Field(
-        default=5.0,
-        ge=3.0,
+        default=3.0,
+        ge=1.5,
         le=10.0,
-        description="손절매 임계값 (3-10%) [DB 오버라이드 가능]",
+        description="손절매 임계값 (1.5-10%) [DB 오버라이드 가능]",
     )
     daily_loss_limit_pct: float = Field(
-        default=5.0,
-        ge=3.0,
+        default=3.0,
+        ge=1.5,
         le=10.0,
-        description="일일 손실 한도 (3-10%) [DB 오버라이드 가능]",
+        description="일일 손실 한도 (1.5-10%) [DB 오버라이드 가능]",
     )
     signal_interval_minutes: int = Field(
         default=60,
@@ -110,21 +108,22 @@ class Settings(BaseSettings):
         default=True,
         description="익절 자동화 활성화 여부 [DB 오버라이드 가능]",
     )
+    # v3.0: 보수적 익절 - 빠른 이익 실현, 좁은 트레일링
     profit_tier_1_pct: float = Field(
-        default=2.0,
-        ge=1.0,
+        default=1.0,
+        ge=0.5,
         le=20.0,
         description="익절 1단계 수익률 (%) [DB 오버라이드 가능]",
     )
     profit_tier_1_sell_pct: int = Field(
-        default=30,
+        default=50,
         ge=10,
         le=100,
         description="익절 1단계 매도 비율 (%) [DB 오버라이드 가능]",
     )
     profit_tier_2_pct: float = Field(
-        default=5.0,
-        ge=2.0,
+        default=2.0,
+        ge=1.0,
         le=30.0,
         description="익절 2단계 수익률 (%) [DB 오버라이드 가능]",
     )
@@ -135,26 +134,26 @@ class Settings(BaseSettings):
         description="익절 2단계 매도 비율 (%) [DB 오버라이드 가능]",
     )
     profit_tier_3_pct: float = Field(
-        default=8.0,
-        ge=3.0,
+        default=3.5,
+        ge=1.5,
         le=50.0,
         description="익절 3단계 수익률 (%) [DB 오버라이드 가능]",
     )
     profit_tier_3_sell_pct: int = Field(
-        default=40,
+        default=20,
         ge=10,
         le=100,
         description="익절 3단계 매도 비율 (%) [DB 오버라이드 가능]",
     )
     trailing_stop_activation_pct: float = Field(
-        default=3.0,
-        ge=1.0,
+        default=1.5,
+        ge=0.5,
         le=20.0,
         description="트레일링 스탑 활성화 수익률 (%) [DB 오버라이드 가능]",
     )
     trailing_stop_distance_pct: float = Field(
-        default=2.5,
-        ge=0.5,
+        default=1.0,
+        ge=0.3,
         le=10.0,
         description="트레일링 스탑 하락 비율 (%) [DB 오버라이드 가능]",
     )
@@ -184,30 +183,30 @@ class Settings(BaseSettings):
         description="거래 코인 심볼 (예: SOL, BTC, MOODENG)",
     )
 
-    # === AI 신호 손절/익절 비율 (v2.4: R:R 1:1.6 개선) ===
+    # === AI 신호 손절/익절 비율 (v3.0: 보수적 R:R 1:1.25) ===
     signal_stop_loss_pct: float = Field(
-        default=0.025,
+        default=0.02,
         ge=0.005,
         le=0.10,
-        description="AI 신호 손절 비율 (0.025 = 2.5%)",
+        description="AI 신호 손절 비율 (0.02 = 2.0%)",
     )
     signal_take_profit_pct: float = Field(
-        default=0.04,
+        default=0.025,
         ge=0.01,
         le=0.20,
-        description="AI 신호 익절 비율 (0.04 = 4.0%)",
+        description="AI 신호 익절 비율 (0.025 = 2.5%)",
     )
     signal_trailing_stop_pct: float = Field(
-        default=0.025,
+        default=0.015,
         ge=0.005,
         le=0.10,
-        description="트레일링 스탑 활성화 수익률 (0.025 = 2.5%)",
+        description="트레일링 스탑 활성화 수익률 (0.015 = 1.5%)",
     )
     signal_breakeven_pct: float = Field(
-        default=0.013,
+        default=0.01,
         ge=0.005,
         le=0.05,
-        description="본전 손절 활성화 수익률 (0.013 = 1.3%)",
+        description="본전 손절 활성화 수익률 (0.01 = 1.0%)",
     )
 
     # === 변동성 돌파 전략 설정 (참고용) ===

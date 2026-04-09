@@ -2,8 +2,8 @@
 룰 기반 익절 엔진
 
 5분마다 포지션 수익률을 체크하고 단계적 부분 매도를 실행합니다.
-- 티어별 부분 매도 (+2%, +5%, +8%)
-- 트레일링 스탑 (최고가 대비 -2.5%)
+- 티어별 부분 매도 (+1%, +2%, +3.5%) (v3.0: 빠른 이익 실현)
+- 트레일링 스탑 (최고가 대비 -1.0%) (v3.0: 수익 반납 최소화)
 - 최소 주문금액(5,000원) 미달 시 전량 매도
 """
 
@@ -111,7 +111,10 @@ class ProfitTaker:
             position.peak_price = current_price
 
         # 트레일링 스탑 활성화 체크
-        if not position.trailing_stop_active and pnl_pct >= settings.trailing_stop_activation_pct:
+        if (
+            not position.trailing_stop_active
+            and pnl_pct >= settings.trailing_stop_activation_pct
+        ):
             position.trailing_stop_active = True
             logger.info(
                 f"[ProfitTaker] 트레일링 스탑 활성화: "
@@ -150,9 +153,7 @@ class ProfitTaker:
                 break
 
             # 티어 조건 충족
-            sell_volume = self._calculate_sell_volume(
-                position, sell_pct, current_price
-            )
+            sell_volume = self._calculate_sell_volume(position, sell_pct, current_price)
             if sell_volume <= 0:
                 continue
 
@@ -163,7 +164,9 @@ class ProfitTaker:
             )
 
             success = await self._execute_partial_sell(
-                position, sell_volume, current_price,
+                position,
+                sell_volume,
+                current_price,
                 reason=f"profit-take-tier-{tier_num}",
             )
             if success:
@@ -191,7 +194,9 @@ class ProfitTaker:
 
             sell_volume = position.quantity
             success = await self._execute_partial_sell(
-                position, sell_volume, current_price,
+                position,
+                sell_volume,
+                current_price,
                 reason="trailing-stop",
             )
             if not success:
@@ -215,7 +220,9 @@ class ProfitTaker:
         if not position.original_quantity or position.original_quantity <= 0:
             return Decimal("0")
 
-        target_volume = position.original_quantity * Decimal(str(sell_pct)) / Decimal("100")
+        target_volume = (
+            position.original_quantity * Decimal(str(sell_pct)) / Decimal("100")
+        )
 
         # 남은 수량보다 많으면 전량
         if target_volume >= position.quantity:
@@ -254,7 +261,9 @@ class ProfitTaker:
         """
         try:
             # 0. Upbit 실제 잔고 확인
-            actual_balance = await self._private_api.get_balance(settings.trading_currency)
+            actual_balance = await self._private_api.get_balance(
+                settings.trading_currency
+            )
             if actual_balance <= 0:
                 logger.warning(
                     f"[ProfitTaker] Upbit {settings.trading_currency} 잔고 없음 → 매도 스킵"
@@ -319,9 +328,7 @@ class ProfitTaker:
             )
 
             # 4. 포지션 업데이트
-            position.quantity = max(
-                Decimal("0"), position.quantity - sell_volume
-            )
+            position.quantity = max(Decimal("0"), position.quantity - sell_volume)
             if position.quantity == 0:
                 # 전량 청산 시 초기화
                 position.avg_buy_price = Decimal("0")
@@ -373,7 +380,9 @@ class ProfitTaker:
         daily_stats.trade_count += 1
 
         if order.executed_amount and order.executed_price and order.avg_cost_at_order:
-            pnl = (order.executed_price - order.avg_cost_at_order) * order.executed_amount
+            pnl = (
+                order.executed_price - order.avg_cost_at_order
+            ) * order.executed_amount
             daily_stats.realized_pnl += pnl
             if pnl >= 0:
                 daily_stats.win_count += 1

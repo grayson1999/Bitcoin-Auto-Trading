@@ -36,11 +36,11 @@ AI_MODEL_COSTS = {
 
 # === 익절 (Profit Taking) 설정 ===
 PROFIT_TAKING_CHECK_INTERVAL_SECONDS = 300  # 5분마다 체크
-PROFIT_TIER_1 = {"profit_pct": 3.0, "sell_pct": 30}  # +3% → 30% 매도
-PROFIT_TIER_2 = {"profit_pct": 5.0, "sell_pct": 30}  # +5% → 30% 매도 (누적 60%)
-PROFIT_TIER_3 = {"profit_pct": 8.0, "sell_pct": 40}  # +8% → 40% 매도 (전량 청산)
-TRAILING_STOP_ACTIVATION_PCT = 3.0  # +3%에서 트레일링 스탑 활성화
-TRAILING_STOP_DISTANCE_PCT = 1.5  # 최고가에서 -1.5% 하락 시 발동
+PROFIT_TIER_1 = {"profit_pct": 1.0, "sell_pct": 50}  # +1% → 50% 매도 (빠른 이익 확보)
+PROFIT_TIER_2 = {"profit_pct": 2.0, "sell_pct": 30}  # +2% → 30% 매도 (누적 80%)
+PROFIT_TIER_3 = {"profit_pct": 3.5, "sell_pct": 20}  # +3.5% → 20% 매도 (전량 청산)
+TRAILING_STOP_ACTIVATION_PCT = 1.5  # +1.5%에서 트레일링 스탑 활성화
+TRAILING_STOP_DISTANCE_PCT = 1.0  # 최고가에서 -1.0% 하락 시 발동
 
 # === 스케줄러 기본 주기 ===
 DATA_COLLECTION_INTERVAL_SECONDS = 10  # 시세 수집 간격

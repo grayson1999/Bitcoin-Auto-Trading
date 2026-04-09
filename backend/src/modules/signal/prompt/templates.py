@@ -48,40 +48,40 @@ class PromptConfig:
     volatility_tolerance: str
 
 
-# 코인 유형별 기본 설정 (v2.5: 기회와 리스크의 균형)
+# 코인 유형별 기본 설정 (v3.0: 보수적 자본 보존)
 PROMPT_CONFIGS: dict[CoinType, PromptConfig] = {
     CoinType.MAJOR: PromptConfig(
-        stop_loss_pct=0.03,
-        take_profit_pct=0.045,
-        trailing_stop_pct=0.03,
-        breakeven_pct=0.015,
-        min_confidence_buy=0.30,
-        min_confluence_buy=0.40,
-        rsi_overbought=75,
-        rsi_oversold=25,
-        volatility_tolerance="medium",
+        stop_loss_pct=0.02,
+        take_profit_pct=0.025,
+        trailing_stop_pct=0.015,
+        breakeven_pct=0.01,
+        min_confidence_buy=0.50,
+        min_confluence_buy=0.55,
+        rsi_overbought=70,
+        rsi_oversold=30,
+        volatility_tolerance="low",
     ),
     CoinType.MEMECOIN: PromptConfig(
-        stop_loss_pct=0.04,
-        take_profit_pct=0.06,
-        trailing_stop_pct=0.035,
-        breakeven_pct=0.02,
-        min_confidence_buy=0.30,
-        min_confluence_buy=0.40,
-        rsi_overbought=82,
-        rsi_oversold=22,
-        volatility_tolerance="high",
+        stop_loss_pct=0.03,
+        take_profit_pct=0.035,
+        trailing_stop_pct=0.02,
+        breakeven_pct=0.015,
+        min_confidence_buy=0.50,
+        min_confluence_buy=0.55,
+        rsi_overbought=75,
+        rsi_oversold=28,
+        volatility_tolerance="medium",
     ),
     CoinType.ALTCOIN: PromptConfig(
-        stop_loss_pct=0.035,
-        take_profit_pct=0.05,
-        trailing_stop_pct=0.03,
-        breakeven_pct=0.018,
-        min_confidence_buy=0.30,
-        min_confluence_buy=0.40,
-        rsi_overbought=78,
-        rsi_oversold=25,
-        volatility_tolerance="medium",
+        stop_loss_pct=0.025,
+        take_profit_pct=0.03,
+        trailing_stop_pct=0.015,
+        breakeven_pct=0.012,
+        min_confidence_buy=0.50,
+        min_confluence_buy=0.55,
+        rsi_overbought=72,
+        rsi_oversold=28,
+        volatility_tolerance="low",
     ),
 }
 
@@ -94,14 +94,19 @@ SYSTEM_INSTRUCTION = """You are a {currency}/KRW trading signal generator.
 - reasoning fields (regime_analysis, action_rationale) MUST be written in Korean.
 - Do NOT chain-of-thought. Just classify directly.
 
+## CAPITAL PRESERVATION PRIORITY
+- When uncertain, ALWAYS prefer HOLD over BUY.
+- BUY only when indicators show STRONG confluence (buy_signals >= 5).
+- In SIDEWAYS markets, prefer HOLD (do not attempt range trading).
+- Require MULTIPLE timeframe confirmation for BUY (at least 2 of: trend_1h, trend_4h, trend_1d must be UP).
+
 ## Signal Decision
 If stop_loss_triggered == true → signal: "SELL", action_score: -0.95
 
 Otherwise use these rules:
-- If overall_bias == "BUY" AND buy_signals >= 4 → BUY, score +0.3 to +0.7
-- If overall_bias == "SELL" AND sell_signals >= 4 → SELL, score -0.3 to -0.7
-- If trend_1h == "UP" AND rsi != "OVERBOUGHT_SELL" → BUY, score +0.3 to +0.5
-- If trend_1h == "DOWN" AND holding position → SELL, score -0.3 to -0.5
+- BUY: overall_bias == "BUY" AND buy_signals >= 5 AND at least 2 trends UP → score +0.5 to +0.7
+- SELL: overall_bias == "SELL" AND sell_signals >= 3 → score -0.3 to -0.7
+- SELL: trend_1h == "DOWN" AND holding position → score -0.3 to -0.5
 - Otherwise → HOLD, score -0.1 to +0.1
 
 ## Output Format (JSON only)
@@ -109,17 +114,17 @@ Otherwise use these rules:
 
 ## Few-Shot Examples
 
-### Example 1: BUY
-Input: trend_1h=UP, trend_4h=UP, rsi=SLIGHTLY_OVERSOLD(32), macd=BULLISH_CROSS, ema=BULLISH_ALIGNED, bb=NEUTRAL, overall_bias=BUY, buy_signals=5, sell_signals=1, no position
-Output: {{"market_regime":"BULLISH","action_score":0.55,"signal":"BUY","reasoning":{{"regime_analysis":"1시간, 4시간 모두 상승 추세로 강세장 판단","action_rationale":"RSI 과매도 구간 벗어나며 반등 중. MACD 골든크로스와 EMA 정배열이 매수 신호를 강화. 5개 매수 신호 대비 1개 매도 신호로 강한 매수 합류","risk_check":{{"stop_loss_triggered":false,"unrealized_pnl_pct":0.0}},"technical_summary":{{"confluence_score":0.72,"rsi_14":32.0,"trend_1h":"UP","trend_4h":"UP","trend_1d":"FLAT"}}}}}}
+### Example 1: BUY (strong confluence required)
+Input: trend_1h=UP, trend_4h=UP, trend_1d=UP, rsi=SLIGHTLY_OVERSOLD(32), macd=BULLISH_CROSS, ema=BULLISH_ALIGNED, bb=NEAR_LOWER_BUY, overall_bias=BUY, buy_signals=6, sell_signals=0, no position
+Output: {{"market_regime":"BULLISH","action_score":0.60,"signal":"BUY","reasoning":{{"regime_analysis":"1시간, 4시간, 일봉 모두 상승 추세로 강세장 판단","action_rationale":"RSI 과매도 구간 벗어나며 반등 중. MACD 골든크로스와 EMA 정배열이 매수 신호를 강화. 6개 매수 신호와 3개 타임프레임 상승으로 강한 매수 합류","risk_check":{{"stop_loss_triggered":false,"unrealized_pnl_pct":0.0}},"technical_summary":{{"confluence_score":0.78,"rsi_14":32.0,"trend_1h":"UP","trend_4h":"UP","trend_1d":"UP"}}}}}}
 
 ### Example 2: SELL
-Input: trend_1h=DOWN, trend_4h=DOWN, rsi=SLIGHTLY_OVERBOUGHT(68), macd=BEARISH_CROSS, ema=BEARISH_ALIGNED, bb=NEAR_UPPER_SELL, overall_bias=SELL, buy_signals=1, sell_signals=6, holding position, unrealized_pnl=-3.2%
-Output: {{"market_regime":"BEARISH","action_score":-0.65,"signal":"SELL","reasoning":{{"regime_analysis":"1시간, 4시간 하락 추세로 약세장 판단","action_rationale":"하락 추세 지속 중 MACD 데드크로스 발생. 볼린저밴드 상단 근접으로 추가 하락 가능성. 미실현 손실 -3.2%로 추가 하락 전 매도 권장","risk_check":{{"stop_loss_triggered":false,"unrealized_pnl_pct":-3.2}},"technical_summary":{{"confluence_score":0.25,"rsi_14":68.0,"trend_1h":"DOWN","trend_4h":"DOWN","trend_1d":"FLAT"}}}}}}
+Input: trend_1h=DOWN, trend_4h=DOWN, rsi=SLIGHTLY_OVERBOUGHT(68), macd=BEARISH_CROSS, ema=BEARISH_ALIGNED, bb=NEAR_UPPER_SELL, overall_bias=SELL, buy_signals=1, sell_signals=6, holding position, unrealized_pnl=-1.5%
+Output: {{"market_regime":"BEARISH","action_score":-0.65,"signal":"SELL","reasoning":{{"regime_analysis":"1시간, 4시간 하락 추세로 약세장 판단","action_rationale":"하락 추세 지속 중 MACD 데드크로스 발생. 볼린저밴드 상단 근접으로 추가 하락 가능성. 미실현 손실 -1.5%로 추가 하락 전 매도 권장","risk_check":{{"stop_loss_triggered":false,"unrealized_pnl_pct":-1.5}},"technical_summary":{{"confluence_score":0.25,"rsi_14":68.0,"trend_1h":"DOWN","trend_4h":"DOWN","trend_1d":"FLAT"}}}}}}
 
-### Example 3: HOLD
+### Example 3: HOLD (uncertain → preserve capital)
 Input: trend_1h=FLAT, trend_4h=UP, rsi=NEUTRAL(48), macd=NEUTRAL, ema=MIXED, bb=NEUTRAL, overall_bias=NEUTRAL, buy_signals=3, sell_signals=2, no position
-Output: {{"market_regime":"SIDEWAYS","action_score":0.05,"signal":"HOLD","reasoning":{{"regime_analysis":"1시간 횡보, 4시간 상승으로 혼조 판단","action_rationale":"기술적 지표가 혼재되어 명확한 방향 없음. 매수/매도 신호 균형으로 관망이 적절","risk_check":{{"stop_loss_triggered":false,"unrealized_pnl_pct":0.0}},"technical_summary":{{"confluence_score":0.50,"rsi_14":48.0,"trend_1h":"FLAT","trend_4h":"UP","trend_1d":"FLAT"}}}}}}
+Output: {{"market_regime":"SIDEWAYS","action_score":0.05,"signal":"HOLD","reasoning":{{"regime_analysis":"1시간 횡보, 4시간 상승으로 혼조 판단","action_rationale":"기술적 지표가 혼재되어 명확한 방향 없음. 자본 보존을 위해 강한 합류 신호까지 관망이 적절","risk_check":{{"stop_loss_triggered":false,"unrealized_pnl_pct":0.0}},"technical_summary":{{"confluence_score":0.50,"rsi_14":48.0,"trend_1h":"FLAT","trend_4h":"UP","trend_1d":"FLAT"}}}}}}
 """
 
 ANALYSIS_PROMPT = """## {currency}/KRW Signal Analysis
