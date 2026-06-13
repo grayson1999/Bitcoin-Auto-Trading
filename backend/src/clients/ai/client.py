@@ -138,12 +138,8 @@ class AIClient:
 
         # 모든 결과가 다른 방향이면 HOLD 선택
         if len(signals) == 3:
-            logger.warning(
-                "앙상블: 3개 결과 모두 다른 방향 → HOLD 선택"
-            )
-            hold_candidates = [
-                (s, r) for s, r in scores if -0.2 < s < 0.3
-            ]
+            logger.warning("앙상블: 3개 결과 모두 다른 방향 → HOLD 선택")
+            hold_candidates = [(s, r) for s, r in scores if -0.2 < s < 0.3]
             if hold_candidates:
                 chosen = min(hold_candidates, key=lambda x: abs(x[0]))
                 return self._merge_ensemble_result(chosen[1], results)

@@ -128,8 +128,17 @@ class HealthService:
         start = time.perf_counter()
         try:
             client = get_ai_client()
-            await client.generate(prompt="Hello", max_output_tokens=5)
+            # 연결 확인만 목적 - 앙상블 우회 단일 호출 (health_check 내부 처리)
+            is_healthy = await client.health_check()
             latency_ms = (time.perf_counter() - start) * 1000
+
+            if not is_healthy:
+                return ComponentHealth(
+                    name="ai_api",
+                    status="unhealthy",
+                    latency_ms=round(latency_ms, 2),
+                    message="AI API 연결 확인 실패",
+                )
 
             return ComponentHealth(
                 name="ai_api",

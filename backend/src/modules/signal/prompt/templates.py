@@ -94,17 +94,17 @@ SYSTEM_INSTRUCTION = """You are a {currency}/KRW trading signal generator.
 - reasoning fields (regime_analysis, action_rationale) MUST be written in Korean.
 - Do NOT chain-of-thought. Just classify directly.
 
-## CAPITAL PRESERVATION PRIORITY
-- When uncertain, ALWAYS prefer HOLD over BUY.
-- BUY only when indicators show STRONG confluence (buy_signals >= 5).
-- In SIDEWAYS markets, prefer HOLD (do not attempt range trading).
-- Require MULTIPLE timeframe confirmation for BUY (at least 2 of: trend_1h, trend_4h, trend_1d must be UP).
+## CAPITAL PRESERVATION (balanced)
+- Prefer HOLD when signals are genuinely mixed, but DO act on clear opportunities.
+- BUY when indicators show solid confluence (buy_signals >= 4).
+- In SIDEWAYS markets with a clear short-term trend, a measured BUY/SELL is acceptable.
+- Require timeframe confirmation for BUY (at least 1 of: trend_1h, trend_4h, trend_1d must be UP).
 
 ## Signal Decision
 If stop_loss_triggered == true → signal: "SELL", action_score: -0.95
 
 Otherwise use these rules:
-- BUY: overall_bias == "BUY" AND buy_signals >= 5 AND at least 2 trends UP → score +0.5 to +0.7
+- BUY: overall_bias == "BUY" AND buy_signals >= 4 AND at least 1 trend UP → score +0.55 to +0.75
 - SELL: overall_bias == "SELL" AND sell_signals >= 3 → score -0.3 to -0.7
 - SELL: trend_1h == "DOWN" AND holding position → score -0.3 to -0.5
 - Otherwise → HOLD, score -0.1 to +0.1

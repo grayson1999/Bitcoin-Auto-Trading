@@ -239,23 +239,27 @@ class OrderMonitor:
         """
         PENDING 상태의 주문을 Upbit와 동기화
 
-        24시간 이내의 PENDING 상태 주문을 조회하여 Upbit의 실제 상태로 업데이트합니다.
+        24시간 이내이면서 upbit_uuid가 있는 PENDING 주문을 Upbit의 실제 상태로
+        업데이트합니다. 그 외(upbit_uuid 없음 또는 24시간 초과)의 좀비 주문은
+        `_reconcile_stale_orders`에서 FAILED로 폐기합니다.
 
         Returns:
-            int: 동기화된 주문 수
+            int: 동기화 + 폐기된 주문 수
         """
-        # 24시간 이내의 PENDING 주문만 조회
-        cutoff_time = datetime.now(UTC) - timedelta(hours=24)
+        # upbit_uuid 없는 좀비 PENDING 주문 먼저 정리 (Upbit 조회 불가)
+        reconciled_count = await self._reconcile_stale_orders()
+
+        # upbit_uuid 보유 PENDING 주문은 생성 시점과 무관하게 Upbit 동기화 대상.
+        # (기존엔 24시간 필터로 오래된 주문이 영구 방치 → 좀비화. 제거함)
         stmt = select(Order).where(
             Order.status == OrderStatus.PENDING.value,
             Order.upbit_uuid.isnot(None),
-            Order.created_at > cutoff_time,
         )
         result = await self._session.execute(stmt)
         pending_orders = list(result.scalars().all())
 
         if not pending_orders:
-            return 0
+            return reconciled_count
 
         logger.info(f"PENDING 주문 동기화 시작: {len(pending_orders)}건")
 
@@ -332,7 +336,43 @@ class OrderMonitor:
             await self._session.commit()
             logger.info(f"PENDING 주문 동기화 완료: {synced_count}건")
 
-        return synced_count
+        return synced_count + reconciled_count
+
+    async def _reconcile_stale_orders(self) -> int:
+        """
+        upbit_uuid 없는 좀비 PENDING 주문을 FAILED로 폐기
+
+        upbit_uuid가 없는 PENDING 주문은 Upbit에 실제 주문이 생성되지 않은
+        미체결 상태이므로 Upbit 조회로 복구할 수 없다. 이런 주문은 정상 동기화
+        쿼리(upbit_uuid IS NOT NULL)에서 영구 제외되어 좀비로 남으므로 폐기한다.
+        단, 막 생성되어 아직 upbit_uuid 할당 전인 주문을 오폐기하지 않도록
+        생성 후 1시간이 지난 것만 대상으로 한다.
+
+        Returns:
+            int: FAILED로 폐기한 주문 수
+        """
+        cutoff_time = datetime.now(UTC) - timedelta(hours=1)
+        stmt = select(Order).where(
+            Order.status == OrderStatus.PENDING.value,
+            Order.upbit_uuid.is_(None),
+            Order.created_at <= cutoff_time,
+        )
+        result = await self._session.execute(stmt)
+        stale_orders = list(result.scalars().all())
+
+        if not stale_orders:
+            return 0
+
+        for order in stale_orders:
+            order.mark_failed("upbit_uuid 없음 - 주문 미생성으로 자동 폐기")
+            logger.warning(
+                f"좀비 PENDING 주문 폐기: order_id={order.id}, "
+                f"created_at={order.created_at}"
+            )
+
+        await self._session.commit()
+        logger.info(f"좀비 PENDING 주문 폐기 완료: {len(stale_orders)}건")
+        return len(stale_orders)
 
     async def check_and_update_existing_order(self, order: Order) -> bool:
         """

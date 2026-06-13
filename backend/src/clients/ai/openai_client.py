@@ -242,9 +242,13 @@ class OpenAIClient(BaseAIClient):
             bool: 연결 정상 여부
         """
         try:
+            # gpt-5-nano는 reasoning 모델이라 출력 전 reasoning 토큰을 먼저 소비한다.
+            # max_output_tokens가 작으면 visible content=0(finish_reason=length)으로
+            # 빈 응답이 되어 헬스체크가 거짓 실패한다. reasoning 변동성을 고려해
+            # 넉넉한 한도(512)를 줘 간헐 실패를 방지한다. (실제 출력은 ~190토큰)
             await self.generate(
                 prompt="Hello",
-                max_output_tokens=10,
+                max_output_tokens=512,
             )
             return True
         except AIClientError:
