@@ -31,9 +31,7 @@ async def profit_taking_check_job() -> None:
             from sqlalchemy import select
 
             # 첫 번째 사용자 ID 조회
-            result = await session.execute(
-                select(User.id).order_by(User.id).limit(1)
-            )
+            result = await session.execute(select(User.id).order_by(User.id).limit(1))
             user_id = result.scalar_one_or_none()
             if user_id is None:
                 return

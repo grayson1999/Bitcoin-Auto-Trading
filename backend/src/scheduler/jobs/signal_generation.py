@@ -393,7 +393,9 @@ async def evaluate_signal_performance_job() -> None:
                 logger.info(f"신호 성과 평가 완료: {evaluated_count}건")
 
                 # 성과 요약 생성 및 로깅 (7일 전체 데이터)
-                summary = await tracker.generate_performance_summary(limit=100, hours=168)
+                summary = await tracker.generate_performance_summary(
+                    limit=100, hours=168
+                )
                 logger.info(
                     f"최근 성과 요약: "
                     f"총 {summary.total_signals}건, "
@@ -417,19 +419,14 @@ async def _check_recent_buy_failure(session) -> bool:
     """
     cutoff = datetime.now(UTC) - timedelta(hours=48)
 
-    stmt = (
-        select(
-            func.count().label("total"),
-            func.count()
-            .filter(TradingSignal.outcome_correct.is_(True))
-            .label("correct"),
-        )
-        .where(
-            and_(
-                TradingSignal.signal_type == SignalType.BUY.value,
-                TradingSignal.outcome_evaluated.is_(True),
-                TradingSignal.created_at > cutoff,
-            )
+    stmt = select(
+        func.count().label("total"),
+        func.count().filter(TradingSignal.outcome_correct.is_(True)).label("correct"),
+    ).where(
+        and_(
+            TradingSignal.signal_type == SignalType.BUY.value,
+            TradingSignal.outcome_evaluated.is_(True),
+            TradingSignal.created_at > cutoff,
         )
     )
 

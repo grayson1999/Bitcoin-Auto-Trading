@@ -11,8 +11,8 @@ from src.modules.admin.schemas import SchedulerJobResponse, SystemMetricsRespons
 from src.modules.admin.service import get_system_metrics
 
 __all__ = [
-    "router",
-    "get_system_metrics",
     "SchedulerJobResponse",
     "SystemMetricsResponse",
+    "get_system_metrics",
+    "router",
 ]

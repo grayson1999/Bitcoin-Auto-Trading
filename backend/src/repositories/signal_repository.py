@@ -47,9 +47,7 @@ class SignalRepository(BaseRepository[TradingSignal]):
             return query.where(TradingSignal.user_id == self.user_id)
         return query
 
-    async def get_latest(
-        self, limit: int = 1, offset: int = 0
-    ) -> list[TradingSignal]:
+    async def get_latest(self, limit: int = 1, offset: int = 0) -> list[TradingSignal]:
         """
         최신 매매 신호 조회
 
@@ -65,9 +63,7 @@ class SignalRepository(BaseRepository[TradingSignal]):
         query = select(TradingSignal)
         query = self._user_filter(query)
         result = await self.session.execute(
-            query.order_by(TradingSignal.created_at.desc())
-            .offset(offset)
-            .limit(limit)
+            query.order_by(TradingSignal.created_at.desc()).offset(offset).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -149,9 +145,7 @@ class SignalRepository(BaseRepository[TradingSignal]):
         )
         query = self._user_filter(query)
         result = await self.session.execute(
-            query.order_by(TradingSignal.created_at.desc())
-            .offset(offset)
-            .limit(limit)
+            query.order_by(TradingSignal.created_at.desc()).offset(offset).limit(limit)
         )
         return list(result.scalars().all())
 

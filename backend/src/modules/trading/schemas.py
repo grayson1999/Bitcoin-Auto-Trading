@@ -154,10 +154,16 @@ class PositionResponse(BaseModel):
     updated_at: datetime = Field(description="최종 업데이트 시간")
 
     # 익절 시스템 필드
-    profit_tier_reached: int = Field(default=0, description="익절 단계 (0=미실행, 1/2/3)")
+    profit_tier_reached: int = Field(
+        default=0, description="익절 단계 (0=미실행, 1/2/3)"
+    )
     peak_price: Decimal | None = Field(default=None, description="진입 후 최고가")
-    trailing_stop_active: bool = Field(default=False, description="트레일링 스탑 활성화")
-    original_quantity: Decimal | None = Field(default=None, description="진입 시 원래 수량")
+    trailing_stop_active: bool = Field(
+        default=False, description="트레일링 스탑 활성화"
+    )
+    original_quantity: Decimal | None = Field(
+        default=None, description="진입 시 원래 수량"
+    )
 
 
 class BalanceResponse(BaseModel):
