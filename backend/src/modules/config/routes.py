@@ -73,13 +73,14 @@ async def get_db_configs(
 
 @router.get("/trading-status", response_model=TradingStatusResponse)
 async def get_trading_status(
-    _: CurrentUser,
     service: ConfigService = Depends(get_config_service),
 ) -> TradingStatusResponse:
     """
-    거래 상태 조회
+    거래 상태 조회 (공개 - 인증 불필요)
 
-    거래 활성화 여부와 거래 대상 마켓을 반환합니다.
+    거래 활성화 여부와 거래 대상 마켓(통화)을 반환합니다.
+    프론트엔드가 로그인 전에도 통화 표시를 위해 호출하므로 공개로 둔다.
+    비민감 정보(통화·거래 on/off)만 노출하며 잔고/손익은 포함하지 않는다.
     """
     trading_enabled = await service.is_trading_enabled()
     ticker = await service.get("trading_ticker", default="KRW-BTC")
