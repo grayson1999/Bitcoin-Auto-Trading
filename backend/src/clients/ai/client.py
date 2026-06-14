@@ -44,7 +44,7 @@ class AIClient:
         prompt: str,
         system_instruction: str | None = None,
         temperature: float = 0.7,
-        max_output_tokens: int = 4096,
+        max_output_tokens: int = 1024,
     ) -> AIResponse:
         """
         텍스트 생성 요청 (앙상블 모드 지원)

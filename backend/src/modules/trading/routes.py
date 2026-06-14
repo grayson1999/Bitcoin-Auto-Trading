@@ -29,7 +29,7 @@ from src.config.constants import (
     API_PAGINATION_MIN_LIMIT,
 )
 from src.entities import OrderStatus, Position
-from src.modules.auth import CurrentUser
+from src.modules.auth import AdminUser
 from src.modules.trading.schemas import (
     BalanceResponse,
     OrderListResponse,
@@ -57,7 +57,7 @@ router = APIRouter(prefix="/trading")
 )
 async def get_orders(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: CurrentUser,
+    current_user: AdminUser,
     status: Annotated[
         OrderStatusFilterEnum,
         Query(description="주문 상태 필터"),
@@ -134,7 +134,7 @@ async def get_orders(
 async def get_order(
     order_id: int,
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: CurrentUser,
+    current_user: AdminUser,
 ) -> OrderResponse:
     """
     주문 상세 조회
@@ -180,7 +180,7 @@ async def get_order(
 )
 async def get_position(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: CurrentUser,
+    current_user: AdminUser,
 ) -> PositionResponse:
     """
     현재 포지션 조회
@@ -245,7 +245,7 @@ async def get_position(
 )
 async def get_balance(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: CurrentUser,
+    current_user: AdminUser,
 ) -> BalanceResponse:
     """
     계좌 잔고 조회
@@ -293,7 +293,7 @@ async def get_balance(
 )
 async def sync_pending_orders(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: CurrentUser,
+    current_user: AdminUser,
 ) -> dict:
     """
     대기 주문 상태 동기화

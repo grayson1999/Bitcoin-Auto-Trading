@@ -45,6 +45,9 @@ class UpbitTickerData(BaseModel):
     high_price: Decimal
     low_price: Decimal
     timestamp: int
+    # 전일 종가 및 부호 있는 24h 등락률 (실제 24h 변동 계산용)
+    prev_closing_price: Decimal | None = None
+    signed_change_rate: Decimal | None = None
 
 
 class UpbitCandleData(BaseModel):
@@ -139,6 +142,16 @@ def parse_ticker(data: dict[str, Any]) -> UpbitTickerData:
         high_price=to_decimal(data["high_price"]),
         low_price=to_decimal(data["low_price"]),
         timestamp=data["timestamp"],
+        prev_closing_price=(
+            to_decimal(data["prev_closing_price"])
+            if data.get("prev_closing_price") is not None
+            else None
+        ),
+        signed_change_rate=(
+            to_decimal(data["signed_change_rate"])
+            if data.get("signed_change_rate") is not None
+            else None
+        ),
     )
 
 

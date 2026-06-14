@@ -13,6 +13,7 @@ from sqlalchemy import and_, func, select
 
 from src.entities import DailyStats, SignalType, TradingSignal
 from src.entities.order import Order
+from src.scheduler.locks import position_lock
 from src.scheduler.metrics import track_job
 from src.utils import UTC
 from src.utils.database import async_session_factory
@@ -52,7 +53,11 @@ async def generate_trading_signal_job() -> None:
     from src.modules.signal.service import SignalService, SignalServiceError
     from src.modules.trading import OrderBlockedReason, get_trading_service
 
-    async with track_job("signal_generation"), async_session_factory() as session:
+    async with (
+        position_lock,
+        track_job("signal_generation"),
+        async_session_factory() as session,
+    ):
         try:
             # 신호 생성 전 Upbit 잔고와 포지션 동기화
             trading_service = await get_trading_service(session)
@@ -164,7 +169,7 @@ async def execute_trading_from_signal_job(signal_id: int) -> None:
     # 순환 참조 방지를 위한 지연 임포트
     from src.modules.trading import OrderBlockedReason, get_trading_service
 
-    async with async_session_factory() as session:
+    async with position_lock, async_session_factory() as session:
         try:
             # 1. 신호 조회
             stmt = select(TradingSignal).where(TradingSignal.id == signal_id)
@@ -255,24 +260,36 @@ async def check_volatility_job() -> None:
                 logger.info(f"변동성 경고: {message}")
 
             elif result == RiskCheckResult.PASS:
-                # 변동성 정상 - 고변동성 자동 감지로 중단된 경우 자동 재개
+                # 변동성 정상 - 고변동성 자동 감지로 중단된 경우만 자동 재개
                 if not await risk_service.is_trading_enabled():
                     today = date.today()
                     stmt = select(DailyStats).where(DailyStats.date == today)
                     ds_result = await session.execute(stmt)
                     daily_stats = ds_result.scalar_one_or_none()
 
-                    if (
+                    # 중단 사유가 고변동성인 경우에만 재개 대상
+                    is_volatility_halt = (
                         daily_stats
                         and daily_stats.halt_reason
                         and "고변동성 자동 감지" in daily_stats.halt_reason
-                    ):
-                        logger.info(
-                            f"변동성 정상화 확인 - 자동 거래 재개 "
-                            f"(이전 사유: {daily_stats.halt_reason})"
-                        )
-                        await risk_service.resume_trading()
-                        await session.commit()
+                    )
+                    if is_volatility_halt:
+                        # 일일 실현 손실이 여전히 한도를 초과하면 재개하지 않음
+                        # (halt 플래그가 아닌 실제 손실률로 판단 - side-effect 없음)
+                        daily_loss_limit = await risk_service.get_daily_loss_limit_pct()
+                        if daily_stats.loss_pct < -daily_loss_limit:
+                            logger.warning(
+                                f"변동성은 정상화됐으나 일일 손실 "
+                                f"{daily_stats.loss_pct:.2f}% < -{daily_loss_limit}% "
+                                f"- 자동 재개 보류"
+                            )
+                        else:
+                            logger.info(
+                                f"변동성 정상화 확인 - 자동 거래 재개 "
+                                f"(이전 사유: {daily_stats.halt_reason})"
+                            )
+                            await risk_service.resume_trading()
+                            await session.commit()
 
         except Exception as e:
             await session.rollback()
@@ -290,6 +307,7 @@ async def recover_unexecuted_signals_job() -> None:
     from src.modules.trading import OrderBlockedReason, get_trading_service
 
     async with (
+        position_lock,
         track_job("recover_unexecuted_signals"),
         async_session_factory() as session,
     ):

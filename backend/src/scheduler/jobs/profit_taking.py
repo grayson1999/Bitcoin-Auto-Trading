@@ -27,8 +27,13 @@ async def profit_taking_check_job() -> None:
     from src.entities import User
     from src.modules.risk.event_manager import RiskEventManager
     from src.modules.trading.profit_taker import ProfitTaker
+    from src.scheduler.locks import position_lock
 
-    async with track_job("profit_taking"), async_session_factory() as session:
+    async with (
+        position_lock,
+        track_job("profit_taking"),
+        async_session_factory() as session,
+    ):
         try:
             from sqlalchemy import select
 

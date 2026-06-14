@@ -235,7 +235,7 @@ class OrderMonitor:
         # 최대 시도 횟수 초과
         logger.warning(f"주문 체결 확인 타임아웃: order_id={order.id}, uuid={uuid}")
 
-    async def sync_pending_orders(self) -> int:
+    async def sync_pending_orders(self) -> tuple[int, list[Order]]:
         """
         PENDING 상태의 주문을 Upbit와 동기화
 
@@ -244,7 +244,8 @@ class OrderMonitor:
         `_reconcile_stale_orders`에서 FAILED로 폐기합니다.
 
         Returns:
-            int: 동기화 + 폐기된 주문 수
+            tuple[int, list[Order]]: (동기화+폐기 주문 수, 이번에 체결 전환된 주문 목록)
+                체결 전환 주문은 호출자가 포지션/통계에 반영한다.
         """
         # upbit_uuid 없는 좀비 PENDING 주문 먼저 정리 (Upbit 조회 불가)
         reconciled_count = await self._reconcile_stale_orders()
@@ -259,11 +260,12 @@ class OrderMonitor:
         pending_orders = list(result.scalars().all())
 
         if not pending_orders:
-            return reconciled_count
+            return reconciled_count, []
 
         logger.info(f"PENDING 주문 동기화 시작: {len(pending_orders)}건")
 
         synced_count = 0
+        executed_orders: list[Order] = []
         for order in pending_orders:
             try:
                 upbit_order = await self._private_api.get_order(order.upbit_uuid)
@@ -297,6 +299,7 @@ class OrderMonitor:
                         f"executed_price={executed_price}, "
                         f"executed_amount={executed_volume}"
                     )
+                    executed_orders.append(order)
                     synced_count += 1
 
                 elif upbit_order.state == "cancel":
@@ -319,6 +322,7 @@ class OrderMonitor:
                             f"executed_price={executed_price}, "
                             f"executed_amount={executed_volume}"
                         )
+                        executed_orders.append(order)
                     else:
                         order.mark_cancelled()
                         logger.info(f"PENDING 주문 취소 확인: order_id={order.id}")
@@ -336,7 +340,7 @@ class OrderMonitor:
             await self._session.commit()
             logger.info(f"PENDING 주문 동기화 완료: {synced_count}건")
 
-        return synced_count + reconciled_count
+        return synced_count + reconciled_count, executed_orders
 
     async def _reconcile_stale_orders(self) -> int:
         """

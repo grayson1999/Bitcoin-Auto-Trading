@@ -35,7 +35,7 @@ from src.entities import (
     Position,
     TradingSignal,
 )
-from src.modules.auth import CurrentUser
+from src.modules.auth import AdminUser
 from src.modules.dashboard.schemas import DashboardSummaryResponse
 from src.modules.risk.service import get_risk_service
 from src.modules.signal import TradingSignalResponse
@@ -55,7 +55,7 @@ router = APIRouter(prefix="/dashboard")
 )
 async def get_dashboard_summary(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: CurrentUser,
+    current_user: AdminUser,
 ) -> DashboardSummaryResponse:
     """
     대시보드 요약 정보 조회
@@ -80,14 +80,16 @@ async def get_dashboard_summary(
         ticker = await public_api.get_ticker()
         current_price = ticker.trade_price
 
-        # 24시간 변동률 계산
+        # 24시간 변동률: Upbit의 부호 있는 등락률(전일 종가 대비) 사용
         change_24h_pct = None
-        if ticker.low_price > 0:
-            mid_price = (ticker.high_price + ticker.low_price) / 2
-            if mid_price > 0:
-                change_24h_pct = float(
-                    (ticker.trade_price - mid_price) / mid_price * 100
-                )
+        if ticker.signed_change_rate is not None:
+            change_24h_pct = float(ticker.signed_change_rate * 100)
+        elif ticker.prev_closing_price and ticker.prev_closing_price > 0:
+            change_24h_pct = float(
+                (ticker.trade_price - ticker.prev_closing_price)
+                / ticker.prev_closing_price
+                * 100
+            )
     except UpbitPublicAPIError as e:
         logger.error(f"시세 조회 실패: {e.message}")
         raise HTTPException(

@@ -8,10 +8,13 @@ import {
   Shield,
   LogOut,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { cn } from '@core/utils'
 import { useAuth } from '@stores/auth.store'
 import { Button } from '@core/components/ui/button'
 import { useTradingConfig } from '@/core/contexts/TradingConfigContext'
+import { fetchDashboardSummary } from '@/api/dashboard.api'
+import { formatRelativeTime } from '@/core/utils/formatters'
 
 interface NavItem {
   to: string
@@ -38,6 +41,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, isAdmin, logout } = useAuth()
   const { currency } = useTradingConfig()
   const navigate = useNavigate()
+
+  // 봇 생존/갱신/연결 상태 인디케이터용 (대시보드는 admin 전용이므로 admin만 폴링)
+  const {
+    data: dashboard,
+    isError: isStatusError,
+    isFetching: isStatusFetching,
+  } = useQuery({
+    queryKey: ['dashboardSummary'],
+    queryFn: fetchDashboardSummary,
+    refetchInterval: 5000,
+    enabled: isAdmin,
+  })
 
   const handleLogout = async () => {
     await logout()
@@ -95,6 +110,39 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </NavLink>
             ))}
           </nav>
+
+          {/* Bot status indicator (admin only) */}
+          {isAdmin && (
+            <div className="px-4 pt-3">
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/5 border border-white/5 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      'w-2 h-2 rounded-full',
+                      isStatusError
+                        ? 'bg-rose-500 animate-pulse'
+                        : dashboard?.is_trading_active
+                          ? 'bg-emerald-400'
+                          : 'bg-zinc-500',
+                      isStatusFetching && !isStatusError && 'animate-pulse'
+                    )}
+                  />
+                  <span className="text-muted-foreground">
+                    {isStatusError
+                      ? '연결 끊김'
+                      : dashboard?.is_trading_active
+                        ? '봇 가동중'
+                        : '봇 대기중'}
+                  </span>
+                </div>
+                {dashboard?.updated_at && !isStatusError && (
+                  <span className="text-muted-foreground/70 font-mono">
+                    {formatRelativeTime(dashboard.updated_at)}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* User section */}
           <div className="p-4 border-t border-white/5">

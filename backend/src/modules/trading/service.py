@@ -148,6 +148,35 @@ class TradingService:
             f"type={signal.signal_type}, confidence={signal.confidence}"
         )
 
+        # 멱등성: 동일 signal에 이미 체결/대기 주문이 있으면 중복 실행 방지
+        # (메인 경로와 복구 잡이 같은 신호를 동시 실행하는 것을 차단)
+        if signal.id is not None and signal.signal_type != SignalType.HOLD.value:
+            existing = (
+                await self._session.execute(
+                    select(Order)
+                    .where(
+                        Order.signal_id == signal.id,
+                        Order.status.in_(
+                            [
+                                OrderStatus.EXECUTED.value,
+                                OrderStatus.PENDING.value,
+                            ]
+                        ),
+                    )
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if existing is not None:
+                logger.info(
+                    f"signal_id={signal.id}에 이미 주문 존재 "
+                    f"(order_id={existing.id}, status={existing.status}) → 중복 실행 스킵"
+                )
+                return OrderResult(
+                    success=True,
+                    order=existing,
+                    message="이미 처리된 신호 - 중복 실행 스킵",
+                )
+
         # 1. 신호 검증 (리스크 체크 포함)
         validation_result, balance_info = await self._validator.validate_signal(signal)
 
@@ -796,13 +825,23 @@ class TradingService:
         """
         PENDING 상태의 주문을 Upbit와 동기화
 
+        sync 경로로 체결 전환된 주문은 메인 경로에서 처리되지 못한 것이므로,
+        여기서 포지션·실현손익(DailyStats)에 반영한다(누락 방지).
+
         Returns:
             int: 동기화된 주문 수
         """
-        synced_count = await self._monitor.sync_pending_orders()
+        synced_count, executed_orders = await self._monitor.sync_pending_orders()
 
-        # 포지션 및 일일 통계 업데이트 (동기화된 주문 처리)
-        # sync_pending_orders에서 이미 commit 했으므로 여기서는 별도 처리 없음
+        # 체결 전환된 주문에 대해 포지션 및 일일 통계 갱신
+        if executed_orders:
+            for order in executed_orders:
+                await self._update_position_after_order(order)
+                await self._update_daily_stats(order)
+            await self._session.commit()
+            logger.info(
+                f"sync 체결 주문 {len(executed_orders)}건 포지션·통계 반영 완료"
+            )
 
         return synced_count
 

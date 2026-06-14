@@ -22,7 +22,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.config.constants import RISK_WARNING_THRESHOLD_RATIO
+from src.config.constants import (
+    DATA_COLLECTION_INTERVAL_SECONDS,
+    RISK_WARNING_THRESHOLD_RATIO,
+)
 from src.entities import (
     DailyStats,
     MarketData,
@@ -375,16 +378,40 @@ class RiskService:
         stmt = select(
             func.min(MarketData.price).label("min_price"),
             func.max(MarketData.price).label("max_price"),
+            func.count(MarketData.id).label("row_count"),
+            func.max(MarketData.timestamp).label("latest_ts"),
         ).where(MarketData.timestamp >= window_start)
         result = await self._db.execute(stmt)
         row = result.one_or_none()
 
+        # 데이터 부재/정체 시 보수적으로 차단 (fail-safe).
+        # 수집기 장애가 급변과 겹치면 가장 위험한 순간에 보호가 꺼지는 것을 방지.
         if row is None or row.min_price is None or row.max_price is None:
             return (
-                RiskCheckResult.PASS,
+                RiskCheckResult.BLOCKED,
                 0.0,
-                f"최근 {window_minutes}분 데이터 부족",
+                f"변동성 데이터 부재 - 보수적 차단 (최근 {window_minutes}분)",
             )
+
+        # 기대 데이터 포인트의 50% 미만이면 데이터 부족으로 차단
+        expected_rows = (window_minutes * 60) / DATA_COLLECTION_INTERVAL_SECONDS
+        if row.row_count < expected_rows * 0.5:
+            return (
+                RiskCheckResult.BLOCKED,
+                0.0,
+                f"변동성 데이터 부족: {row.row_count}건 "
+                f"(기대 {expected_rows:.0f}건의 50% 미만) - 보수적 차단",
+            )
+
+        # 최신 데이터가 수집 간격의 6배보다 오래되면 정체로 간주, 차단
+        if row.latest_ts is not None:
+            staleness = (now - row.latest_ts).total_seconds()
+            if staleness > DATA_COLLECTION_INTERVAL_SECONDS * 6:
+                return (
+                    RiskCheckResult.BLOCKED,
+                    0.0,
+                    f"변동성 데이터 정체: 최신 {staleness:.0f}초 전 - 보수적 차단",
+                )
 
         min_price = Decimal(str(row.min_price))
         max_price = Decimal(str(row.max_price))
@@ -481,6 +508,12 @@ class RiskService:
                 title="✅ 거래 재개",
                 message="거래가 재개되었습니다.",
             )
+
+    async def get_daily_loss_limit_pct(self) -> float:
+        """일일 손실 한도(%) 조회 (DB 오버라이드 우선)."""
+        return await self._get_config_value(
+            "daily_loss_limit_pct", settings.daily_loss_limit_pct
+        )
 
     async def is_trading_enabled(self) -> bool:
         """거래 가능 여부 확인"""

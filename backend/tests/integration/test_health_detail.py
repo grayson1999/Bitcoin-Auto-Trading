@@ -38,9 +38,7 @@ class TestHealthService:
 
         # 외부 API 호출 모킹
         with (
-            patch(
-                "src.clients.upbit.get_upbit_public_api"
-            ) as mock_upbit,
+            patch("src.clients.upbit.get_upbit_public_api") as mock_upbit,
             patch("src.clients.ai.get_ai_client") as mock_ai,
             patch("src.scheduler.get_scheduler_status") as mock_scheduler,
         ):
@@ -86,9 +84,7 @@ class TestHealthService:
         service = HealthService(mock_session)
 
         with (
-            patch(
-                "src.clients.upbit.get_upbit_public_api"
-            ) as mock_upbit,
+            patch("src.clients.upbit.get_upbit_public_api") as mock_upbit,
             patch("src.clients.ai.get_ai_client") as mock_ai,
             patch("src.scheduler.get_scheduler_status") as mock_scheduler,
         ):

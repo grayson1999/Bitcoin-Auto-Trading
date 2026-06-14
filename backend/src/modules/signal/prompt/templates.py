@@ -107,6 +107,7 @@ Otherwise use these rules:
 - BUY: overall_bias == "BUY" AND buy_signals >= 4 AND at least 1 trend UP → score +0.55 to +0.75
 - SELL: overall_bias == "SELL" AND sell_signals >= 3 → score -0.3 to -0.7
 - SELL: trend_1h == "DOWN" AND holding position → score -0.3 to -0.5
+- SELL (loss-cut bias): holding position AND unrealized_pnl_pct is clearly negative AND sell_signals >= 2 → score -0.4 to -0.6. Do NOT hold a losing position when bearish signals are forming; cut early rather than waiting for the hard stop-loss.
 - Otherwise → HOLD, score -0.1 to +0.1
 
 ## Output Format (JSON only)

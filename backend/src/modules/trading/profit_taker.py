@@ -302,7 +302,9 @@ class ProfitTaker:
                     f"[ProfitTaker] Upbit {settings.trading_currency} 잔고 없음 → 매도 스킵"
                 )
                 return False
-            if sell_volume > actual_balance:
+            # DB 보유량이 Upbit 실잔고보다 큰지(유령 수량 가능성) 기록
+            was_clamped = sell_volume > actual_balance
+            if was_clamped:
                 logger.warning(
                     f"[ProfitTaker] 매도 수량 조정: {sell_volume} → {actual_balance} "
                     f"(Upbit 실제 잔고 기준)"
@@ -372,7 +374,18 @@ class ProfitTaker:
 
             # 4. 포지션 업데이트 (실제 체결 수량 기준 차감)
             filled = order.executed_amount or Decimal("0")
-            position.quantity = max(Decimal("0"), position.quantity - filled)
+            if was_clamped:
+                # DB 보유량이 Upbit 실잔고보다 컸음(유령 수량) → 매도 후 실잔고로 재동기화
+                post_balance = await self._private_api.get_balance(
+                    settings.trading_currency
+                )
+                position.quantity = max(Decimal("0"), post_balance)
+                logger.info(
+                    f"[ProfitTaker] 클램프 매도 후 Upbit 실잔고로 재동기화: "
+                    f"quantity={position.quantity}"
+                )
+            else:
+                position.quantity = max(Decimal("0"), position.quantity - filled)
             if position.quantity == 0:
                 # 전량 청산 시 초기화
                 position.avg_buy_price = Decimal("0")

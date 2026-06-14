@@ -101,6 +101,12 @@ function MobileOrderCard({ order }: { order: Order }) {
             {displayTotal != null && displayTotal > 0 ? formatCurrency(displayTotal) : '-'}
           </p>
         </div>
+        {order.status === 'FAILED' && order.error_message && (
+          <div className="col-span-2">
+            <p className="text-xs text-zinc-500 mb-0.5">실패 사유</p>
+            <p className="text-xs text-rose-400/90">{order.error_message}</p>
+          </div>
+        )}
       </div>
 
       {/* Footer: Time */}
@@ -146,6 +152,14 @@ function DesktopRow({ order }: { order: Order }) {
       </TableCell>
       <TableCell>
         <OrderStatusBadge status={order.status} />
+        {order.status === 'FAILED' && order.error_message && (
+          <div
+            className="text-[10px] text-rose-400/90 mt-0.5 max-w-[180px] truncate"
+            title={order.error_message}
+          >
+            {order.error_message}
+          </div>
+        )}
       </TableCell>
       <TableCell className="text-xs text-muted-foreground">
         {formatDateTime(order.created_at)}

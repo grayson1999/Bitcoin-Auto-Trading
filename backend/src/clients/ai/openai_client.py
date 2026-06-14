@@ -106,7 +106,11 @@ class OpenAIClient(BaseAIClient):
                     "messages": messages,
                     "max_completion_tokens": max_output_tokens,
                 }
-                if "nano" not in self.model:
+                if "nano" in self.model or "gpt-5" in self.model:
+                    # reasoning 모델: 숨은 추론 토큰이 비용 대부분을 차지하므로
+                    # 최소 추론으로 설정 (프롬프트가 이미 카테고리 라벨 제공)
+                    create_kwargs["reasoning_effort"] = "minimal"
+                else:
                     create_kwargs["temperature"] = temperature
 
                 response = await asyncio.wait_for(
