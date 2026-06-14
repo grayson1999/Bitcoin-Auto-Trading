@@ -342,7 +342,7 @@ export interface HealthDetail {
   components: {
     database: ComponentHealth
     upbit_api: ComponentHealth
-    gemini_api: ComponentHealth
+    ai_api: ComponentHealth
     scheduler: ComponentHealth
     recent_signal: ComponentHealth
     recent_order: ComponentHealth

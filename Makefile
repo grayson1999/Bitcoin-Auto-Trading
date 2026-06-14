@@ -1,4 +1,4 @@
-.PHONY: dev-db dev-db-down dev-db-logs dev-backend dev-frontend test test-backend test-frontend lint lint-fix db-migrate db-revision clean
+.PHONY: dev-db dev-db-down dev-db-logs dev-backend dev-frontend test test-backend test-frontend lint lint-fix db-migrate db-revision scan-secrets clean
 
 # PostgreSQL (Docker)
 dev-db:
@@ -44,6 +44,11 @@ db-migrate:
 
 db-revision:
 	cd backend && uv run alembic revision --autogenerate -m "$(msg)"
+
+# Secret scanning (gitleaks 설치 필요: https://github.com/gitleaks/gitleaks)
+scan-secrets:
+	@command -v gitleaks >/dev/null 2>&1 || { echo "gitleaks 미설치 - 'brew install gitleaks' 또는 릴리스 바이너리 설치 필요"; exit 1; }
+	gitleaks detect --config .gitleaks.toml --no-banner --redact
 
 # Clean
 clean:

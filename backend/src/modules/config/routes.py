@@ -184,19 +184,28 @@ async def batch_update_configs(
     """
     updated: list[str] = []
     failed: list[str] = []
+    errors: dict[str, str] = {}
 
     for key, value in request.configs.items():
         if key not in DB_OVERRIDABLE_KEYS:
             failed.append(key)
+            errors[key] = "DB 저장이 허용되지 않는 키"
             continue
 
-        success = await service.set(key, value)
+        try:
+            success = await service.set(key, value)
+        except ValueError as e:
+            failed.append(key)
+            errors[key] = str(e)
+            continue
+
         if success:
             updated.append(key)
         else:
             failed.append(key)
+            errors[key] = "저장 실패"
 
-    return ConfigBatchUpdateResponse(updated=updated, failed=failed)
+    return ConfigBatchUpdateResponse(updated=updated, failed=failed, errors=errors)
 
 
 @router.delete("/{key}", status_code=status.HTTP_204_NO_CONTENT)

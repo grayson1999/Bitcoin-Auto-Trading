@@ -259,11 +259,17 @@ class RiskService:
     # 일일 손실 한도 체크
     # =========================================================================
 
-    async def check_daily_loss_limit(self) -> tuple[RiskCheckResult, str]:
+    async def check_daily_loss_limit(
+        self, current_equity: Decimal | None = None
+    ) -> tuple[RiskCheckResult, str]:
         """
         일일 손실 한도 체크
 
-        오늘의 실현 손실이 일일 손실 한도를 초과하는지 확인합니다.
+        current_equity가 주어지면 평가액 기준(실현+미실현)으로 손실률을 계산하고,
+        없으면 실현 손익만으로 계산한다(하위호환 폴백).
+
+        Args:
+            current_equity: 현재 총 평가자산(KRW). 평가손익 포함 판단용.
 
         Returns:
             tuple[RiskCheckResult, str]: (결과, 메시지)
@@ -292,8 +298,19 @@ class RiskService:
                 f"거래 중단 상태: {daily_stats.halt_reason}",
             )
 
-        # 일일 손실률 계산
-        loss_pct = daily_stats.loss_pct
+        # 일일 손실률 계산: 평가액(실현+미실현) 기준 우선, 없으면 실현 전용 폴백
+        if (
+            current_equity is not None
+            and daily_stats.starting_balance
+            and daily_stats.starting_balance > 0
+        ):
+            loss_pct = float(
+                (current_equity - daily_stats.starting_balance)
+                / daily_stats.starting_balance
+                * 100
+            )
+        else:
+            loss_pct = daily_stats.loss_pct
 
         if loss_pct < -daily_loss_limit_pct:
             message = f"일일 손실 한도 도달: {loss_pct:.2f}% < -{daily_loss_limit_pct}%"

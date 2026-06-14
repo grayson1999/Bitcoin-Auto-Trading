@@ -83,9 +83,17 @@ export function RiskStatusCard({ riskStatus, isLoading, className }: RiskStatusC
   }
 
   const isActive = riskStatus.trading_enabled && !riskStatus.is_halted
-  const dailyLossRatio = (riskStatus.daily_loss_pct / riskStatus.daily_loss_limit_pct) * 100
-  const isWarning = dailyLossRatio >= 70
-  const isCritical = dailyLossRatio >= 90
+  // daily_loss_pct는 부호가 있는 일일 손익률(수익 +, 손실 -).
+  // 손실 진행률은 손실일 때(음수)만 한도 대비로 계산한다.
+  const isProfit = riskStatus.daily_loss_pct > 0
+  const dailyLossMagnitude =
+    riskStatus.daily_loss_pct < 0 ? Math.abs(riskStatus.daily_loss_pct) : 0
+  const dailyLossRatio =
+    riskStatus.daily_loss_limit_pct > 0
+      ? (dailyLossMagnitude / riskStatus.daily_loss_limit_pct) * 100
+      : 0
+  const isWarning = !isProfit && dailyLossRatio >= 70
+  const isCritical = !isProfit && dailyLossRatio >= 90
 
   return (
     <CommonCard title="리스크 상태" className={className}>
@@ -160,15 +168,17 @@ export function RiskStatusCard({ riskStatus, isLoading, className }: RiskStatusC
         {/* Daily Loss Progress */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-zinc-400">일일 손실</span>
+            <span className="text-zinc-400">{isProfit ? '일일 손익' : '일일 손실'}</span>
             <span
               className={cn('font-mono-num', {
-                'text-emerald-400': !isWarning,
-                'text-yellow-400': isWarning && !isCritical,
-                'text-rose-400': isCritical,
+                'text-emerald-400': isProfit || !isWarning,
+                'text-yellow-400': !isProfit && isWarning && !isCritical,
+                'text-rose-400': !isProfit && isCritical,
               })}
             >
-              {formatPercent(riskStatus.daily_loss_pct)} / {formatPercent(riskStatus.daily_loss_limit_pct)}
+              {isProfit
+                ? formatPercent(riskStatus.daily_loss_pct, { showSign: true })
+                : `${formatPercent(dailyLossMagnitude)} / ${formatPercent(riskStatus.daily_loss_limit_pct)}`}
             </span>
           </div>
           <Progress

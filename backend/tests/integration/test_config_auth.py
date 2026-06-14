@@ -74,6 +74,27 @@ def test_patch_config_admin_allowed(mock_admin_auth: None, client: TestClient) -
         app.dependency_overrides.pop(get_config_service, None)
 
 
+def test_patch_config_out_of_range_returns_400(
+    mock_admin_auth: None, client: TestClient
+) -> None:
+    """admin이라도 범위 초과 값(H6)은 400 (검증 → ValueError → 400 매핑)."""
+
+    service = AsyncMock()
+    service.set_and_get = AsyncMock(
+        side_effect=ValueError("'stop_loss_pct'는 10.0 이하여야 합니다 (입력: 999)")
+    )
+
+    async def _override() -> AsyncMock:
+        return service
+
+    app.dependency_overrides[get_config_service] = _override
+    try:
+        response = client.patch("/api/v1/config/stop_loss_pct", json={"value": "999"})
+        assert response.status_code == 400
+    finally:
+        app.dependency_overrides.pop(get_config_service, None)
+
+
 # === DELETE /config/{key}: admin 필요 ===
 
 

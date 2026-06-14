@@ -128,35 +128,7 @@ class OrderValidator:
                 None,
             )
 
-        # 2. 일일 손실 한도 체크 (매도 신호는 우회)
-        if not is_sell_signal:
-            daily_result, daily_msg = await self._risk_service.check_daily_loss_limit()
-            if daily_result == RiskCheckResult.BLOCKED:
-                logger.warning(f"일일 손실 한도 도달: {daily_msg}")
-                return (
-                    ValidationResult(
-                        is_valid=False,
-                        blocked_reason=OrderBlockedReason.DAILY_LIMIT_REACHED,
-                        message=daily_msg,
-                    ),
-                    None,
-                )
-
-        # 3. 변동성 체크 (매도 신호는 우회)
-        if not is_sell_signal:
-            vol_result, _vol_pct, vol_msg = await self._risk_service.check_volatility()
-            if vol_result == RiskCheckResult.BLOCKED:
-                logger.warning(f"고변동성 감지: {vol_msg}")
-                return (
-                    ValidationResult(
-                        is_valid=False,
-                        blocked_reason=OrderBlockedReason.HIGH_VOLATILITY,
-                        message=vol_msg,
-                    ),
-                    None,
-                )
-
-        # 4. 잔고 조회
+        # 2. 잔고 조회 (일일 손실 한도 평가액 계산에 필요하므로 먼저 수행)
         try:
             balance_info = await self._get_balance_info()
         except (UpbitPrivateAPIError, UpbitPublicAPIError) as e:
@@ -168,6 +140,36 @@ class OrderValidator:
                 ),
                 None,
             )
+
+        # 3. 일일 손실 한도 체크 (평가액 기준, 매도 신호는 우회)
+        if not is_sell_signal:
+            daily_result, daily_msg = await self._risk_service.check_daily_loss_limit(
+                current_equity=balance_info.total_krw
+            )
+            if daily_result == RiskCheckResult.BLOCKED:
+                logger.warning(f"일일 손실 한도 도달: {daily_msg}")
+                return (
+                    ValidationResult(
+                        is_valid=False,
+                        blocked_reason=OrderBlockedReason.DAILY_LIMIT_REACHED,
+                        message=daily_msg,
+                    ),
+                    balance_info,
+                )
+
+        # 4. 변동성 체크 (매도 신호는 우회)
+        if not is_sell_signal:
+            vol_result, _vol_pct, vol_msg = await self._risk_service.check_volatility()
+            if vol_result == RiskCheckResult.BLOCKED:
+                logger.warning(f"고변동성 감지: {vol_msg}")
+                return (
+                    ValidationResult(
+                        is_valid=False,
+                        blocked_reason=OrderBlockedReason.HIGH_VOLATILITY,
+                        message=vol_msg,
+                    ),
+                    balance_info,
+                )
 
         return (
             ValidationResult(is_valid=True, message="검증 통과"),
@@ -242,7 +244,32 @@ class OrderValidator:
                 blocked_reason=OrderBlockedReason.INSUFFICIENT_BALANCE,
                 message=f"가용 잔고 부족: {balance_info.krw_available:,.0f}원",
             )
-        # 포지션 크기 검증
+
+        # 누적 노출 한도 검증: 기존 코인 평가액 + 이번 주문이 max_pct를 넘지 않아야 함
+        # (단일 주문 한도만 보는 check_position_size로는 반복 매수 누적을 못 막음)
+        # coin_value = total_krw - krw_available - krw_locked (대수적 도출, 추가 API 불필요)
+        coin_value = (
+            balance_info.total_krw
+            - balance_info.krw_available
+            - balance_info.krw_locked
+        )
+        if balance_info.total_krw > 0:
+            projected_pct = (
+                (coin_value + order_amount) / balance_info.total_krw * Decimal("100")
+            )
+            if projected_pct > max_pct:
+                message = (
+                    f"누적 포지션 한도 초과: 기존 {coin_value:,.0f}원 + "
+                    f"주문 {order_amount:,.0f}원 = {projected_pct:.1f}% > 최대 {max_pct}%"
+                )
+                logger.warning(message)
+                return ValidationResult(
+                    is_valid=False,
+                    blocked_reason=OrderBlockedReason.POSITION_SIZE_EXCEEDED,
+                    message=message,
+                )
+
+        # 포지션 크기 검증 (단일 주문 한도, 방어 심화)
         pos_result = await self._risk_service.check_position_size(
             order_amount, balance_info.total_krw
         )

@@ -17,6 +17,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import DB_OVERRIDABLE_KEYS, Settings, settings
+from src.config.validators import validate_config_value
 from src.repositories.config_repository import ConfigRepository, get_config_cache
 
 
@@ -100,6 +101,9 @@ class ConfigService:
         if key not in DB_OVERRIDABLE_KEYS:
             logger.warning(f"설정 '{key}'는 DB 저장이 허용되지 않습니다")
             return False
+
+        # 타입·범위 검증 (실패 시 ValueError 전파 → 호출자가 사유 처리)
+        value = validate_config_value(key, value)
 
         await self.repo.set_value(key, value)
         logger.info(f"설정 '{key}' DB에 저장: {value}")
@@ -242,6 +246,9 @@ class ConfigService:
         """
         if key not in DB_OVERRIDABLE_KEYS:
             raise ValueError(f"'{key}'는 DB 저장이 허용되지 않습니다")
+
+        # 타입·범위 검증 (실패 시 ValueError → routes에서 400 매핑)
+        value = validate_config_value(key, value)
 
         config = await self.repo.set_value(key, value)
         logger.info(f"설정 '{key}' DB에 저장: {value}")

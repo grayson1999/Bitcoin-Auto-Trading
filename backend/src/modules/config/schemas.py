@@ -51,6 +51,7 @@ class ConfigBatchUpdateResponse(BaseModel):
 
     updated: list[str] = Field(..., description="수정된 키 목록")
     failed: list[str] = Field(..., description="실패한 키 목록")
+    errors: dict[str, str] = Field(default_factory=dict, description="실패 키별 사유")
 
 
 class TradingStatusResponse(BaseModel):

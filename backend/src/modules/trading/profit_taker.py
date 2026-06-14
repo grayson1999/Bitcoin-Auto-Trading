@@ -23,7 +23,7 @@ from src.clients.upbit import (
     UpbitPublicAPIError,
 )
 from src.config import settings
-from src.config.constants import UPBIT_FEE_RATE, UPBIT_MIN_ORDER_KRW
+from src.config.constants import UPBIT_MIN_ORDER_KRW
 from src.entities import (
     DailyStats,
     Order,
@@ -35,10 +35,8 @@ from src.entities import (
     TradingSignal,
 )
 from src.modules.risk.event_manager import RiskEventManager
+from src.modules.trading.monitor import OrderMonitor
 from src.utils import UTC
-
-# Decimal 변환 상수 (order_monitor.py 패턴 동일)
-_UPBIT_FEE_RATE = Decimal(str(UPBIT_FEE_RATE))
 
 if TYPE_CHECKING:
     pass
@@ -58,6 +56,7 @@ class ProfitTaker:
         public_api: UpbitPublicAPI,
         user_id: int,
         event_manager: RiskEventManager | None = None,
+        order_monitor: OrderMonitor | None = None,
     ) -> None:
         self._session = session
         self._private_api = private_api
@@ -65,6 +64,8 @@ class ProfitTaker:
         self._user_id = user_id
         # 하드 손절 발동 시 RiskEvent 기록 및 Telegram 알림에 사용
         self._event_manager = event_manager or RiskEventManager(session)
+        # 실제 체결가/체결수량 확인용 (TradingService와 동일 경로)
+        self._monitor = order_monitor or OrderMonitor(session, private_api)
 
     async def check_and_execute(self) -> None:
         """메인 진입점: 포지션 체크 후 익절/트레일링 스탑 실행"""
@@ -353,15 +354,25 @@ class ProfitTaker:
                 identifier=order.idempotency_key,
             )
 
+            # 실제 체결가/체결수량 확인 (ticker 대신 실제 Upbit 체결 정보 사용)
             order.upbit_uuid = upbit_response.uuid
-            order.mark_executed(
-                executed_price=current_price,
-                executed_amount=sell_volume,
-                fee=sell_volume * current_price * _UPBIT_FEE_RATE,
-            )
+            order.status = OrderStatus.PENDING.value
+            await self._monitor.update_order_status(order, upbit_response)
+            if not order.is_executed and upbit_response.uuid:
+                await self._monitor.poll_order_completion(order, upbit_response.uuid)
 
-            # 4. 포지션 업데이트
-            position.quantity = max(Decimal("0"), position.quantity - sell_volume)
+            # 체결 미확인(타임아웃) 시 포지션 미조정 - sync_pending_orders가 추후 reconcile
+            if not order.is_executed:
+                logger.warning(
+                    f"[ProfitTaker] 매도 체결 미확인(타임아웃) → 포지션 미조정, "
+                    f"sync 대기: order_id={order.id}, uuid={order.upbit_uuid}"
+                )
+                await self._session.commit()
+                return False
+
+            # 4. 포지션 업데이트 (실제 체결 수량 기준 차감)
+            filled = order.executed_amount or Decimal("0")
+            position.quantity = max(Decimal("0"), position.quantity - filled)
             if position.quantity == 0:
                 # 전량 청산 시 초기화
                 position.avg_buy_price = Decimal("0")

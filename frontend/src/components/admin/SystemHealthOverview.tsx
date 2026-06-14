@@ -57,7 +57,7 @@ function getOverallStatusBadge(status: HealthDetail['status']) {
 const componentConfig = [
   { key: 'database', label: '데이터베이스', icon: Database },
   { key: 'upbit_api', label: 'Upbit API', icon: Cloud },
-  { key: 'gemini_api', label: 'Gemini AI', icon: Brain },
+  { key: 'ai_api', label: 'AI (GPT-5 Nano)', icon: Brain },
   { key: 'scheduler', label: '스케줄러', icon: Clock },
   { key: 'recent_signal', label: '최근 신호', icon: Zap },
   { key: 'recent_order', label: '최근 주문', icon: ShoppingCart },
@@ -86,6 +86,7 @@ export function SystemHealthOverview({ health }: SystemHealthOverviewProps) {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {componentConfig.map(({ key, label, icon: Icon }) => {
             const component = health.components[key as keyof typeof health.components]
+            if (!component) return null
             const isHealthy = component.status === 'healthy'
 
             return (

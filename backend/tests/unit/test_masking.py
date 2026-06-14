@@ -12,7 +12,6 @@ mask_sensitive_data 함수가 다양한 민감 정보를 올바르게 마스킹�
 - 비민감 정보 보존
 """
 
-import pytest
 
 from src.config.logging import mask_sensitive_data
 
@@ -38,9 +37,10 @@ class TestMaskSensitiveData:
 
     def test_mask_telegram_bot_token(self) -> None:
         """Telegram Bot 토큰 마스킹"""
-        message = "telegram_bot_token='8649707402:AAFswSjwstEJkpKt1FATa9yADHB6rcJD0_s'"
+        dummy_token = "0000000000:TEST_DUMMY_TOKEN_AAA0000000000000000000"
+        message = f"telegram_bot_token='{dummy_token}'"
         result = mask_sensitive_data(message)
-        assert "8649707402:AAFswSjwstEJkpKt1FATa9yADHB6rcJD0_s" not in result
+        assert dummy_token not in result
         assert "***" in result
 
     def test_mask_openai_api_key(self) -> None:

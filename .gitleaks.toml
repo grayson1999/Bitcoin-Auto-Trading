@@ -1,0 +1,15 @@
+title = "Bitcoin-Auto-Trading gitleaks config"
+
+[extend]
+useDefault = true
+
+# 의도적으로 사용하는 테스트용 더미 토큰은 허용 (실제 시크릿 아님)
+[[allowlist]]
+description = "test dummy tokens in masking tests"
+regexes = [
+  '''0000000000:TEST_DUMMY_TOKEN''',
+  '''1234567890:ABCdefGHIjklMNOpqrsTUVwxyz''',
+]
+paths = [
+  '''backend/tests/unit/test_masking.py''',
+]
