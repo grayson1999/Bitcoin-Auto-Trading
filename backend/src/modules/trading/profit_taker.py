@@ -31,8 +31,10 @@ from src.entities import (
     OrderStatus,
     OrderType,
     Position,
+    RiskEventType,
     TradingSignal,
 )
+from src.modules.risk.event_manager import RiskEventManager
 from src.utils import UTC
 
 # Decimal 변환 상수 (order_monitor.py 패턴 동일)
@@ -55,11 +57,14 @@ class ProfitTaker:
         private_api: UpbitPrivateAPI,
         public_api: UpbitPublicAPI,
         user_id: int,
+        event_manager: RiskEventManager | None = None,
     ) -> None:
         self._session = session
         self._private_api = private_api
         self._public_api = public_api
         self._user_id = user_id
+        # 하드 손절 발동 시 RiskEvent 기록 및 Telegram 알림에 사용
+        self._event_manager = event_manager or RiskEventManager(session)
 
     async def check_and_execute(self) -> None:
         """메인 진입점: 포지션 체크 후 익절/트레일링 스탑 실행"""
@@ -98,6 +103,33 @@ class ProfitTaker:
         pnl_pct = float(
             (current_price - position.avg_buy_price) / position.avg_buy_price * 100
         )
+
+        # === 하드 손절 (룰 기반, AI 신호와 무관하게 강제 청산) ===
+        # 익절 티어/트레일링보다 우선 평가하여 손실을 상한선에서 차단한다.
+        # RiskService와 동일한 stop_loss_pct 설정 키를 사용해 UI/설정과 일치.
+        stop_loss_pct = await self._event_manager.get_config_value(
+            "stop_loss_pct", settings.stop_loss_pct
+        )
+        if pnl_pct <= -float(stop_loss_pct):
+            logger.warning(
+                f"[ProfitTaker] 하드 손절 발동: "
+                f"PnL={pnl_pct:+.2f}% <= -{stop_loss_pct}%"
+            )
+            success = await self._execute_partial_sell(
+                position,
+                position.quantity,
+                current_price,
+                reason="hard-stoploss",
+            )
+            if success:
+                await self._event_manager.create_risk_event(
+                    event_type=RiskEventType.STOP_LOSS,
+                    trigger_value=Decimal(str(abs(pnl_pct))),
+                    action_taken=f"하드 손절 전량 매도 (PnL {pnl_pct:+.2f}%)",
+                    user_id=self._user_id,
+                )
+            await self._session.commit()
+            return
 
         # original_quantity 초기화 (최초 진입 시)
         if position.original_quantity is None or position.original_quantity <= 0:
@@ -312,12 +344,13 @@ class ProfitTaker:
             self._session.add(order)
             await self._session.flush()
 
-            # 3. Upbit 시장가 매도
+            # 3. Upbit 시장가 매도 (identifier로 거래소 측 중복 방지)
             upbit_response = await self._private_api.place_order(
                 market=settings.trading_ticker,
                 side="ask",
                 volume=sell_volume,
                 ord_type="market",
+                identifier=order.idempotency_key,
             )
 
             order.upbit_uuid = upbit_response.uuid

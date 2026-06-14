@@ -152,6 +152,11 @@ class UpbitPrivateAPI:
 
         last_error: Exception | None = None
 
+        # 주문 생성(POST /orders)은 전송 후 응답 유실 시 재시도하면 이중 발주가
+        # 발생하므로 타임아웃/네트워크 오류를 재시도하지 않고 즉시 실패시킨다.
+        # 상위 계층(service)이 identifier로 실제 접수 여부를 조회해 복구한다.
+        is_order_post = method == "POST" and endpoint == "/orders"
+
         for attempt in range(DEFAULT_MAX_RETRIES):
             try:
                 response = await client.request(
@@ -182,6 +187,10 @@ class UpbitPrivateAPI:
 
             except httpx.TimeoutException as e:
                 last_error = e
+                if is_order_post:
+                    raise UpbitPrivateAPIError(
+                        "주문 POST 타임아웃 - 중복 방지를 위해 재시도하지 않음"
+                    ) from e
                 logger.warning(
                     f"Request timeout (attempt {attempt + 1}/{DEFAULT_MAX_RETRIES})"
                 )
@@ -189,6 +198,10 @@ class UpbitPrivateAPI:
 
             except httpx.RequestError as e:
                 last_error = e
+                if is_order_post:
+                    raise UpbitPrivateAPIError(
+                        "주문 POST 네트워크 오류 - 중복 방지를 위해 재시도하지 않음"
+                    ) from e
                 logger.warning(
                     f"Request error (attempt {attempt + 1}/{DEFAULT_MAX_RETRIES}): {e}"
                 )
@@ -241,6 +254,7 @@ class UpbitPrivateAPI:
         volume: Decimal | None = None,
         price: Decimal | None = None,
         ord_type: str = "limit",
+        identifier: str | None = None,
     ) -> UpbitOrderResponse:
         """
         Place an order.
@@ -251,6 +265,8 @@ class UpbitPrivateAPI:
             volume: Order volume (required for limit/market sell)
             price: Order price (required for limit/market buy)
             ord_type: Order type (limit, price, market)
+            identifier: 클라이언트 멱등성 키 (계정 내 영구 유일).
+                전달 시 Upbit이 중복 주문을 거부하여 이중 발주를 방지한다.
 
         Returns:
             UpbitOrderResponse: Order response
@@ -273,6 +289,8 @@ class UpbitPrivateAPI:
                 params["price"] = str(int(price))
             else:
                 params["price"] = str(price)
+        if identifier is not None:
+            params["identifier"] = identifier
 
         logger.info(f"Order request: {params}")
 
@@ -314,6 +332,41 @@ class UpbitPrivateAPI:
             f"executed_volume={response.get('executed_volume')}, "
             f"executed_funds={response.get('executed_funds')}"
         )
+
+        return parse_order_response(response)
+
+    async def get_order_by_identifier(
+        self, identifier: str
+    ) -> UpbitOrderResponse | None:
+        """
+        클라이언트 identifier로 주문 조회 (멱등성 복구용).
+
+        POST /orders가 타임아웃으로 응답을 유실했을 때, 주문이 실제로
+        접수되었는지 identifier로 확인하기 위해 사용한다.
+
+        Args:
+            identifier: 주문 생성 시 전달한 클라이언트 멱등성 키
+
+        Returns:
+            UpbitOrderResponse | None: 주문이 존재하면 응답, 없으면(404) None
+
+        Raises:
+            UpbitPrivateAPIError: 404 이외의 조회 실패 시
+        """
+        try:
+            response = await self._request(
+                method="GET",
+                endpoint="/order",
+                params={"identifier": identifier},
+            )
+        except UpbitPrivateAPIError as e:
+            # 주문 미접수: Upbit은 존재하지 않는 주문 조회 시 404를 반환
+            if e.status_code == 404:
+                return None
+            raise
+
+        if not isinstance(response, dict):
+            return None
 
         return parse_order_response(response)
 

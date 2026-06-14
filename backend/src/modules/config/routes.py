@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import DB_OVERRIDABLE_KEYS
+from src.modules.auth import AdminUser, CurrentUser
 from src.modules.config.schemas import (
     ConfigBatchUpdateRequest,
     ConfigBatchUpdateResponse,
@@ -33,6 +34,7 @@ async def get_config_service(
 
 @router.get("", response_model=ConfigListResponse)
 async def get_all_configs(
+    _: CurrentUser,
     service: ConfigService = Depends(get_config_service),
 ) -> ConfigListResponse:
     """
@@ -46,7 +48,7 @@ async def get_all_configs(
 
 
 @router.get("/keys", response_model=OverridableKeysResponse)
-async def get_overridable_keys() -> OverridableKeysResponse:
+async def get_overridable_keys(_: CurrentUser) -> OverridableKeysResponse:
     """
     DB 오버라이드 가능한 키 목록 조회
 
@@ -57,6 +59,7 @@ async def get_overridable_keys() -> OverridableKeysResponse:
 
 @router.get("/db", response_model=ConfigListResponse)
 async def get_db_configs(
+    _: CurrentUser,
     service: ConfigService = Depends(get_config_service),
 ) -> ConfigListResponse:
     """
@@ -70,6 +73,7 @@ async def get_db_configs(
 
 @router.get("/trading-status", response_model=TradingStatusResponse)
 async def get_trading_status(
+    _: CurrentUser,
     service: ConfigService = Depends(get_config_service),
 ) -> TradingStatusResponse:
     """
@@ -87,6 +91,7 @@ async def get_trading_status(
 
 @router.get("/risk-params", response_model=RiskParamsResponse)
 async def get_risk_params(
+    _: CurrentUser,
     service: ConfigService = Depends(get_config_service),
 ) -> RiskParamsResponse:
     """
@@ -106,6 +111,7 @@ async def get_risk_params(
 @router.get("/{key}", response_model=ConfigItemResponse)
 async def get_config(
     key: str,
+    _: CurrentUser,
     service: ConfigService = Depends(get_config_service),
 ) -> ConfigItemResponse:
     """
@@ -133,6 +139,7 @@ async def get_config(
 async def update_config(
     key: str,
     request: ConfigUpdateRequest,
+    _: AdminUser,
     service: ConfigService = Depends(get_config_service),
 ) -> ConfigItemResponse:
     """
@@ -166,6 +173,7 @@ async def update_config(
 @router.patch("", response_model=ConfigBatchUpdateResponse)
 async def batch_update_configs(
     request: ConfigBatchUpdateRequest,
+    _: AdminUser,
     service: ConfigService = Depends(get_config_service),
 ) -> ConfigBatchUpdateResponse:
     """
@@ -194,6 +202,7 @@ async def batch_update_configs(
 @router.delete("/{key}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_config(
     key: str,
+    _: AdminUser,
     service: ConfigService = Depends(get_config_service),
 ) -> None:
     """

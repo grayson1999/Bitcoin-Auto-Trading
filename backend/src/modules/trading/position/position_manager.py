@@ -91,15 +91,17 @@ class PositionManager:
         if order.is_buy:
             # 매수: 수량 증가, 평균 매수가 재계산
             if order.executed_amount and order.executed_price:
-                # 시장가 매수의 경우 executed_amount는 KRW, 실제 코인 수량 계산 필요
+                # executed_amount는 항상 체결된 코인 수량(BTC)이다
+                # (order_monitor가 Upbit executed_volume을 저장).
+                # KRW 원가 = 코인 수량 * 체결가.
                 was_empty = position.quantity <= 0
-                coin_quantity = order.executed_amount / order.executed_price
+                coin_quantity = order.executed_amount
                 new_quantity = position.quantity + coin_quantity
 
                 if new_quantity > 0:
                     # 가중 평균 매수가 계산
                     old_cost = position.quantity * position.avg_buy_price
-                    new_cost = order.executed_amount
+                    new_cost = coin_quantity * order.executed_price
                     position.avg_buy_price = (old_cost + new_cost) / new_quantity
 
                 position.quantity = new_quantity

@@ -22,8 +22,10 @@ async def profit_taking_check_job() -> None:
         3. 익절 티어 조건 충족 시 부분 매도
         4. 트레일링 스탑 조건 충족 시 나머지 전량 매도
     """
+    from src.clients import get_notifier
     from src.clients.upbit import get_upbit_private_api, get_upbit_public_api
     from src.entities import User
+    from src.modules.risk.event_manager import RiskEventManager
     from src.modules.trading.profit_taker import ProfitTaker
 
     async with track_job("profit_taking"), async_session_factory() as session:
@@ -36,11 +38,18 @@ async def profit_taking_check_job() -> None:
             if user_id is None:
                 return
 
+            # 하드 손절 발동 시 Telegram 알림을 위해 notifier 주입
+            try:
+                notifier = get_notifier()
+            except Exception:
+                notifier = None
+
             profit_taker = ProfitTaker(
                 session=session,
                 private_api=get_upbit_private_api(),
                 public_api=get_upbit_public_api(),
                 user_id=user_id,
+                event_manager=RiskEventManager(session, notifier),
             )
             await profit_taker.check_and_execute()
 

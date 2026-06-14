@@ -36,6 +36,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
     # === 데이터베이스 설정 (환경변수 전용) ===
@@ -62,6 +63,24 @@ class Settings(BaseSettings):
         default="http://localhost:9000",
         description="Auth Server URL for token verification",
     )
+
+    # === 관리자 권한 (환경변수 전용) ===
+    # role!=admin이어도 관리자로 인정할 이메일 목록 (콤마 구분).
+    # Auth Server role 미설정 시 오너 락아웃 방지용.
+    admin_emails_raw: str = Field(
+        default="",
+        alias="admin_emails",
+        description="관리자 이메일 목록 (콤마 구분, 락아웃 방지)",
+    )
+
+    @property
+    def admin_emails(self) -> frozenset[str]:
+        """콤마 구분 admin_emails_raw를 정규화된 이메일 집합으로 변환."""
+        return frozenset(
+            email.strip().lower()
+            for email in self.admin_emails_raw.split(",")
+            if email.strip()
+        )
 
     # === 거래 파라미터 (DB 오버라이드 가능) ===
     # 동적 포지션 사이징: AI 신뢰도에 따라 min~max 범위에서 계산

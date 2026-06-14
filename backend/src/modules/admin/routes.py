@@ -4,12 +4,13 @@ Admin API 라우터
 시스템 관리 관련 API 엔드포인트를 정의합니다.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from src.modules.admin.schemas import SystemMetricsResponse
 from src.modules.admin.service import get_system_metrics
+from src.modules.auth import require_admin
 
-router = APIRouter(prefix="/admin")
+router = APIRouter(prefix="/admin", dependencies=[Depends(require_admin)])
 
 
 @router.get(

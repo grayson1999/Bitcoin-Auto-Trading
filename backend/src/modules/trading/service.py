@@ -314,17 +314,33 @@ class TradingService:
             try:
                 logger.info(f"주문 시도 {attempt}/{ORDER_MAX_RETRIES}")
 
-                # 재시도 시: 기존 주문 상태 확인
+                # 재시도 시: 기존 주문 상태 확인 (upbit_uuid를 받은 경우)
                 if await self._monitor.check_and_update_existing_order(order):
                     break  # 이미 주문이 있으므로 새 주문 안 함
 
-                # Upbit 주문 실행
+                # 재시도 시: POST 타임아웃으로 uuid를 못 받았어도 identifier로
+                # 실제 접수 여부를 조회해 중복 발주 대신 기존 주문을 채택한다.
+                if attempt > 1:
+                    adopted = await self._adopt_existing_order_by_identifier(
+                        idempotency_key,
+                        side=side,
+                        amount=amount,
+                        signal_id=signal_id,
+                        user_id=user_id,
+                        existing_order=order,
+                    )
+                    if adopted is not None:
+                        order = adopted
+                        break  # 실제 접수된 주문을 채택, 재발주 안 함
+
+                # Upbit 주문 실행 (identifier로 거래소 측 중복 방지)
                 if side == OrderSide.BUY:
                     upbit_response = await self._private_api.place_order(
                         market=settings.trading_ticker,
                         side="bid",
                         price=amount,
                         ord_type="price",
+                        identifier=idempotency_key,
                     )
                 else:
                     upbit_response = await self._private_api.place_order(
@@ -332,6 +348,7 @@ class TradingService:
                         side="ask",
                         volume=amount,
                         ord_type="market",
+                        identifier=idempotency_key,
                     )
 
                 # API 성공 후에만 Order 레코드 생성 (첫 시도 시)
@@ -500,6 +517,59 @@ class TradingService:
             f"amount={amount}, signal_id={signal_id}, "
             f"idempotency_key={idempotency_key}"
         )
+
+        return order
+
+    async def _adopt_existing_order_by_identifier(
+        self,
+        idempotency_key: str,
+        *,
+        side: OrderSide,
+        amount: Decimal,
+        signal_id: int | None,
+        user_id: int | None,
+        existing_order: Order | None,
+    ) -> Order | None:
+        """
+        identifier로 실제 접수된 주문을 조회해 채택한다 (중복 발주 방지).
+
+        POST /orders가 타임아웃으로 응답을 유실했지만 거래소에는 접수된
+        경우, 재발주 대신 기존 주문을 DB에 반영하고 체결까지 추적한다.
+
+        Returns:
+            Order | None: 실제 주문이 존재해 채택한 경우 Order, 없으면 None
+        """
+        try:
+            upbit_response = await self._private_api.get_order_by_identifier(
+                idempotency_key
+            )
+        except UpbitPrivateAPIError as e:
+            logger.warning(f"identifier 주문 조회 실패: {e.message}")
+            return None
+
+        if upbit_response is None:
+            return None  # 주문 미접수 → 재발주 진행
+
+        logger.warning(
+            f"identifier로 기존 주문 발견 - 재발주 대신 채택: "
+            f"uuid={upbit_response.uuid}, state={upbit_response.state}"
+        )
+
+        order = existing_order
+        if order is None:
+            order = await self._create_order_record(
+                side=side,
+                amount=amount,
+                signal_id=signal_id,
+                user_id=user_id,
+                idempotency_key=idempotency_key,
+            )
+
+        order.upbit_uuid = upbit_response.uuid
+        order.status = OrderStatus.PENDING.value
+        await self._monitor.update_order_status(order, upbit_response)
+        if not order.is_executed and upbit_response.uuid:
+            await self._monitor.poll_order_completion(order, upbit_response.uuid)
 
         return order
 
