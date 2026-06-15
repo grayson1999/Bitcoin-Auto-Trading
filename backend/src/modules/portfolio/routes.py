@@ -16,8 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.clients.upbit import UpbitPrivateAPIError, get_upbit_private_api
 from src.config import settings
-from src.modules.auth import CurrentUser
-from src.modules.portfolio.schemas import PortfolioSummaryResponse
+from src.modules.auth import AdminUser
+from src.modules.portfolio.schemas import (
+    DepositHistoryResponse,
+    DepositItem,
+    PortfolioSummaryResponse,
+)
 from src.modules.portfolio.service import get_portfolio_service
 from src.utils.database import get_session
 
@@ -32,7 +36,7 @@ router = APIRouter(prefix="/portfolio")
 )
 async def get_portfolio_summary(
     session: Annotated[AsyncSession, Depends(get_session)],
-    current_user: CurrentUser,
+    current_user: AdminUser,
 ) -> PortfolioSummaryResponse:
     """
     포트폴리오 요약 정보 조회
@@ -89,3 +93,25 @@ async def get_portfolio_summary(
     summary = await portfolio_service.get_portfolio_summary(current_balance)
 
     return summary
+
+
+@router.get(
+    "/deposits",
+    response_model=DepositHistoryResponse,
+    summary="입출금 내역",
+    description="입금/출금(BalanceAdjustment) 내역을 최신순으로 조회합니다.",
+)
+async def get_deposit_history(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: AdminUser,
+    limit: int = 50,
+) -> DepositHistoryResponse:
+    """입출금 내역 조회 (admin 전용)."""
+    portfolio_service = await get_portfolio_service(session)
+    adjustments = await portfolio_service.get_deposit_history(limit=limit)
+
+    deposits = [
+        DepositItem(id=adj.id, amount=adj.amount, deposited_at=adj.created_at)
+        for adj in adjustments
+    ]
+    return DepositHistoryResponse(deposits=deposits, total=len(deposits))

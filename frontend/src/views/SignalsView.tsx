@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchSignals, generateSignal } from '@/api/signals.api'
+import { fetchSignals, generateSignal, fetchSignalPerformance } from '@/api/signals.api'
 import { isAxiosError } from 'axios'
 import { SignalCard } from '@/components/signals/SignalCard'
 import { SignalTimeline } from '@/components/signals/SignalTimeline'
@@ -12,16 +12,35 @@ import { EmptyState } from '@core/components/EmptyState'
 import { ErrorMessage } from '@core/components/ErrorMessage'
 import { Button } from '@core/components/ui/button'
 import { Skeleton } from '@core/components/ui/skeleton'
+import { cn } from '@core/utils'
+import { formatPercent } from '@core/utils/formatters'
 import type { TradingSignal, SignalType } from '@/core/types'
 import { Activity, ChevronLeft, ChevronRight, RefreshCw, Sparkles, AlertCircle } from 'lucide-react'
 
 const PAGE_SIZE = 20
+
+/** Client-side outcome filter options */
+type OutcomeFilter = 'all' | 'hit' | 'miss'
+
+const OUTCOME_FILTERS: { value: OutcomeFilter; label: string }[] = [
+  { value: 'all', label: '전체' },
+  { value: 'hit', label: '적중만' },
+  { value: 'miss', label: '실패만' },
+]
+
+/** Accuracy color based on threshold (>=60 emerald, 40-60 amber, <40 rose) */
+function accuracyColor(pct: number): string {
+  if (pct >= 60) return 'text-emerald-400'
+  if (pct >= 40) return 'text-amber-400'
+  return 'text-rose-400'
+}
 
 export function SignalsView() {
   const [selectedSignal, setSelectedSignal] = useState<TradingSignal | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [filterType, setFilterType] = useState<SignalType | 'all'>('all')
+  const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>('all')
   const [page, setPage] = useState(0)
   const [generateError, setGenerateError] = useState<string | null>(null)
 
@@ -45,7 +64,24 @@ export function SignalsView() {
     staleTime: 30000, // 30 seconds
   })
 
+  // AI performance summary (admin-only; hide panel on error)
+  const {
+    data: performance,
+    isLoading: isPerformanceLoading,
+    isError: isPerformanceError,
+  } = useQuery({
+    queryKey: ['signalPerformance'],
+    queryFn: fetchSignalPerformance,
+    staleTime: 60000,
+  })
+
   const signals = data?.items ?? []
+  // Client-side outcome filter (only filters the already-fetched page)
+  const filteredSignals = signals.filter((s) => {
+    if (outcomeFilter === 'hit') return s.outcome_correct === true
+    if (outcomeFilter === 'miss') return s.outcome_correct === false
+    return true
+  })
   const total = data?.total ?? 0
   const totalPages = Math.ceil(total / PAGE_SIZE)
   const hasNextPage = page < totalPages - 1
@@ -213,9 +249,83 @@ export function SignalsView() {
         </div>
       )}
 
+      {/* AI Performance Panel (admin-only; hidden on error) */}
+      {!isPerformanceError && !isPerformanceLoading && performance && (
+        <CommonCard title="AI 성과 요약">
+          {performance.total_signals === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              평가된 신호가 아직 없습니다 (4시간+ 경과 필요)
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">매수 정확도</p>
+                  <p className={cn('text-lg font-semibold font-mono-num', accuracyColor(performance.buy_accuracy))}>
+                    {formatPercent(performance.buy_accuracy, { decimals: 0 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">매도 정확도</p>
+                  <p className={cn('text-lg font-semibold font-mono-num', accuracyColor(performance.sell_accuracy))}>
+                    {formatPercent(performance.sell_accuracy, { decimals: 0 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">평균 신뢰도</p>
+                  <p className="text-lg font-semibold font-mono-num text-zinc-200">
+                    {formatPercent(performance.avg_confidence, { decimals: 0 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">평균 24h 수익률</p>
+                  <p
+                    className={cn(
+                      'text-lg font-semibold font-mono-num',
+                      performance.avg_pnl_24h > 0
+                        ? 'text-emerald-400'
+                        : performance.avg_pnl_24h < 0
+                          ? 'text-rose-400'
+                          : 'text-zinc-200'
+                    )}
+                  >
+                    {formatPercent(performance.avg_pnl_24h, { showSign: true, decimals: 2 })}
+                  </p>
+                </div>
+              </div>
+              {performance.feedback_summary && (
+                <p className="text-sm text-zinc-400 leading-relaxed border-t border-white/5 pt-3">
+                  {performance.feedback_summary}
+                </p>
+              )}
+            </div>
+          )}
+        </CommonCard>
+      )}
+
       {/* Filters and View Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <SignalTypeFilter value={filterType} onChange={handleFilterChange} />
+        <div className="flex flex-wrap items-center gap-4">
+          <SignalTypeFilter value={filterType} onChange={handleFilterChange} />
+          {/* Outcome filter (client-side, current page) */}
+          <div className="inline-flex items-center rounded-lg border border-border bg-black/20 p-0.5">
+            {OUTCOME_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setOutcomeFilter(f.value)}
+                className={cn(
+                  'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                  outcomeFilter === f.value
+                    ? 'bg-zinc-700 text-zinc-100'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <ViewToggle value={viewMode} onChange={setViewMode} />
       </div>
 
@@ -223,30 +333,44 @@ export function SignalsView() {
       <CommonCard noPadding className="p-4">
         {isLoading ? (
           renderSkeleton()
-        ) : signals.length === 0 ? (
+        ) : filteredSignals.length === 0 ? (
           <EmptyState
             icon={<Activity className="h-8 w-8 text-muted-foreground" />}
-            title={filterType === 'all' ? '신호 없음' : `${filterType} 신호 없음`}
+            title={
+              outcomeFilter !== 'all'
+                ? `${OUTCOME_FILTERS.find((f) => f.value === outcomeFilter)?.label ?? ''} 신호 없음`
+                : filterType === 'all'
+                  ? '신호 없음'
+                  : `${filterType} 신호 없음`
+            }
             description={
-              filterType === 'all'
-                ? '아직 생성된 AI 신호가 없습니다.'
-                : `${filterType} 타입의 신호가 없습니다. 다른 필터를 시도해 보세요.`
+              outcomeFilter !== 'all'
+                ? '현재 페이지에 해당 결과의 신호가 없습니다. 다른 결과 필터를 시도해 보세요.'
+                : filterType === 'all'
+                  ? '아직 생성된 AI 신호가 없습니다.'
+                  : `${filterType} 타입의 신호가 없습니다. 다른 필터를 시도해 보세요.`
             }
             action={
-              filterType !== 'all' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFilterChange('all')}
-                >
-                  전체 신호 보기
+              outcomeFilter !== 'all' ? (
+                <Button variant="outline" size="sm" onClick={() => setOutcomeFilter('all')}>
+                  전체 결과 보기
                 </Button>
+              ) : (
+                filterType !== 'all' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleFilterChange('all')}
+                  >
+                    전체 신호 보기
+                  </Button>
+                )
               )
             }
           />
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {signals.map((signal) => (
+            {filteredSignals.map((signal) => (
               <SignalCard
                 key={signal.id}
                 signal={signal}
@@ -256,7 +380,7 @@ export function SignalsView() {
           </div>
         ) : (
           <SignalTimeline
-            signals={signals}
+            signals={filteredSignals}
             onSignalClick={handleSignalClick}
           />
         )}

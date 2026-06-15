@@ -60,3 +60,23 @@ export function isRuleBasedSignal(modelName: string): boolean {
 
 /** Confidence display multiplier (backend returns 0~1, display as percentage) */
 export const CONFIDENCE_MULTIPLIER = 100
+
+/** Outcome badge display config based on signal evaluation result */
+export interface OutcomeBadgeConfig {
+  label: string
+  className: string
+}
+
+/** Resolve outcome badge config from a signal's evaluation fields */
+export function getOutcomeBadgeConfig(
+  outcomeEvaluated: boolean,
+  outcomeCorrect: boolean | null
+): OutcomeBadgeConfig {
+  if (!outcomeEvaluated) {
+    return { label: '평가 전', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/10' }
+  }
+  if (outcomeCorrect === true) {
+    return { label: '적중', className: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' }
+  }
+  return { label: '실패', className: 'border-rose-500/30 text-rose-400 bg-rose-500/10' }
+}

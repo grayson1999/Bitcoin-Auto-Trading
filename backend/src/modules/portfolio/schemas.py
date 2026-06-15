@@ -6,9 +6,25 @@
 - Pydantic v2 BaseModel 기반
 """
 
+from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
+
+
+class DepositItem(BaseModel):
+    """입출금 내역 항목 (입금: 양수, 출금: 음수)."""
+
+    id: int = Field(description="조정 ID")
+    amount: Decimal = Field(description="조정 금액 (입금 양수/출금 음수, KRW)")
+    deposited_at: datetime = Field(description="조정 시각")
+
+
+class DepositHistoryResponse(BaseModel):
+    """입출금 내역 응답."""
+
+    deposits: list[DepositItem] = Field(description="입출금 내역 목록")
+    total: int = Field(description="총 건수")
 
 
 class ProfitDataPoint(BaseModel):
@@ -55,6 +71,9 @@ class PortfolioSummaryResponse(BaseModel):
     win_rate: float = Field(description="승률 (%)")
     average_return_pct: float = Field(description="평균 수익률 (%)")
     max_drawdown_pct: float = Field(description="최대 낙폭 MDD (%)")
+    total_fees_paid: Decimal = Field(
+        default=Decimal("0"), description="누적 지불 수수료 (KRW)"
+    )
     profit_chart_data: list[ProfitDataPoint] = Field(
         default_factory=list, description="30일 수익 차트 데이터"
     )

@@ -18,6 +18,21 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+class SignalPerformanceResponse(BaseModel):
+    """AI 신호 성과 요약 응답 (적중률·평균수익·피드백)."""
+
+    total_signals: int = Field(description="분석 대상 신호 수")
+    buy_signals: int = Field(description="매수 신호 수")
+    sell_signals: int = Field(description="매도 신호 수")
+    hold_signals: int = Field(description="홀드 신호 수")
+    buy_accuracy: float = Field(description="매수 정확도 (%)")
+    sell_accuracy: float = Field(description="매도 정확도 (%)")
+    avg_confidence: float = Field(description="평균 신뢰도")
+    avg_pnl_4h: float = Field(description="평균 4시간 수익률 (%)")
+    avg_pnl_24h: float = Field(description="평균 24시간 수익률 (%)")
+    feedback_summary: str = Field(description="피드백 요약 (한국어)")
+
+
 class TradingSignalResponse(BaseModel):
     """
     매매 신호 응답 스키마

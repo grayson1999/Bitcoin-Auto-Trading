@@ -1,5 +1,11 @@
 import { apiClient } from '@/core/api/client'
-import type { TradingSignal, TradingSignalListResponse, SignalType, TradingSignalDetail } from '@/core/types'
+import type { TradingSignal, TradingSignalListResponse, SignalType, TradingSignalDetail, SignalPerformance } from '@/core/types'
+
+/** Fetch AI signal performance summary (accuracy, avg return, feedback) */
+export async function fetchSignalPerformance(): Promise<SignalPerformance> {
+  const response = await apiClient.get<SignalPerformance>('/signals/performance')
+  return response.data
+}
 
 export interface FetchSignalsParams {
   limit?: number

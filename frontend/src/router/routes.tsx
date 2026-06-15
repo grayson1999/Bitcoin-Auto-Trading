@@ -12,6 +12,7 @@ const SignalsView = lazy(() => import('@views/SignalsView'))
 const OrdersView = lazy(() => import('@views/OrdersView'))
 const SettingsView = lazy(() => import('@views/SettingsView'))
 const AdminView = lazy(() => import('@views/AdminView'))
+const RiskView = lazy(() => import('@views/RiskView'))
 const LoginView = lazy(() => import('@views/LoginView'))
 
 export const routes: RouteObject[] = [
@@ -24,25 +25,25 @@ export const routes: RouteObject[] = [
       </AuthLayout>
     ),
   },
-  // Protected routes (with main layout)
+  // 소유자(admin) 전용 - 민감 금융 데이터(잔고/포지션/주문/대시보드) 노출 화면
   {
     path: '/',
     element: (
-      <ProtectedRoute>
+      <AdminRoute>
         <MainLayout>
           <DashboardView />
         </MainLayout>
-      </ProtectedRoute>
+      </AdminRoute>
     ),
   },
   {
     path: '/portfolio',
     element: (
-      <ProtectedRoute>
+      <AdminRoute>
         <MainLayout>
           <PortfolioView />
         </MainLayout>
-      </ProtectedRoute>
+      </AdminRoute>
     ),
   },
   {
@@ -58,11 +59,11 @@ export const routes: RouteObject[] = [
   {
     path: '/orders',
     element: (
-      <ProtectedRoute>
+      <AdminRoute>
         <MainLayout>
           <OrdersView />
         </MainLayout>
-      </ProtectedRoute>
+      </AdminRoute>
     ),
   },
   {
@@ -73,6 +74,16 @@ export const routes: RouteObject[] = [
           <SettingsView />
         </MainLayout>
       </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/risk',
+    element: (
+      <AdminRoute>
+        <MainLayout>
+          <RiskView />
+        </MainLayout>
+      </AdminRoute>
     ),
   },
   // Admin only routes

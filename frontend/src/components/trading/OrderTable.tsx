@@ -30,6 +30,7 @@ export function OrderTable({ orders, className }: OrderTableProps) {
               <TableHead className="text-right">가격</TableHead>
               <TableHead className="text-right">수량</TableHead>
               <TableHead className="text-right">금액</TableHead>
+              <TableHead className="text-right">실현손익</TableHead>
               <TableHead className="w-[100px]">상태</TableHead>
               <TableHead className="w-[180px]">주문 시간</TableHead>
             </TableRow>
@@ -95,10 +96,16 @@ function MobileOrderCard({ order }: { order: Order }) {
             {displayQuantity != null ? formatBTC(displayQuantity) : '-'}
           </p>
         </div>
-        <div className="col-span-2">
+        <div>
           <p className="text-xs text-zinc-500 mb-0.5">총 금액</p>
           <p className="font-mono-num text-base font-medium text-foreground">
             {displayTotal != null && displayTotal > 0 ? formatCurrency(displayTotal) : '-'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-zinc-500 mb-0.5">실현손익</p>
+          <p className="font-mono-num text-base font-medium">
+            <RealizedPnl order={order} />
           </p>
         </div>
         {order.status === 'FAILED' && order.error_message && (
@@ -150,6 +157,9 @@ function DesktopRow({ order }: { order: Order }) {
       <TableCell className="text-right font-mono">
         {displayTotal != null && displayTotal > 0 ? formatCurrency(displayTotal) : '-'}
       </TableCell>
+      <TableCell className="text-right font-mono text-xs">
+        <RealizedPnl order={order} />
+      </TableCell>
       <TableCell>
         <OrderStatusBadge status={order.status} />
         {order.status === 'FAILED' && order.error_message && (
@@ -199,6 +209,32 @@ function getOrderDisplayValues(order: Order) {
   }
 
   return { displayPrice, displayQuantity, displayTotal }
+}
+
+/** 매도 체결 주문의 거래별 실현손익 = (체결가 - 매도시점 평단) * 체결수량 */
+function getRealizedPnl(order: Order): number | null {
+  if (
+    order.side !== 'SELL' ||
+    order.status !== 'EXECUTED' ||
+    order.executed_price == null ||
+    order.executed_amount == null ||
+    order.avg_cost_at_order == null
+  ) {
+    return null
+  }
+  return (order.executed_price - order.avg_cost_at_order) * order.executed_amount
+}
+
+function RealizedPnl({ order }: { order: Order }) {
+  const pnl = getRealizedPnl(order)
+  if (pnl == null) return <span className="text-muted-foreground">-</span>
+  const isProfit = pnl >= 0
+  return (
+    <span className={cn(isProfit ? 'text-emerald-400' : 'text-rose-400')}>
+      {isProfit ? '+' : ''}
+      {formatCurrency(pnl)}
+    </span>
+  )
 }
 
 export default OrderTable

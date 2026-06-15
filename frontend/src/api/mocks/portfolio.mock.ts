@@ -60,6 +60,7 @@ export function getPortfolioSummaryMock(): PortfolioSummary {
     win_rate: 59.57,
     average_return_pct: 0.42,
     max_drawdown_pct: maxDrawdown,
+    total_fees_paid: 0,
     profit_chart_data: profitChartData,
   }
 }
@@ -104,6 +105,7 @@ export function getEmptyPortfolioSummary(): PortfolioSummary {
     win_rate: 0,
     average_return_pct: 0,
     max_drawdown_pct: 0,
+    total_fees_paid: 0,
     profit_chart_data: [],
   }
 }

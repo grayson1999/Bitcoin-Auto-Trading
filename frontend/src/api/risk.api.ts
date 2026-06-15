@@ -1,11 +1,5 @@
 import { apiClient } from '@/core/api/client'
-import type { RiskStatus, RiskEvent, PaginatedResponse } from '@/core/types'
-
-interface RiskEventParams {
-  page?: number
-  limit?: number
-  severity?: 'low' | 'medium' | 'high' | 'critical'
-}
+import type { RiskStatus, RiskEventListResponse } from '@/core/types'
 
 /** Fetch current risk status */
 export async function fetchRiskStatus(): Promise<RiskStatus> {
@@ -13,18 +7,11 @@ export async function fetchRiskStatus(): Promise<RiskStatus> {
   return response.data
 }
 
-/** Fetch risk events with pagination */
+/** Fetch risk events */
 export async function fetchRiskEvents(
-  params: RiskEventParams = {}
-): Promise<PaginatedResponse<RiskEvent>> {
-  const { page = 1, limit = 20, severity } = params
-  const response = await apiClient.get<PaginatedResponse<RiskEvent>>('/risk/events', {
-    params: {
-      page,
-      limit,
-      severity,
-    },
-  })
+  params: { limit?: number; event_type?: string } = {}
+): Promise<RiskEventListResponse> {
+  const response = await apiClient.get<RiskEventListResponse>('/risk/events', { params })
   return response.data
 }
 

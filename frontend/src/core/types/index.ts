@@ -139,6 +139,7 @@ export interface Order {
   executed_price: number | null
   executed_amount: number | null
   fee: number | null
+  avg_cost_at_order: number | null
   upbit_uuid: string | null
   error_message: string | null
   created_at: ISOTimestamp
@@ -217,7 +218,22 @@ export interface PortfolioSummary {
   win_rate: number
   average_return_pct: number
   max_drawdown_pct: number
+  total_fees_paid: number
   profit_chart_data: ProfitDataPoint[]
+}
+
+/** AI 신호 성과 요약 */
+export interface SignalPerformance {
+  total_signals: number
+  buy_signals: number
+  sell_signals: number
+  hold_signals: number
+  buy_accuracy: number
+  sell_accuracy: number
+  avg_confidence: number
+  avg_pnl_4h: number
+  avg_pnl_24h: number
+  feedback_summary: string
 }
 
 /** Deposit record */
@@ -294,13 +310,21 @@ export interface RiskStatus {
   breakout_min_strength: number
 }
 
-/** Risk event */
+/** Risk event - matches backend RiskEventResponse schema */
 export interface RiskEvent {
-  id: string
+  id: number
+  order_id: number | null
   event_type: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  description: string
+  trigger_value: number
+  action_taken: string
   created_at: ISOTimestamp
+  notified: boolean
+}
+
+/** Risk event list response */
+export interface RiskEventListResponse {
+  items: RiskEvent[]
+  total: number
 }
 
 // ============================================================================
@@ -329,7 +353,7 @@ export interface SystemMetrics {
 
 /** Component health status */
 export interface ComponentHealth {
-  status: 'healthy' | 'unhealthy'
+  status: 'healthy' | 'unhealthy' | 'warning'
   latency_ms?: number
   message?: string
 }

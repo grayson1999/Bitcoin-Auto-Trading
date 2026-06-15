@@ -3,7 +3,7 @@ import { formatDateTime, formatPercent } from '@core/utils/formatters'
 import { Badge } from '@core/components/ui/badge'
 import type { TradingSignal } from '@/core/types'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import { SIGNAL_CONFIG, CONFIDENCE_MULTIPLIER, isRuleBasedSignal } from './signal-config'
+import { SIGNAL_CONFIG, CONFIDENCE_MULTIPLIER, isRuleBasedSignal, getOutcomeBadgeConfig } from './signal-config'
 
 interface SignalCardProps {
   signal: TradingSignal
@@ -20,6 +20,7 @@ const SIGNAL_ICONS = {
 export function SignalCard({ signal, onClick, className }: SignalCardProps) {
   const config = SIGNAL_CONFIG[signal.signal_type]
   const icon = SIGNAL_ICONS[signal.signal_type]
+  const outcome = getOutcomeBadgeConfig(signal.outcome_evaluated, signal.outcome_correct)
 
   return (
     <div
@@ -42,11 +43,21 @@ export function SignalCard({ signal, onClick, className }: SignalCardProps) {
               자동
             </Badge>
           )}
+          <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', outcome.className)}>
+            {outcome.label}
+          </Badge>
         </div>
-        <div className={cn('flex items-center px-2.5 py-1 rounded-md bg-black/20 border', config.borderColor)}>
-          <span className={cn('text-sm font-mono-num font-medium', config.color)}>
-            {formatPercent(signal.confidence * CONFIDENCE_MULTIPLIER, { decimals: 0 })}
-          </span>
+        <div className={cn('flex flex-col items-end gap-0.5')}>
+          <div className={cn('flex items-center px-2.5 py-1 rounded-md bg-black/20 border', config.borderColor)}>
+            <span className={cn('text-sm font-mono-num font-medium', config.color)}>
+              {formatPercent(signal.confidence * CONFIDENCE_MULTIPLIER, { decimals: 0 })}
+            </span>
+          </div>
+          {signal.action_score != null && (
+            <span className="text-[10px] text-zinc-500 font-mono-num">
+              강도 {signal.action_score.toFixed(2)}
+            </span>
+          )}
         </div>
       </div>
 

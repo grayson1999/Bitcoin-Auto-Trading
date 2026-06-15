@@ -1,13 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw, AlertCircle, PieChart } from 'lucide-react'
-import { fetchPortfolioSummary } from '@/api/portfolio.api'
+import { fetchPortfolioSummary, fetchDepositHistory } from '@/api/portfolio.api'
 import { fetchDashboardSummary } from '@/api/dashboard.api'
 import { CommonButton } from '@/core/components/CommonButton'
 import { EmptyState } from '@/core/components/EmptyState'
+import { NetProfitHero } from '@/components/portfolio/NetProfitHero'
 import { CumulativeReturnCard } from '@/components/portfolio/CumulativeReturnCard'
 import { TodayReturnCard } from '@/components/portfolio/TodayReturnCard'
 import { TradeStatsCard } from '@/components/portfolio/TradeStatsCard'
+import { DepositHistoryCard } from '@/components/portfolio/DepositHistoryCard'
 import { ProfitChart } from '@/components/portfolio/ProfitChart'
 import { PositionCard } from '@/components/dashboard/PositionCard'
 import { BalanceCard } from '@/components/dashboard/BalanceCard'
@@ -35,6 +37,13 @@ export function PortfolioView() {
     queryFn: fetchDashboardSummary,
     staleTime: 30000,
     refetchInterval: 60000,
+  })
+
+  // 입출금 내역
+  const { data: depositHistory, isLoading: isDepositLoading } = useQuery({
+    queryKey: ['depositHistory'],
+    queryFn: fetchDepositHistory,
+    staleTime: 5 * 60 * 1000,
   })
 
   const handleRefresh = () => {
@@ -118,6 +127,14 @@ export function PortfolioView() {
         </CommonButton>
       </div>
 
+      {/* 순손익 히어로 - 입금 대비 현재 평가 (최상단) */}
+      <NetProfitHero
+        totalDeposit={portfolio?.total_deposit ?? 0}
+        currentValue={portfolio?.current_value ?? 0}
+        totalFeesPaid={portfolio?.total_fees_paid ?? 0}
+        isLoading={isLoading}
+      />
+
       {/* Summary Cards - 2 column grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <CumulativeReturnCard
@@ -158,6 +175,13 @@ export function PortfolioView() {
         averageReturnPct={portfolio?.average_return_pct ?? 0}
         maxDrawdownPct={portfolio?.max_drawdown_pct ?? 0}
         isLoading={isLoading}
+      />
+
+      {/* 입출금 내역 - Full width */}
+      <DepositHistoryCard
+        deposits={depositHistory?.deposits ?? []}
+        totalDeposit={portfolio?.total_deposit ?? 0}
+        isLoading={isDepositLoading}
       />
     </div>
   )

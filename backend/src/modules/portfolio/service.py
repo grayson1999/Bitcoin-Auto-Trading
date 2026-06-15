@@ -11,10 +11,10 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.entities import AdjustmentType, BalanceAdjustment, DailyStats
+from src.entities import AdjustmentType, BalanceAdjustment, DailyStats, Order
 from src.modules.portfolio.schemas import PortfolioSummaryResponse, ProfitDataPoint
 
 # 입금/출금 감지 임계값 (원)
@@ -126,6 +126,9 @@ class PortfolioService:
         # 최근 30일 수익 차트 데이터 (누적 실현 손익 + 오늘 포인트)
         profit_chart_data = self._generate_chart_data(all_stats, current_balance)
 
+        # 누적 지불 수수료 (체결된 주문의 fee 합계)
+        total_fees_paid = await self._calculate_total_fees_paid()
+
         return PortfolioSummaryResponse(
             total_deposit=total_invested,  # 입금/출금 반영된 총 투자금
             current_value=current_balance,
@@ -138,8 +141,30 @@ class PortfolioService:
             win_rate=win_rate,
             average_return_pct=average_return_pct,
             max_drawdown_pct=max_drawdown_pct,
+            total_fees_paid=total_fees_paid,
             profit_chart_data=profit_chart_data,
         )
+
+    async def _calculate_total_fees_paid(self) -> Decimal:
+        """체결된 주문의 누적 수수료 합계 (KRW)."""
+        stmt = select(func.sum(Order.fee)).where(Order.fee.isnot(None))
+        result = await self.session.execute(stmt)
+        return result.scalar() or Decimal("0")
+
+    async def get_deposit_history(self, limit: int = 50) -> list[BalanceAdjustment]:
+        """입출금(BalanceAdjustment) 내역 조회 (최신순)."""
+        stmt = (
+            select(BalanceAdjustment)
+            .where(
+                BalanceAdjustment.adjustment_type.in_(
+                    [AdjustmentType.DEPOSIT.value, AdjustmentType.WITHDRAWAL.value]
+                )
+            )
+            .order_by(BalanceAdjustment.created_at.desc())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
     async def detect_and_record_adjustment(
         self,

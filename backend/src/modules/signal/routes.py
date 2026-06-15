@@ -19,14 +19,16 @@ from src.config.constants import (
     API_PAGINATION_MIN_LIMIT,
 )
 from src.entities import SignalType
-from src.modules.auth import CurrentUser, ResolvedUser
+from src.modules.auth import AdminUser, CurrentUser, ResolvedUser
 from src.modules.signal.schemas import (
     GenerateSignalResponse,
     SignalFilterParams,
+    SignalPerformanceResponse,
     TradingSignalListResponse,
     TradingSignalResponse,
 )
 from src.modules.signal.service import SignalServiceError, get_signal_service
+from src.modules.signal.tracker import SignalPerformanceTracker
 from src.modules.trading import OrderBlockedReason, get_trading_service
 from src.utils.database import get_session
 
@@ -92,6 +94,34 @@ async def get_signals(
     return TradingSignalListResponse(
         items=[TradingSignalResponse.model_validate(s) for s in signals],
         total=total_count,
+    )
+
+
+@router.get(
+    "/performance",
+    response_model=SignalPerformanceResponse,
+    summary="AI 신호 성과 요약",
+    description="최근 평가된 신호의 매수/매도 정확도, 평균 수익률, 피드백을 조회합니다.",
+)
+async def get_signal_performance(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: AdminUser,
+    hours: int = Query(default=168, ge=24, le=720, description="분석 기간 (시간)"),
+) -> SignalPerformanceResponse:
+    """AI 신호 성과 요약 조회 (admin 전용)."""
+    tracker = SignalPerformanceTracker(session)
+    summary = await tracker.generate_performance_summary(limit=100, hours=hours)
+    return SignalPerformanceResponse(
+        total_signals=summary.total_signals,
+        buy_signals=summary.buy_signals,
+        sell_signals=summary.sell_signals,
+        hold_signals=summary.hold_signals,
+        buy_accuracy=summary.buy_accuracy,
+        sell_accuracy=summary.sell_accuracy,
+        avg_confidence=summary.avg_confidence,
+        avg_pnl_4h=summary.avg_pnl_4h,
+        avg_pnl_24h=summary.avg_pnl_24h,
+        feedback_summary=summary.feedback_summary,
     )
 
 

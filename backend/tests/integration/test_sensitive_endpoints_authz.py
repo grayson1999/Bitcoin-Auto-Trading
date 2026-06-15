@@ -12,6 +12,9 @@ SENSITIVE_GET_ENDPOINTS = [
     "/api/v1/trading/balance",
     "/api/v1/trading/position",
     "/api/v1/trading/orders",
+    "/api/v1/portfolio/summary",
+    "/api/v1/portfolio/deposits",
+    "/api/v1/signals/performance",
 ]
 
 

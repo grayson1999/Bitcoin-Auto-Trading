@@ -6,6 +6,7 @@ import {
   Settings,
   Wallet,
   Shield,
+  AlertTriangle,
   LogOut,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -14,6 +15,7 @@ import { useAuth } from '@stores/auth.store'
 import { Button } from '@core/components/ui/button'
 import { useTradingConfig } from '@/core/contexts/TradingConfigContext'
 import { fetchDashboardSummary } from '@/api/dashboard.api'
+import { getHealthDetail } from '@/api/health.api'
 import { formatRelativeTime } from '@/core/utils/formatters'
 
 interface NavItem {
@@ -28,6 +30,7 @@ const navItems: NavItem[] = [
   { to: '/portfolio', icon: <Wallet size={20} />, label: '포트폴리오' },
   { to: '/signals', icon: <TrendingUp size={20} />, label: 'AI 신호' },
   { to: '/orders', icon: <ClipboardList size={20} />, label: '주문 내역' },
+  { to: '/risk', icon: <AlertTriangle size={20} />, label: '리스크', adminOnly: true },
   { to: '/settings', icon: <Settings size={20} />, label: '설정' },
   { to: '/admin', icon: <Shield size={20} />, label: '관리자', adminOnly: true },
 ]
@@ -42,15 +45,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { currency } = useTradingConfig()
   const navigate = useNavigate()
 
-  // 봇 생존/갱신/연결 상태 인디케이터용 (대시보드는 admin 전용이므로 admin만 폴링)
-  const {
-    data: dashboard,
-    isError: isStatusError,
-    isFetching: isStatusFetching,
-  } = useQuery({
+  // 마지막 AI 신호 시각용 (대시보드는 admin 전용이므로 admin만 폴링)
+  const { data: dashboard, isError: isStatusError } = useQuery({
     queryKey: ['dashboardSummary'],
     queryFn: fetchDashboardSummary,
     refetchInterval: 5000,
+    enabled: isAdmin,
+  })
+
+  // 봇 생존 진실 판단: 헬스체크의 scheduler·recent_signal 상태 기반
+  // (dashboard.updated_at은 매 응답마다 now라 가짜 생존신호 → 사용 안 함)
+  const { data: health, isError: isHealthError } = useQuery({
+    queryKey: ['healthDetail'],
+    queryFn: getHealthDetail,
+    refetchInterval: 10000,
     enabled: isAdmin,
   })
 
@@ -111,38 +119,46 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             ))}
           </nav>
 
-          {/* Bot status indicator (admin only) */}
-          {isAdmin && (
-            <div className="px-4 pt-3">
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/5 border border-white/5 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={cn(
-                      'w-2 h-2 rounded-full',
-                      isStatusError
-                        ? 'bg-rose-500 animate-pulse'
-                        : dashboard?.is_trading_active
-                          ? 'bg-emerald-400'
-                          : 'bg-zinc-500',
-                      isStatusFetching && !isStatusError && 'animate-pulse'
+          {/* Bot status indicator (admin only) - 헬스체크 기반 진짜 생존 신호 */}
+          {isAdmin &&
+            (() => {
+              const schedulerStatus = health?.components?.scheduler?.status
+              const signalStatus = health?.components?.recent_signal?.status
+              const lastSignalAt = dashboard?.latest_signal?.created_at
+
+              // 연결 끊김 > 스케줄러 정지(빨강) > 신호 지연(노랑) > 정상(초록)
+              let dot = 'bg-emerald-400'
+              let label = '봇 정상'
+              if (isHealthError || isStatusError) {
+                dot = 'bg-rose-500 animate-pulse'
+                label = '연결 끊김'
+              } else if (schedulerStatus === 'unhealthy') {
+                dot = 'bg-rose-500 animate-pulse'
+                label = '봇 정지'
+              } else if (signalStatus === 'warning' || signalStatus === 'unhealthy') {
+                dot = 'bg-amber-400'
+                label = '신호 지연'
+              }
+
+              return (
+                <div className="px-4 pt-3">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/5 border border-white/5 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn('w-2 h-2 rounded-full', dot)} />
+                      <span className="text-muted-foreground">{label}</span>
+                    </div>
+                    {lastSignalAt && !isHealthError && (
+                      <span
+                        className="text-muted-foreground/70 font-mono"
+                        title="마지막 AI 신호 시각"
+                      >
+                        {formatRelativeTime(lastSignalAt)}
+                      </span>
                     )}
-                  />
-                  <span className="text-muted-foreground">
-                    {isStatusError
-                      ? '연결 끊김'
-                      : dashboard?.is_trading_active
-                        ? '봇 가동중'
-                        : '봇 대기중'}
-                  </span>
+                  </div>
                 </div>
-                {dashboard?.updated_at && !isStatusError && (
-                  <span className="text-muted-foreground/70 font-mono">
-                    {formatRelativeTime(dashboard.updated_at)}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+              )
+            })()}
 
           {/* User section */}
           <div className="p-4 border-t border-white/5">

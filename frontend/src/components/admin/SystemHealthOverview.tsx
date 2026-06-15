@@ -1,6 +1,6 @@
 import { CommonCard } from '@core/components/CommonCard'
 import { Badge } from '@core/components/ui/badge'
-import type { HealthDetail } from '@core/types'
+import type { HealthDetail, ComponentHealth } from '@core/types'
 import { formatDateTime } from '@core/utils/formatters'
 import {
   CheckCircle,
@@ -18,12 +18,14 @@ interface SystemHealthOverviewProps {
   health: HealthDetail
 }
 
-function getStatusIcon(status: 'healthy' | 'unhealthy') {
-  return status === 'healthy' ? (
-    <CheckCircle className="w-4 h-4 text-up" />
-  ) : (
-    <XCircle className="w-4 h-4 text-down" />
-  )
+function getStatusIcon(status: ComponentHealth['status']) {
+  if (status === 'healthy') {
+    return <CheckCircle className="w-4 h-4 text-up" />
+  }
+  if (status === 'warning') {
+    return <AlertTriangle className="w-4 h-4 text-neutral" />
+  }
+  return <XCircle className="w-4 h-4 text-down" />
 }
 
 function getOverallStatusBadge(status: HealthDetail['status']) {

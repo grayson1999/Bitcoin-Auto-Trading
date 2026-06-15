@@ -102,6 +102,9 @@ class OrderResponse(BaseModel):
     executed_price: Decimal | None = Field(default=None, description="체결 가격")
     executed_amount: Decimal | None = Field(default=None, description="체결 금액/수량")
     fee: Decimal | None = Field(default=None, description="수수료")
+    avg_cost_at_order: Decimal | None = Field(
+        default=None, description="매도 시점 평균 매수가 (거래별 실현손익 계산용)"
+    )
     upbit_uuid: str | None = Field(default=None, description="Upbit 주문 UUID")
     error_message: str | None = Field(default=None, description="실패 시 오류 메시지")
     created_at: datetime = Field(description="주문 생성 시간")
