@@ -64,10 +64,6 @@ async def ensure_daily_stats_job() -> None:
             prev_result = await session.execute(prev_stmt)
             prev_stats = prev_result.scalar_one_or_none()
 
-            # 입금/출금 감지용으로 갱신 전 ending_balance를 먼저 포착한다.
-            # (아래에서 current_balance로 덮어쓰면 prev_ending==today_starting이라 diff=0)
-            prev_ending_captured = prev_stats.ending_balance if prev_stats else None
-
             if prev_stats:
                 prev_stats.ending_balance = current_balance
                 logger.info(
@@ -80,18 +76,8 @@ async def ensure_daily_stats_job() -> None:
             latest_stats = latest_result.scalar_one_or_none()
             user_id = latest_stats.user_id if latest_stats else 1
 
-            # 입금/출금 자동 감지 (갱신 전 ending vs 현재 잔고)
-            # 주의: 잔고는 KRW+코인평가라 코인 변동이 섞이므로 임계값으로 오탐 억제
-            if prev_ending_captured is not None:
-                from src.modules.portfolio.service import get_portfolio_service
-
-                portfolio_service = await get_portfolio_service(session)
-                await portfolio_service.detect_and_record_adjustment(
-                    prev_ending_balance=prev_ending_captured,
-                    current_starting_balance=current_balance,
-                    target_date=today,
-                    user_id=user_id,
-                )
+            # 입금/출금은 잔고차 추정 대신 Upbit 원장 동기화(sync_deposits_job)로
+            # 정확히 반영한다(코인 평가변동 오탐 방지). 여기서는 감지하지 않음.
 
             # 오늘 DailyStats 생성 (거래 없음 상태)
             new_stats = DailyStats(

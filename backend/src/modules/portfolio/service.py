@@ -7,21 +7,16 @@
 - 입금/출금 자동 감지 및 추적
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.upbit import UpbitPrivateAPIError, get_upbit_private_api
 from src.entities import AdjustmentType, BalanceAdjustment, DailyStats, Order
 from src.modules.portfolio.schemas import PortfolioSummaryResponse, ProfitDataPoint
-
-# 입금/출금 감지 임계값 (원)
-# 주의: 잔고는 KRW + 코인 평가액이라 코인 가격 변동이 잔고차에 섞인다.
-# 임계값을 코인 일간 평가변동보다 크게 잡아 오탐을 줄인다(실제 입금 ~3만원 대상).
-# 정밀 감지는 Upbit /v1/deposits·/v1/withdraws 원장이 향후 정확한 소스.
-ADJUSTMENT_THRESHOLD = Decimal("20000")
 
 
 class PortfolioService:
@@ -169,69 +164,69 @@ class PortfolioService:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def detect_and_record_adjustment(
-        self,
-        prev_ending_balance: Decimal,
-        current_starting_balance: Decimal,
-        target_date: date,
-        user_id: int = 1,
-    ) -> BalanceAdjustment | None:
+    async def sync_deposits_from_upbit(self) -> int:
         """
-        잔고 변화에서 입금/출금 감지 및 기록
+        Upbit 입금 원장(/v1/deposits)을 BalanceAdjustment로 동기화한다.
 
-        Args:
-            prev_ending_balance: 전일 종료 잔고
-            current_starting_balance: 오늘 시작 잔고
-            target_date: 조정 날짜
-            user_id: 소유자 사용자 ID (BalanceAdjustment.user_id, NOT NULL)
+        잔고 차이 추정과 달리 실제 입금만 정확히 반영(코인 평가변동에 오염 안 됨).
+        봇 운영 기간 손익 기준을 위해, 봇 시작일(첫 DailyStats.date) "이후"의
+        입금만 기록한다(시작일·이전 입금은 initial_balance에 이미 포함).
 
         Returns:
-            BalanceAdjustment | None: 감지된 조정 내역 (없으면 None)
+            int: 새로 기록한 입금 건수
         """
-        # 잔고 차이 계산
-        diff = current_starting_balance - prev_ending_balance
+        # 봇 시작일 조회
+        first_stmt = select(DailyStats).order_by(DailyStats.date.asc()).limit(1)
+        first_stats = (await self.session.execute(first_stmt)).scalar_one_or_none()
+        if first_stats is None:
+            logger.info("DailyStats 없음 - 입금 동기화 건너뜀")
+            return 0
+        start_date = first_stats.date
+        user_id = first_stats.user_id
 
-        # 임계값 미만이면 무시
-        if abs(diff) < ADJUSTMENT_THRESHOLD:
-            return None
+        # Upbit 입금 원장 조회
+        try:
+            deposits = await get_upbit_private_api().get_krw_deposits(limit=100)
+        except UpbitPrivateAPIError as e:
+            logger.warning(f"Upbit 입금 원장 조회 실패: {e.message}")
+            return 0
 
-        # 입금/출금 타입 결정
-        if diff > 0:
-            adj_type = AdjustmentType.DEPOSIT
-            logger.info(f"입금 감지: {diff:,.0f}원 ({target_date})")
-        else:
-            adj_type = AdjustmentType.WITHDRAWAL
-            logger.info(f"출금 감지: {abs(diff):,.0f}원 ({target_date})")
+        recorded = 0
+        for dep in deposits:
+            # created_at(ISO8601) → date. 봇 시작일 '이후'만 대상.
+            try:
+                dep_date = datetime.fromisoformat(dep.created_at).date()
+            except ValueError:
+                dep_date = date.fromisoformat(dep.created_at[:10])
+            if dep_date <= start_date:
+                continue
 
-        # 이미 기록된 조정인지 확인
-        existing_stmt = select(BalanceAdjustment).where(
-            BalanceAdjustment.date == target_date,
-            BalanceAdjustment.amount == diff,
-        )
-        existing_result = await self.session.execute(existing_stmt)
-        if existing_result.scalar_one_or_none():
-            logger.debug(f"이미 기록된 조정: {target_date}, {diff:,.0f}원")
-            return None
+            # 중복 방지: 같은 date + amount 기록이 있으면 스킵
+            exists_stmt = select(BalanceAdjustment).where(
+                BalanceAdjustment.date == dep_date,
+                BalanceAdjustment.amount == dep.amount,
+            )
+            if (await self.session.execute(exists_stmt)).scalar_one_or_none():
+                continue
 
-        # 새 조정 기록 (user_id 필수 - NOT NULL, 누락 시 IntegrityError)
-        adjustment = BalanceAdjustment(
-            user_id=user_id,
-            date=target_date,
-            amount=diff,
-            adjustment_type=adj_type.value,
-            balance_before=prev_ending_balance,
-            balance_after=current_starting_balance,
-            notes=f"자동 감지 ({adj_type.value})",
-        )
-        self.session.add(adjustment)
-        await self.session.flush()
+            self.session.add(
+                BalanceAdjustment(
+                    user_id=user_id,
+                    date=dep_date,
+                    amount=dep.amount,
+                    adjustment_type=AdjustmentType.DEPOSIT.value,
+                    balance_before=Decimal("0"),
+                    balance_after=Decimal("0"),
+                    notes=f"Upbit 원장 동기화 (uuid={dep.uuid})",
+                )
+            )
+            recorded += 1
+            logger.info(f"입금 기록: {dep_date} {float(dep.amount):,.0f}원")
 
-        logger.info(
-            f"잔고 조정 기록: {adj_type.value} {diff:,.0f}원 "
-            f"({prev_ending_balance:,.0f} → {current_starting_balance:,.0f})"
-        )
-
-        return adjustment
+        if recorded:
+            await self.session.flush()
+            logger.info(f"Upbit 입금 동기화 완료: {recorded}건 신규 기록")
+        return recorded
 
     def _calculate_mdd_from_pnl(self, stats: list[DailyStats]) -> float:
         """

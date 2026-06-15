@@ -26,8 +26,10 @@ from src.clients.upbit.common import (
     REQUEST_TIMEOUT,
     UPBIT_API_URL,
     UpbitBalance,
+    UpbitDeposit,
     UpbitOrderResponse,
     parse_balance,
+    parse_deposit,
     parse_order_response,
 )
 from src.config import settings
@@ -334,6 +336,30 @@ class UpbitPrivateAPI:
         )
 
         return parse_order_response(response)
+
+    async def get_krw_deposits(self, limit: int = 100) -> list[UpbitDeposit]:
+        """
+        KRW 입금 내역 조회 (Upbit /v1/deposits 원장).
+
+        포트폴리오 total_deposit을 실제 입금으로 정확히 보정하는 소스.
+        잔고 차이 추정과 달리 코인 평가변동에 오염되지 않는다.
+
+        Args:
+            limit: 조회 건수 (최대 100)
+
+        Returns:
+            list[UpbitDeposit]: 완료(ACCEPTED) 상태의 KRW 입금 목록
+        """
+        response = await self._request(
+            method="GET",
+            endpoint="/deposits",
+            params={"currency": "KRW", "limit": str(limit)},
+        )
+
+        if not isinstance(response, list):
+            raise UpbitPrivateAPIError("Invalid deposits response")
+
+        return [parse_deposit(d) for d in response if d.get("state") == "ACCEPTED"]
 
     async def get_order_by_identifier(
         self, identifier: str

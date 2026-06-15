@@ -13,11 +13,13 @@ from src.clients.upbit.common import (
     # Models
     UpbitBalance,
     UpbitCandleData,
+    UpbitDeposit,
     UpbitOrderResponse,
     UpbitTickerData,
     # Parsers
     parse_balance,
     parse_candle,
+    parse_deposit,
     parse_order_response,
     parse_ticker,
     to_decimal,
@@ -42,6 +44,7 @@ __all__ = [
     # Models
     "UpbitBalance",
     "UpbitCandleData",
+    "UpbitDeposit",
     "UpbitOrderResponse",
     # Private API
     "UpbitPrivateAPI",
@@ -58,6 +61,7 @@ __all__ = [
     # Parsers
     "parse_balance",
     "parse_candle",
+    "parse_deposit",
     "parse_order_response",
     "parse_ticker",
     "to_decimal",

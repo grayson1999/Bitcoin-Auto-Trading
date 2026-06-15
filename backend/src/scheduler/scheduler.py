@@ -32,6 +32,7 @@ from src.scheduler.jobs import (
     generate_trading_signal_job,
     profit_taking_check_job,
     recover_unexecuted_signals_job,
+    sync_deposits_job,
     sync_pending_orders_job,
 )
 from src.utils import UTC
@@ -177,6 +178,24 @@ def setup_scheduler() -> AsyncIOScheduler:
         ensure_daily_stats_job,
         id="ensure_daily_stats_startup",
         name="DailyStats 시작 시 생성",
+        replace_existing=True,
+        max_instances=1,
+    )
+
+    # 입금 동기화 (매일 00:10 KST, DailyStats 다음 + 서버 시작 시 백필)
+    scheduler.add_job(
+        sync_deposits_job,
+        trigger=CronTrigger(hour=0, minute=10, timezone="Asia/Seoul"),
+        id="deposit_sync",
+        name="Upbit 입금 동기화",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+    scheduler.add_job(
+        sync_deposits_job,
+        id="deposit_sync_startup",
+        name="입금 동기화 시작 시 백필",
         replace_existing=True,
         max_instances=1,
     )

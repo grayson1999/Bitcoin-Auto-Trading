@@ -73,6 +73,17 @@ class UpbitBalance(BaseModel):
     avg_buy_price: Decimal
 
 
+class UpbitDeposit(BaseModel):
+    """Upbit 입금 내역 (원장) 모델."""
+
+    uuid: str
+    txid: str | None = None
+    currency: str
+    amount: Decimal
+    state: str  # ACCEPTED=완료
+    created_at: str  # ISO 8601
+
+
 class UpbitTrade(BaseModel):
     """Upbit individual trade model."""
 
@@ -170,6 +181,26 @@ def parse_balance(acc: dict[str, Any]) -> UpbitBalance:
         balance=to_decimal(acc["balance"]),
         locked=to_decimal(acc["locked"]),
         avg_buy_price=to_decimal(acc["avg_buy_price"]),
+    )
+
+
+def parse_deposit(data: dict[str, Any]) -> UpbitDeposit:
+    """
+    Parse deposit ledger entry from Upbit /v1/deposits response.
+
+    Args:
+        data: Raw deposit data from API
+
+    Returns:
+        UpbitDeposit: Parsed deposit
+    """
+    return UpbitDeposit(
+        uuid=data["uuid"],
+        txid=data.get("txid"),
+        currency=data["currency"],
+        amount=to_decimal(data["amount"]),
+        state=data["state"],
+        created_at=data["created_at"],
     )
 
 
