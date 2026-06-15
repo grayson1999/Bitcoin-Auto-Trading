@@ -192,8 +192,9 @@ class OrderValidator:
             ValidationResult: 검증 결과
         """
         # 동적 포지션 사이징: AI 신뢰도에 따라 min~max 범위에서 계산
+        # max_pct는 DB 오버라이드 우선 (단일 주문 한도 체크와 동일 소스 사용)
         min_pct = Decimal(str(settings.position_size_min_pct))
-        max_pct = Decimal(str(settings.position_size_max_pct))
+        max_pct = Decimal(str(await self._risk_service.get_position_size_max_pct()))
 
         # 신뢰도 0.5 -> min_pct, 신뢰도 0.9+ -> max_pct
         confidence = signal.confidence

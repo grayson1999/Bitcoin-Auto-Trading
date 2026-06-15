@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from src.config import settings
 from src.entities import TradingSignal
 from src.modules.risk.service import PositionCheckResult, RiskCheckResult
 from src.modules.trading.validator.order_validator import (
@@ -21,6 +22,11 @@ from src.modules.trading.validator.order_validator import (
 
 def _make_validator() -> OrderValidator:
     risk_service = MagicMock()
+    # max_pct는 DB 오버라이드 경로(get_position_size_max_pct)로 읽힘
+    # → 동적 사이징 min_pct와 일관되도록 실제 설정값 사용
+    risk_service.get_position_size_max_pct = AsyncMock(
+        return_value=settings.position_size_max_pct
+    )
     # 단일 주문 한도(check_position_size)는 항상 PASS로 둬서
     # 누적 노출 가드가 단독으로 동작하는지 본다
     risk_service.check_position_size = AsyncMock(
@@ -48,7 +54,7 @@ def _signal(confidence: str = "0.6") -> TradingSignal:
 
 @pytest.mark.asyncio
 async def test_buy_blocked_when_exposure_exceeds_max() -> None:
-    """기존 코인이 이미 ~8%인데 추가 BUY → 누적 한도 초과 차단."""
+    """기존 코인이 이미 한도 초과(92%)인데 추가 BUY → 누적 한도 초과 차단."""
     # total 1,000,000 / krw 80,000 / coin_value = 920,000 (92%)
     balance = BalanceInfo(
         krw_available=Decimal("80000"),
@@ -70,7 +76,7 @@ async def test_buy_blocked_when_exposure_exceeds_max() -> None:
 @pytest.mark.asyncio
 async def test_buy_allowed_when_no_existing_position() -> None:
     """코인 0 + 소액 주문 → 누적 노출 한도 내 → 통과."""
-    # total 1,000,000 / 전액 krw → coin_value 0, order ~ max 8%
+    # total 1,000,000 / 전액 krw → coin_value 0, order는 한도 내
     balance = BalanceInfo(
         krw_available=Decimal("1000000"),
         krw_locked=Decimal("0"),

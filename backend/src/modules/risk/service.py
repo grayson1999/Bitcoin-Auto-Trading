@@ -515,6 +515,12 @@ class RiskService:
             "daily_loss_limit_pct", settings.daily_loss_limit_pct
         )
 
+    async def get_position_size_max_pct(self) -> float:
+        """최대 포지션 크기 비율(%) 조회 (DB 오버라이드 우선)."""
+        return await self._get_config_value(
+            "position_size_max_pct", settings.position_size_max_pct
+        )
+
     async def is_trading_enabled(self) -> bool:
         """거래 가능 여부 확인"""
         enabled = await self._get_config_value("trading_enabled", True)
