@@ -18,7 +18,10 @@ from src.entities import AdjustmentType, BalanceAdjustment, DailyStats, Order
 from src.modules.portfolio.schemas import PortfolioSummaryResponse, ProfitDataPoint
 
 # 입금/출금 감지 임계값 (원)
-ADJUSTMENT_THRESHOLD = Decimal("1000")
+# 주의: 잔고는 KRW + 코인 평가액이라 코인 가격 변동이 잔고차에 섞인다.
+# 임계값을 코인 일간 평가변동보다 크게 잡아 오탐을 줄인다(실제 입금 ~3만원 대상).
+# 정밀 감지는 Upbit /v1/deposits·/v1/withdraws 원장이 향후 정확한 소스.
+ADJUSTMENT_THRESHOLD = Decimal("20000")
 
 
 class PortfolioService:
@@ -171,6 +174,7 @@ class PortfolioService:
         prev_ending_balance: Decimal,
         current_starting_balance: Decimal,
         target_date: date,
+        user_id: int = 1,
     ) -> BalanceAdjustment | None:
         """
         잔고 변화에서 입금/출금 감지 및 기록
@@ -179,6 +183,7 @@ class PortfolioService:
             prev_ending_balance: 전일 종료 잔고
             current_starting_balance: 오늘 시작 잔고
             target_date: 조정 날짜
+            user_id: 소유자 사용자 ID (BalanceAdjustment.user_id, NOT NULL)
 
         Returns:
             BalanceAdjustment | None: 감지된 조정 내역 (없으면 None)
@@ -208,8 +213,9 @@ class PortfolioService:
             logger.debug(f"이미 기록된 조정: {target_date}, {diff:,.0f}원")
             return None
 
-        # 새 조정 기록
+        # 새 조정 기록 (user_id 필수 - NOT NULL, 누락 시 IntegrityError)
         adjustment = BalanceAdjustment(
+            user_id=user_id,
             date=target_date,
             amount=diff,
             adjustment_type=adj_type.value,

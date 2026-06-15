@@ -6,7 +6,6 @@ import { fetchDashboardSummary } from '@/api/dashboard.api'
 import { CommonButton } from '@/core/components/CommonButton'
 import { EmptyState } from '@/core/components/EmptyState'
 import { NetProfitHero } from '@/components/portfolio/NetProfitHero'
-import { CumulativeReturnCard } from '@/components/portfolio/CumulativeReturnCard'
 import { TodayReturnCard } from '@/components/portfolio/TodayReturnCard'
 import { TradeStatsCard } from '@/components/portfolio/TradeStatsCard'
 import { DepositHistoryCard } from '@/components/portfolio/DepositHistoryCard'
@@ -127,27 +126,22 @@ export function PortfolioView() {
         </CommonButton>
       </div>
 
-      {/* 순손익 히어로 - 입금 대비 현재 평가 (최상단) */}
+      {/* 매매 실현손익 히어로 (메인=진짜 거래 성적, 보조=입금 포함 자산변화) */}
       <NetProfitHero
+        realizedPnl={portfolio?.total_realized_pnl ?? 0}
+        cumulativeReturnPct={portfolio?.cumulative_return_pct ?? 0}
         totalDeposit={portfolio?.total_deposit ?? 0}
         currentValue={portfolio?.current_value ?? 0}
         totalFeesPaid={portfolio?.total_fees_paid ?? 0}
         isLoading={isLoading}
       />
 
-      {/* Summary Cards - 2 column grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <CumulativeReturnCard
-          cumulativeReturnPct={portfolio?.cumulative_return_pct ?? 0}
-          totalRealizedPnl={portfolio?.total_realized_pnl ?? 0}
-          isLoading={isLoading}
-        />
-        <TodayReturnCard
-          todayReturnPct={portfolio?.today_return_pct ?? 0}
-          todayRealizedPnl={portfolio?.today_realized_pnl ?? 0}
-          isLoading={isLoading}
-        />
-      </div>
+      {/* 오늘 수익률 (누적은 히어로 헤드라인과 중복이라 CumulativeReturnCard 제거) */}
+      <TodayReturnCard
+        todayReturnPct={portfolio?.today_return_pct ?? 0}
+        todayRealizedPnl={portfolio?.today_realized_pnl ?? 0}
+        isLoading={isLoading}
+      />
 
       {/* Position & Balance Cards - 2 column grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

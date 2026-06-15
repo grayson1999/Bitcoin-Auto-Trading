@@ -12,7 +12,7 @@
 import asyncio
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -33,8 +33,6 @@ from src.config.constants import (
     UPBIT_MIN_ORDER_KRW,
 )
 from src.entities import (
-    AdjustmentType,
-    BalanceAdjustment,
     DailyStats,
     Order,
     OrderSide,
@@ -623,18 +621,8 @@ class TradingService:
             balance_info = await self._validator.get_balance_info()
             current_balance = balance_info.total_krw
 
-            # 전일 DailyStats 조회하여 입금/출금 감지
-            yesterday = today - timedelta(days=1)
-            prev_stmt = select(DailyStats).where(DailyStats.date == yesterday)
-            prev_result = await self._session.execute(prev_stmt)
-            prev_stats = prev_result.scalar_one_or_none()
-
-            if prev_stats:
-                await self._detect_balance_adjustment(
-                    prev_stats.ending_balance,
-                    current_balance,
-                    today,
-                )
+            # 입금/출금 감지는 daily_stats 잡(ensure_daily_stats_job)으로 일원화한다.
+            # (이중 기록 방지 - 두 경로의 잔고 산출 방식이 달라 dedup이 어긋날 수 있음)
 
             daily_stats = DailyStats(
                 user_id=order.user_id,
@@ -753,69 +741,6 @@ class TradingService:
     async def _get_position(self) -> Position | None:
         """현재 포지션 조회 (PositionManager에 위임)"""
         return await self._position_manager.get_position()
-
-    async def _detect_balance_adjustment(
-        self,
-        prev_ending_balance: Decimal,
-        current_balance: Decimal,
-        target_date: date,
-    ) -> BalanceAdjustment | None:
-        """
-        잔고 변화에서 입금/출금 감지 및 기록
-
-        Args:
-            prev_ending_balance: 전일 종료 잔고
-            current_balance: 현재 잔고
-            target_date: 조정 날짜
-
-        Returns:
-            BalanceAdjustment | None: 감지된 조정 내역 (없으면 None)
-        """
-        # 입금/출금 감지 임계값 (원)
-        ADJUSTMENT_THRESHOLD = Decimal("1000")
-
-        # 잔고 차이 계산
-        diff = current_balance - prev_ending_balance
-
-        # 임계값 미만 차이는 무시
-        if abs(diff) < ADJUSTMENT_THRESHOLD:
-            return None
-
-        # 입금/출금 타입 결정
-        if diff > 0:
-            adj_type = AdjustmentType.DEPOSIT
-            logger.info(f"입금 감지: {diff:,.0f}원 ({target_date})")
-        else:
-            adj_type = AdjustmentType.WITHDRAWAL
-            logger.info(f"출금 감지: {abs(diff):,.0f}원 ({target_date})")
-
-        # 이미 기록된 조정인지 확인
-        existing_stmt = select(BalanceAdjustment).where(
-            BalanceAdjustment.date == target_date,
-            BalanceAdjustment.amount == diff,
-        )
-        existing_result = await self._session.execute(existing_stmt)
-        if existing_result.scalar_one_or_none():
-            logger.debug(f"이미 기록된 조정: {target_date}, {diff:,.0f}원")
-            return None
-
-        # 새 조정 기록
-        adjustment = BalanceAdjustment(
-            date=target_date,
-            amount=diff,
-            adjustment_type=adj_type.value,
-            balance_before=prev_ending_balance,
-            balance_after=current_balance,
-            notes=f"자동 감지 ({adj_type.value})",
-        )
-        self._session.add(adjustment)
-
-        logger.info(
-            f"잔고 조정 기록: {adj_type.value} {diff:,.0f}원 "
-            f"({prev_ending_balance:,.0f} → {current_balance:,.0f})"
-        )
-
-        return adjustment
 
     async def sync_position_from_upbit(self) -> Position | None:
         """Upbit 실제 잔고와 Position 테이블 동기화 (PositionManager에 위임)"""
