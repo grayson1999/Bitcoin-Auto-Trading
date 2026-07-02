@@ -5,9 +5,9 @@ import { formatCurrency, formatPercent } from '@/core/utils/formatters'
 import { cn } from '@/core/utils'
 
 interface NetProfitHeroProps {
-  /** 매매 실현손익 (KRW) - 진짜 거래 성적 */
+  /** 매매 순손익 (KRW, 실현손익 - 수수료) - 진짜 거래 성적 */
   realizedPnl: number
-  /** 누적 수익률 (%, 실현손익 기준) */
+  /** 누적 수익률 (%, 순손익 기준) */
   cumulativeReturnPct: number
   /** 누적 입금액 (KRW) */
   totalDeposit: number
@@ -45,8 +45,8 @@ export function NetProfitHero({
 
   return (
     <CommonCard
-      title="매매 실현손익"
-      description="실제 거래로 번/잃은 금액 (입금 제외)"
+      title="매매 순손익"
+      description="실제 거래로 번/잃은 금액 (입금 제외, 수수료 차감)"
     >
       <div className="space-y-4">
         {/* 메인: 진짜 매매 성적 */}
@@ -104,7 +104,7 @@ export function NetProfitHero({
             </div>
           </div>
           <p className="text-[11px] text-zinc-600 mt-2">
-            입금이 포함되어 실제 매매 성적과 다릅니다. 누적 수수료{' '}
+            입금이 포함되어 실제 매매 성적과 다릅니다. 순손익에 이미 차감된 누적 수수료{' '}
             <span className="text-amber-400/80">{formatCurrency(totalFeesPaid)}</span>
           </p>
         </div>

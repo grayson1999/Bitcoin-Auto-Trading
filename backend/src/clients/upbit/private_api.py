@@ -28,9 +28,11 @@ from src.clients.upbit.common import (
     UpbitBalance,
     UpbitDeposit,
     UpbitOrderResponse,
+    UpbitWithdrawal,
     parse_balance,
     parse_deposit,
     parse_order_response,
+    parse_withdrawal,
 )
 from src.config import settings
 from src.config.constants import (
@@ -360,6 +362,30 @@ class UpbitPrivateAPI:
             raise UpbitPrivateAPIError("Invalid deposits response")
 
         return [parse_deposit(d) for d in response if d.get("state") == "ACCEPTED"]
+
+    async def get_krw_withdraws(self, limit: int = 100) -> list[UpbitWithdrawal]:
+        """
+        KRW 출금 내역 조회 (Upbit /v1/withdraws 원장).
+
+        포트폴리오 total_deposit(원금)에서 출금을 정확히 차감하는 소스.
+        입금과 달리 완료 상태값이 "DONE"(대문자)이다. (공식 문서 확인)
+
+        Args:
+            limit: 조회 건수 (최대 100)
+
+        Returns:
+            list[UpbitWithdrawal]: 완료(DONE) 상태의 KRW 출금 목록
+        """
+        response = await self._request(
+            method="GET",
+            endpoint="/withdraws",
+            params={"currency": "KRW", "limit": str(limit)},
+        )
+
+        if not isinstance(response, list):
+            raise UpbitPrivateAPIError("Invalid withdraws response")
+
+        return [parse_withdrawal(w) for w in response if w.get("state") == "DONE"]
 
     async def get_order_by_identifier(
         self, identifier: str

@@ -7,6 +7,7 @@ import { cn } from '@/core/utils'
 interface TradeStatsCardProps {
   totalTrades: number
   winCount: number
+  lossCount: number
   winRate: number
   averageReturnPct: number
   maxDrawdownPct: number
@@ -17,6 +18,7 @@ interface TradeStatsCardProps {
 export function TradeStatsCard({
   totalTrades,
   winCount,
+  lossCount,
   winRate,
   averageReturnPct,
   maxDrawdownPct,
@@ -36,8 +38,6 @@ export function TradeStatsCard({
     )
   }
 
-  const lossCount = totalTrades - winCount
-
   const stats = [
     {
       label: '승률',
@@ -50,7 +50,7 @@ export function TradeStatsCard({
     {
       label: '총 거래 횟수',
       value: formatNumber(totalTrades),
-      subValue: '전체 체결',
+      subValue: '전체 체결(매수+매도)',
       icon: BarChart3,
       iconColor: 'text-blue-400',
       bgColor: 'bg-blue-400/10',

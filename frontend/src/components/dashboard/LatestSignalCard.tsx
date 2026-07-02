@@ -95,7 +95,8 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
   const confidencePercent = Math.round(signal.confidence * 100)
   const outcome = getOutcomeBadgeConfig(signal.outcome_evaluated, signal.outcome_correct)
 
-  // AI accuracy (win_rate) - hidden on admin-only fetch error
+  // 매매 승률 (win/(win+loss)) - hidden on admin-only fetch error
+  // 주의: AI 신호 정확도가 아니라 청산 거래 기준 승률임.
   const winRate = !portfolioError && portfolio ? portfolio.win_rate : null
 
   // Next-signal countdown from created_at + signal_interval_minutes
@@ -128,7 +129,7 @@ export function LatestSignalCard({ signal, isLoading, className }: LatestSignalC
                 winRate < 40 ? 'text-rose-400' : 'text-emerald-400'
               )}
             >
-              최근 AI 적중률 {Math.round(winRate)}%
+              매매 승률 {Math.round(winRate)}%
             </span>
           )}
           <button

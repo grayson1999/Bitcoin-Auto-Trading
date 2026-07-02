@@ -62,13 +62,20 @@ class PortfolioSummaryResponse(BaseModel):
 
     total_deposit: Decimal = Field(description="초기 투자금 (KRW)")
     current_value: Decimal = Field(description="현재 평가금 (KRW)")
-    cumulative_return_pct: float = Field(description="누적 수익률 (%, 실현 손익 기준)")
-    total_realized_pnl: Decimal = Field(description="누적 실현 손익 (KRW)")
+    cumulative_return_pct: float = Field(
+        description="누적 수익률 (%, 순손익=실현손익-수수료 기준)"
+    )
+    total_realized_pnl: Decimal = Field(description="누적 실현 손익 (gross, KRW)")
+    net_realized_pnl: Decimal = Field(
+        default=Decimal("0"),
+        description="누적 순손익 (실현손익 - 누적수수료, KRW)",
+    )
     today_return_pct: float = Field(description="오늘 수익률 (%)")
     today_realized_pnl: Decimal = Field(description="오늘 실현 손익 (KRW)")
-    total_trades: int = Field(description="총 거래 횟수")
-    win_count: int = Field(description="승리 횟수")
-    win_rate: float = Field(description="승률 (%)")
+    total_trades: int = Field(description="총 거래 횟수 (전체 체결)")
+    win_count: int = Field(description="승리 횟수 (청산 이익 거래)")
+    loss_count: int = Field(default=0, description="패배 횟수 (청산 손실 거래)")
+    win_rate: float = Field(description="승률 (%, 승/(승+패))")
     average_return_pct: float = Field(description="평균 수익률 (%)")
     max_drawdown_pct: float = Field(description="최대 낙폭 MDD (%)")
     total_fees_paid: Decimal = Field(

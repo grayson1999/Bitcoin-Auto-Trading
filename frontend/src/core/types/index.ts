@@ -211,10 +211,12 @@ export interface PortfolioSummary {
   current_value: number
   cumulative_return_pct: number
   total_realized_pnl: number
+  net_realized_pnl: number
   today_return_pct: number
   today_realized_pnl: number
   total_trades: number
   win_count: number
+  loss_count: number
   win_rate: number
   average_return_pct: number
   max_drawdown_pct: number

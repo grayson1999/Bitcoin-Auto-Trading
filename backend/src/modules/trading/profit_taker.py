@@ -23,7 +23,7 @@ from src.clients.upbit import (
     UpbitPublicAPIError,
 )
 from src.config import settings
-from src.config.constants import UPBIT_MIN_ORDER_KRW
+from src.config.constants import ROUND_TRIP_FEE_PCT, UPBIT_MIN_ORDER_KRW
 from src.entities import (
     DailyStats,
     Order,
@@ -100,13 +100,17 @@ class ProfitTaker:
             await self._session.commit()
             return
 
-        # 미실현 손익률 계산
+        # 미실현 손익률 계산 (gross: 가격 기준, 수수료 미반영)
         pnl_pct = float(
             (current_price - position.avg_buy_price) / position.avg_buy_price * 100
         )
+        # 순 손익률 (net): 왕복 수수료(0.10%)를 차감 → 익절/트레일링 판정에 사용.
+        # 소액 계좌에서 수수료가 이익을 잠식하지 않도록 실질 이익 기준으로 청산.
+        net_pnl_pct = pnl_pct - ROUND_TRIP_FEE_PCT
 
         # === 하드 손절 (룰 기반, AI 신호와 무관하게 강제 청산) ===
         # 익절 티어/트레일링보다 우선 평가하여 손실을 상한선에서 차단한다.
+        # 손실 차단은 빨라야 하므로 gross(pnl_pct) 기준 유지.
         # RiskService와 동일한 stop_loss_pct 설정 키를 사용해 UI/설정과 일치.
         stop_loss_pct = await self._event_manager.get_config_value(
             "stop_loss_pct", settings.stop_loss_pct
@@ -143,15 +147,16 @@ class ProfitTaker:
         if position.peak_price is None or current_price > position.peak_price:
             position.peak_price = current_price
 
-        # 트레일링 스탑 활성화 체크
+        # 트레일링 스탑 활성화 체크 (순 손익률 기준)
         if (
             not position.trailing_stop_active
-            and pnl_pct >= settings.trailing_stop_activation_pct
+            and net_pnl_pct >= settings.trailing_stop_activation_pct
         ):
             position.trailing_stop_active = True
             logger.info(
                 f"[ProfitTaker] 트레일링 스탑 활성화: "
-                f"PnL={pnl_pct:+.2f}% >= {settings.trailing_stop_activation_pct}%"
+                f"net PnL={net_pnl_pct:+.2f}% (gross {pnl_pct:+.2f}%) "
+                f">= {settings.trailing_stop_activation_pct}%"
             )
 
         # 1. 트레일링 스탑 체크 (활성 시)
@@ -161,17 +166,18 @@ class ProfitTaker:
                 await self._session.commit()
                 return
 
-        # 2. 익절 티어 체크
-        await self._check_profit_tiers(position, current_price, pnl_pct)
+        # 2. 익절 티어 체크 (순 손익률 기준)
+        await self._check_profit_tiers(position, current_price, net_pnl_pct, pnl_pct)
         await self._session.commit()
 
     async def _check_profit_tiers(
         self,
         position: Position,
         current_price: Decimal,
-        pnl_pct: float,
+        net_pnl_pct: float,
+        gross_pnl_pct: float,
     ) -> None:
-        """티어별 부분 매도 실행"""
+        """티어별 부분 매도 실행 (순 손익률=수수료 차감 기준으로 판정)"""
         tiers = [
             (1, settings.profit_tier_1_pct, settings.profit_tier_1_sell_pct),
             (2, settings.profit_tier_2_pct, settings.profit_tier_2_sell_pct),
@@ -182,7 +188,7 @@ class ProfitTaker:
             if position.profit_tier_reached >= tier_num:
                 continue
 
-            if pnl_pct < profit_pct:
+            if net_pnl_pct < profit_pct:
                 break
 
             # 티어 조건 충족
@@ -192,7 +198,7 @@ class ProfitTaker:
 
             logger.info(
                 f"[ProfitTaker] 익절 Tier {tier_num} 실행: "
-                f"PnL={pnl_pct:+.2f}% >= {profit_pct}%, "
+                f"net PnL={net_pnl_pct:+.2f}% (gross {gross_pnl_pct:+.2f}%) >= {profit_pct}%, "
                 f"매도 {sell_pct}% = {sell_volume} ({sell_volume * current_price:,.0f}원)"
             )
 

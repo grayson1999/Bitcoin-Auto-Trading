@@ -16,12 +16,14 @@ from src.clients.upbit.common import (
     UpbitDeposit,
     UpbitOrderResponse,
     UpbitTickerData,
+    UpbitWithdrawal,
     # Parsers
     parse_balance,
     parse_candle,
     parse_deposit,
     parse_order_response,
     parse_ticker,
+    parse_withdrawal,
     to_decimal,
 )
 from src.clients.upbit.private_api import (
@@ -53,6 +55,7 @@ __all__ = [
     "UpbitPublicAPI",
     "UpbitPublicAPIError",
     "UpbitTickerData",
+    "UpbitWithdrawal",
     # Singleton getters/closers
     "close_upbit_private_api",
     "close_upbit_public_api",
@@ -64,5 +67,6 @@ __all__ = [
     "parse_deposit",
     "parse_order_response",
     "parse_ticker",
+    "parse_withdrawal",
     "to_decimal",
 ]

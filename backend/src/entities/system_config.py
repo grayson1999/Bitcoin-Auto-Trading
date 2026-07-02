@@ -98,16 +98,16 @@ class SystemConfig(Base):
         return f"<SystemConfig(key={self.key}, value={value_preview}...)>"
 
 
-# 기본 설정값 상수
-# DB 오버라이드 가능한 7개 설정만 포함
+# 기본 설정값 상수 (settings.py v3.0 보수 전략 코드 기본값과 일치시킨다)
 # - trading_ticker: 환경변수로 관리
 # - trading_enabled: Risk API로 제어
+# 주의: 이 값이 DB에 시딩되면 코드 기본값을 덮어쓰므로 반드시 settings.py와 동기화 유지.
 DEFAULT_CONFIGS = {
-    "position_size_min_pct": "10.0",
-    "position_size_max_pct": "25.0",
-    "stop_loss_pct": "5.0",
-    "daily_loss_limit_pct": "5.0",
-    "signal_interval_hours": "1",
+    "position_size_min_pct": "3.0",
+    "position_size_max_pct": "8.0",
+    "stop_loss_pct": "3.0",
+    "daily_loss_limit_pct": "3.0",
+    "signal_interval_minutes": "60",
     "ai_model": '"gpt-5-nano"',
     "volatility_threshold_pct": "3.0",
 }

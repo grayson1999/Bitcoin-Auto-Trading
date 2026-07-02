@@ -54,10 +54,12 @@ class PortfolioService:
                 current_value=current_balance,
                 cumulative_return_pct=0.0,
                 total_realized_pnl=Decimal("0"),
+                net_realized_pnl=Decimal("0"),
                 today_return_pct=0.0,
                 today_realized_pnl=Decimal("0"),
                 total_trades=0,
                 win_count=0,
+                loss_count=0,
                 win_rate=0.0,
                 average_return_pct=0.0,
                 max_drawdown_pct=0.0,
@@ -75,23 +77,29 @@ class PortfolioService:
         total_invested = initial_balance + total_deposits - total_withdrawals
 
         # 누적 통계 계산
+        # trade_count 는 매수+매도 모든 체결을 세므로 승률 분모로 부적절.
+        # 승/패는 매도 청산에서만 집계되므로 청산 거래 수(win+loss)를 분모로 사용.
         total_trades = sum(stat.trade_count for stat in all_stats)
         win_count = sum(stat.win_count for stat in all_stats)
-        win_rate = (win_count / total_trades * 100) if total_trades > 0 else 0.0
+        loss_count = sum(stat.loss_count for stat in all_stats)
+        closed_trades = win_count + loss_count
+        win_rate = (win_count / closed_trades * 100) if closed_trades > 0 else 0.0
 
-        # 누적 실현 손익
+        # 누적 실현 손익 (gross) 및 순손익 (수수료 차감)
         total_pnl = sum(stat.realized_pnl for stat in all_stats)
+        total_fees_paid = await self._calculate_total_fees_paid()
+        net_pnl = total_pnl - total_fees_paid
 
-        # 누적 수익률 (실현 손익 기준)
+        # 누적 수익률 (순손익=실현손익-수수료 기준)
         if total_invested > 0:
-            cumulative_return_pct = float(total_pnl / total_invested * 100)
+            cumulative_return_pct = float(net_pnl / total_invested * 100)
         else:
             cumulative_return_pct = 0.0
 
-        # 평균 수익률 (거래당)
+        # 평균 수익률 (청산 거래당, 순손익 기준)
         average_return_pct = (
-            float(total_pnl / total_trades / total_invested * 100)
-            if total_trades > 0 and total_invested > 0
+            float(net_pnl / closed_trades / total_invested * 100)
+            if closed_trades > 0 and total_invested > 0
             else 0.0
         )
 
@@ -124,18 +132,17 @@ class PortfolioService:
         # 최근 30일 수익 차트 데이터 (누적 실현 손익 + 오늘 포인트)
         profit_chart_data = self._generate_chart_data(all_stats, current_balance)
 
-        # 누적 지불 수수료 (체결된 주문의 fee 합계)
-        total_fees_paid = await self._calculate_total_fees_paid()
-
         return PortfolioSummaryResponse(
             total_deposit=total_invested,  # 입금/출금 반영된 총 투자금
             current_value=current_balance,
             cumulative_return_pct=cumulative_return_pct,
             total_realized_pnl=total_pnl,
+            net_realized_pnl=net_pnl,
             today_return_pct=today_return_pct,
             today_realized_pnl=today_realized_pnl,
             total_trades=total_trades,
             win_count=win_count,
+            loss_count=loss_count,
             win_rate=win_rate,
             average_return_pct=average_return_pct,
             max_drawdown_pct=max_drawdown_pct,
@@ -226,6 +233,76 @@ class PortfolioService:
         if recorded:
             await self.session.flush()
             logger.info(f"Upbit 입금 동기화 완료: {recorded}건 신규 기록")
+        return recorded
+
+    async def sync_withdrawals_from_upbit(self) -> int:
+        """
+        Upbit 출금 원장(/v1/withdraws)을 BalanceAdjustment로 동기화한다.
+
+        입금과 동일 골격이나 완료 상태값이 "DONE"이고, 계좌에서 실제 빠져나간
+        총액(amount+fee)을 음수 amount로 기록해 원금에서 정확히 차감되게 한다.
+        봇 시작일(첫 DailyStats.date) "이후"의 출금만 기록한다.
+
+        Returns:
+            int: 새로 기록한 출금 건수
+        """
+        # 봇 시작일 조회
+        first_stmt = select(DailyStats).order_by(DailyStats.date.asc()).limit(1)
+        first_stats = (await self.session.execute(first_stmt)).scalar_one_or_none()
+        if first_stats is None:
+            logger.info("DailyStats 없음 - 출금 동기화 건너뜀")
+            return 0
+        start_date = first_stats.date
+        user_id = first_stats.user_id
+
+        # Upbit 출금 원장 조회
+        try:
+            withdraws = await get_upbit_private_api().get_krw_withdraws(limit=100)
+        except UpbitPrivateAPIError as e:
+            logger.warning(f"Upbit 출금 원장 조회 실패: {e.message}")
+            return 0
+
+        recorded = 0
+        for wd in withdraws:
+            # created_at(ISO8601) → date. 봇 시작일 '이후'만 대상.
+            try:
+                wd_date = datetime.fromisoformat(wd.created_at).date()
+            except ValueError:
+                wd_date = date.fromisoformat(wd.created_at[:10])
+            if wd_date <= start_date:
+                continue
+
+            # 계좌에서 실제 빠져나간 총액 = amount + fee (음수로 기록)
+            total_out = -(wd.amount + wd.fee)
+
+            # 중복 방지: 같은 date + amount 기록이 있으면 스킵
+            exists_stmt = select(BalanceAdjustment).where(
+                BalanceAdjustment.date == wd_date,
+                BalanceAdjustment.amount == total_out,
+            )
+            if (await self.session.execute(exists_stmt)).scalar_one_or_none():
+                continue
+
+            self.session.add(
+                BalanceAdjustment(
+                    user_id=user_id,
+                    date=wd_date,
+                    amount=total_out,
+                    adjustment_type=AdjustmentType.WITHDRAWAL.value,
+                    balance_before=Decimal("0"),
+                    balance_after=Decimal("0"),
+                    notes=f"Upbit 출금 원장 동기화 (uuid={wd.uuid})",
+                )
+            )
+            recorded += 1
+            logger.info(
+                f"출금 기록: {wd_date} {float(total_out):,.0f}원 "
+                f"(amount={float(wd.amount):,.0f}, fee={float(wd.fee):,.0f})"
+            )
+
+        if recorded:
+            await self.session.flush()
+            logger.info(f"Upbit 출금 동기화 완료: {recorded}건 신규 기록")
         return recorded
 
     def _calculate_mdd_from_pnl(self, stats: list[DailyStats]) -> float:

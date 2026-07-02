@@ -128,7 +128,7 @@ export function PortfolioView() {
 
       {/* 매매 실현손익 히어로 (메인=진짜 거래 성적, 보조=입금 포함 자산변화) */}
       <NetProfitHero
-        realizedPnl={portfolio?.total_realized_pnl ?? 0}
+        realizedPnl={portfolio?.net_realized_pnl ?? 0}
         cumulativeReturnPct={portfolio?.cumulative_return_pct ?? 0}
         totalDeposit={portfolio?.total_deposit ?? 0}
         currentValue={portfolio?.current_value ?? 0}
@@ -165,6 +165,7 @@ export function PortfolioView() {
       <TradeStatsCard
         totalTrades={portfolio?.total_trades ?? 0}
         winCount={portfolio?.win_count ?? 0}
+        lossCount={portfolio?.loss_count ?? 0}
         winRate={portfolio?.win_rate ?? 0}
         averageReturnPct={portfolio?.average_return_pct ?? 0}
         maxDrawdownPct={portfolio?.max_drawdown_pct ?? 0}

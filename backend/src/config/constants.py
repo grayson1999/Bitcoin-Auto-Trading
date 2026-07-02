@@ -15,6 +15,7 @@ DB_POOL_MAX_OVERFLOW = 10  # 풀 초과 시 추가 허용 연결 수 (최대 20�
 
 # === 거래소 제한 ===
 UPBIT_FEE_RATE = 0.0005  # 거래 수수료 (0.05%)
+ROUND_TRIP_FEE_PCT = UPBIT_FEE_RATE * 2 * 100  # 왕복 수수료율 (%) = 0.10%
 UPBIT_MIN_ORDER_KRW = 5000  # 최소 주문 금액 (원)
 UPBIT_RATE_LIMIT_ORDER = 10  # 초당 주문 요청 제한
 UPBIT_RATE_LIMIT_QUERY = 30  # 초당 조회 요청 제한

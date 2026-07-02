@@ -185,12 +185,16 @@ class DailyStats(Base, UserOwnedMixin, AuditMixin):
         """
         승률 계산
 
+        trade_count 는 매수+매도 모든 체결을 세므로 분모로 부적절.
+        승/패는 매도 청산에서만 집계되므로 청산 거래 수(win+loss)를 분모로 사용.
+
         Returns:
             float: 승률 (0.0 ~ 1.0)
         """
-        if self.trade_count == 0:
+        closed_trades = self.win_count + self.loss_count
+        if closed_trades == 0:
             return 0.0
-        return self.win_count / self.trade_count
+        return self.win_count / closed_trades
 
     @property
     def loss_pct(self) -> float:

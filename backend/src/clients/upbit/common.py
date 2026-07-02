@@ -84,6 +84,19 @@ class UpbitDeposit(BaseModel):
     created_at: str  # ISO 8601
 
 
+class UpbitWithdrawal(BaseModel):
+    """Upbit 출금 내역 (원장) 모델. (/v1/withdraws)"""
+
+    uuid: str
+    txid: str | None = None
+    currency: str
+    amount: Decimal
+    fee: Decimal = Decimal("0")
+    state: str  # DONE=완료
+    created_at: str  # ISO 8601
+    done_at: str | None = None
+
+
 class UpbitTrade(BaseModel):
     """Upbit individual trade model."""
 
@@ -201,6 +214,30 @@ def parse_deposit(data: dict[str, Any]) -> UpbitDeposit:
         amount=to_decimal(data["amount"]),
         state=data["state"],
         created_at=data["created_at"],
+    )
+
+
+def parse_withdrawal(data: dict[str, Any]) -> UpbitWithdrawal:
+    """
+    Parse withdrawal ledger entry from Upbit /v1/withdraws response.
+
+    KRW 출금 시 계좌에서 실제 빠져나간 금액 = amount + fee.
+
+    Args:
+        data: Raw withdrawal data from API
+
+    Returns:
+        UpbitWithdrawal: Parsed withdrawal
+    """
+    return UpbitWithdrawal(
+        uuid=data["uuid"],
+        txid=data.get("txid"),
+        currency=data["currency"],
+        amount=to_decimal(data["amount"]),
+        fee=to_decimal(data.get("fee", "0")),
+        state=data["state"],
+        created_at=data["created_at"],
+        done_at=data.get("done_at"),
     )
 
 
