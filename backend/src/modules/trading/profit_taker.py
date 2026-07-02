@@ -147,16 +147,16 @@ class ProfitTaker:
         if position.peak_price is None or current_price > position.peak_price:
             position.peak_price = current_price
 
-        # 트레일링 스탑 활성화 체크 (순 손익률 기준)
-        if (
-            not position.trailing_stop_active
-            and net_pnl_pct >= settings.trailing_stop_activation_pct
-        ):
+        # 트레일링 스탑 활성화 체크 (순 손익률 기준, DB 오버라이드 반영)
+        trailing_activation_pct = await self._event_manager.get_config_value(
+            "trailing_stop_activation_pct", settings.trailing_stop_activation_pct
+        )
+        if not position.trailing_stop_active and net_pnl_pct >= trailing_activation_pct:
             position.trailing_stop_active = True
             logger.info(
                 f"[ProfitTaker] 트레일링 스탑 활성화: "
                 f"net PnL={net_pnl_pct:+.2f}% (gross {pnl_pct:+.2f}%) "
-                f">= {settings.trailing_stop_activation_pct}%"
+                f">= {trailing_activation_pct}%"
             )
 
         # 1. 트레일링 스탑 체크 (활성 시)
@@ -178,11 +178,20 @@ class ProfitTaker:
         gross_pnl_pct: float,
     ) -> None:
         """티어별 부분 매도 실행 (순 손익률=수수료 차감 기준으로 판정)"""
-        tiers = [
+        # DB 오버라이드 반영 (DB_OVERRIDABLE_KEYS 선언과 실제 소비 경로 일치)
+        tiers = []
+        for tier_num, default_pct, default_sell in (
             (1, settings.profit_tier_1_pct, settings.profit_tier_1_sell_pct),
             (2, settings.profit_tier_2_pct, settings.profit_tier_2_sell_pct),
             (3, settings.profit_tier_3_pct, settings.profit_tier_3_sell_pct),
-        ]
+        ):
+            profit_pct = await self._event_manager.get_config_value(
+                f"profit_tier_{tier_num}_pct", default_pct
+            )
+            sell_pct = await self._event_manager.get_config_value(
+                f"profit_tier_{tier_num}_sell_pct", default_sell
+            )
+            tiers.append((tier_num, profit_pct, sell_pct))
 
         for tier_num, profit_pct, sell_pct in tiers:
             if position.profit_tier_reached >= tier_num:
@@ -224,11 +233,15 @@ class ProfitTaker:
             (position.peak_price - current_price) / position.peak_price * 100
         )
 
-        if drop_from_peak_pct >= settings.trailing_stop_distance_pct:
+        # DB 오버라이드 반영
+        distance_pct = await self._event_manager.get_config_value(
+            "trailing_stop_distance_pct", settings.trailing_stop_distance_pct
+        )
+        if drop_from_peak_pct >= distance_pct:
             logger.info(
                 f"[ProfitTaker] 트레일링 스탑 발동: "
                 f"최고가 {position.peak_price:,.0f} → 현재가 {current_price:,.0f} "
-                f"({drop_from_peak_pct:+.2f}% >= {settings.trailing_stop_distance_pct}%)"
+                f"({drop_from_peak_pct:+.2f}% >= {distance_pct}%)"
             )
 
             sell_volume = position.quantity
