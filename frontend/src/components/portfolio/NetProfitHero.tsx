@@ -82,7 +82,8 @@ export function NetProfitHero({
             <Info className="h-3 w-3" />
             총자산 변화 (입금 포함)
           </div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
+          {/* 모바일: 세로 스택 (좁은 화면에서 금액 잘림 방지), sm 이상: 3열 */}
+          <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
             <div>
               <div className="text-zinc-500 text-xs mb-0.5">입금 누계</div>
               <div className="font-mono-num text-foreground">

@@ -63,8 +63,9 @@ function SettingField({ configKey, value, onChange, error, disabled }: SettingFi
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
+      {/* 모바일: 세로 스택, sm 이상: 라벨-입력 가로 배치 (좁은 화면 라벨 찌그러짐 방지) */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <Label htmlFor={configKey} className="text-sm font-medium text-gray-200">
             {label}
           </Label>
@@ -72,7 +73,7 @@ function SettingField({ configKey, value, onChange, error, disabled }: SettingFi
             <p className="text-xs text-gray-400 mt-0.5">{description}</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Input
             id={configKey}
             type="number"
